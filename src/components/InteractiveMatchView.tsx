@@ -479,7 +479,10 @@ export function InteractiveMatchView({
       }
     }
 
-    if (newState.inningComplete || newState.isComplete) {
+    // Pause on high-leverage results: show the result and require explicit continue
+    // before auto-sim resumes. This gives the player a moment to absorb what happened.
+    const wasHighLeveragePlay = isHighLeverage(matchState);
+    if (newState.inningComplete || newState.isComplete || wasHighLeveragePlay) {
       setShowingResult(true);
     }
 

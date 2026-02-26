@@ -295,11 +295,12 @@ export const GAME_CONSTANTS = {
     PITCH_HR_ALLOWED: -8,
   },
 
-  // Adaptation — penalizes consecutive same-approach/strategy use within a half-inning
+  // Adaptation — DISABLED (penalty scale removed)
+  // Previously penalized consecutive same-approach/strategy use, but this forced
+  // unnatural rotation and conflicted with strategic depth (e.g., wearing down a
+  // pitcher with "patient" approach). Now all approaches are equal weight.
   ADAPTATION: {
-    // Multiplier applied to stat modifiers: 1st use = full, then immediate diminishing returns
-    // Penalizes repetition from the 2nd use onward to make approach rotation meaningful
-    PENALTY_SCALE: [1.0, 0.85, 0.65, 0.40, 0.20] as readonly number[],
+    PENALTY_SCALE: [1.0, 1.0, 1.0, 1.0, 1.0] as readonly number[],
   },
 
   // AI Personality Presets - creates variation in AI behavior
