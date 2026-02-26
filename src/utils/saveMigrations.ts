@@ -202,8 +202,14 @@ export function migrateSaveData(data: SaveData): SaveData {
 
   console.log(`Migrating save from ${migratedData.version} to ${currentVersion}`);
 
-  // Apply migrations in order
-  const versions = Object.keys(MIGRATIONS).sort();
+  // Apply migrations in order — sort by semantic version, not lexicographic
+  const versions = Object.keys(MIGRATIONS).sort((a, b) => {
+    const [majA, minA, patchA] = a.split('.').map(Number);
+    const [majB, minB, patchB] = b.split('.').map(Number);
+    if (majA !== majB) return majA - majB;
+    if (minA !== minB) return minA - minB;
+    return patchA - patchB;
+  });
   for (const targetVersion of versions) {
     // Only apply migrations newer than current save version
     if (isVersionNewer(targetVersion, migratedData.version)) {

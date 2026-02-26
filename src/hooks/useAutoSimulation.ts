@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as React from "react";
 import {
   InteractiveMatchState,
   finalizeInteractiveMatch,
@@ -33,9 +34,25 @@ export function useAutoSimulation({
 }: AutoSimulationOptions) {
   const [autoSimulating, setAutoSimulating] = useState(false);
   const [simMode, setSimMode] = useState<SimMode | null>(null);
+  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup: clear interval on unmount
+  React.useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const handleAutoSim = (mode: SimMode, matchState: InteractiveMatchState, gamePlan?: BatterApproach) => {
     if (autoSimulating) return; // Guard against double-start
+
+    // Clear any existing interval before starting a new one
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
     setAutoSimulating(true);
     setSimMode(mode);
@@ -71,7 +88,10 @@ export function useAutoSimulation({
         })();
 
         if (shouldStop) {
-          clearInterval(interval);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
           setAutoSimulating(false);
           setSimMode(null);
           if (prev.isComplete) {
@@ -153,6 +173,8 @@ export function useAutoSimulation({
         return simulateAtBat_Interactive(prev, decision);
       });
     }, 200);
+
+    intervalRef.current = interval;
   };
 
   return { autoSimulating, simMode, handleAutoSim };
