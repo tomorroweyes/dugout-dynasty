@@ -53,6 +53,9 @@ export interface InteractiveMatchState {
   currentBatter: Player;
   currentPitcher: Player;
   batterIndex: number;
+  // Persistent batting order positions — survive inning transitions
+  myBatterIndex: number;
+  opponentBatterIndex: number;
 
   // Score
   myRuns: number;
@@ -203,6 +206,19 @@ function applyTeamWideSpiritDelta(team: Player[], delta: number): Player[] {
 }
 
 /**
+ * Resolve pitcher rotation based on innings pitched.
+ * Applies PITCHER_ROTATION thresholds: starter → first reliever → second reliever.
+ */
+function resolveNextPitcher(team: Player[], currentPitcher: Player, inningsCompleted: number): Player {
+  const { FIRST_RELIEVER_INNING, SECOND_RELIEVER_INNING } = GAME_CONSTANTS.PITCHER_ROTATION;
+  const pitchers = team.filter(isPitcher);
+  if (pitchers.length <= 1) return currentPitcher;
+  if (inningsCompleted >= SECOND_RELIEVER_INNING && pitchers.length >= 3) return pitchers[2];
+  if (inningsCompleted >= FIRST_RELIEVER_INNING && pitchers.length >= 2) return pitchers[1];
+  return currentPitcher;
+}
+
+/**
  * Initialize a new interactive match
  */
 export function initializeInteractiveMatch(
@@ -247,6 +263,8 @@ export function initializeInteractiveMatch(
     currentBatter: opponentBatters[0],
     currentPitcher: myPitcher,
     batterIndex: 0,
+    myBatterIndex: 0,
+    opponentBatterIndex: 0,
     myRuns: 0,
     opponentRuns: 0,
     myHits: 0,
@@ -695,19 +713,32 @@ export function simulateAtBat_Interactive(
     // Move to next half-inning or next inning
     if (isTop) {
       // Was top of inning, move to bottom
+      // Batting order: continue my team's lineup where it left off
+      const myBatters = updatedMyTeam.filter(isBatter);
+      const myStartIdx = state.myBatterIndex % (myBatters.length || 1);
+      // Save opponent's batting order position for next time they bat
+      const oppBatterCount = updatedOpponentTeam.filter(isBatter).length || 1;
+      const nextOpponentBatterIndex = (state.batterIndex + 1) % oppBatterCount;
+      // Opponent pitcher rotation: check if they need to swap for this bottom half
+      const newMyPitcherInnings = state.myPitcherInnings + 1;
+      const nextOpponentPitcher = resolveNextPitcher(
+        updatedOpponentTeam, updatedOpponentPitcher, state.opponentPitcherInnings
+      );
       return {
         ...state,
         myTeam: updatedMyTeam,
         opponentTeam: updatedOpponentTeam,
         myPitcher: updatedMyPitcher,
-        opponentPitcher: updatedOpponentPitcher,
+        opponentPitcher: nextOpponentPitcher,
         isTop: false,
         outs: 0,
         bases: [false, false, false],
         baseRunnerIds: [null, null, null],
-        currentBatter: state.myTeam.filter(isBatter)[0],
-        currentPitcher: updatedOpponentPitcher,
-        batterIndex: 0,
+        currentBatter: myBatters[myStartIdx],
+        currentPitcher: nextOpponentPitcher,
+        batterIndex: myStartIdx,
+        myBatterIndex: state.myBatterIndex, // unchanged — will advance as at-bats happen
+        opponentBatterIndex: nextOpponentBatterIndex,
         myRuns: newMyRuns,
         opponentRuns: newOpponentRuns,
         myHits: newMyHits,
@@ -715,7 +746,7 @@ export function simulateAtBat_Interactive(
         playByPlay: newPlayByPlay,
         lootDrops: newLootDrops,
         inningComplete: true,
-        myPitcherInnings: state.myPitcherInnings + 1,
+        myPitcherInnings: newMyPitcherInnings,
         myPitcherExtraFatigue: newMyPitcherExtraFatigue,
         opponentPitcherExtraFatigue: newOpponentPitcherExtraFatigue,
         // Reset adaptation for new half-inning
@@ -753,20 +784,33 @@ export function simulateAtBat_Interactive(
       }
 
       // Move to next inning
+      // Batting order: continue opponent's lineup where it left off
+      const oppBatters = updatedOpponentTeam.filter(isBatter);
+      const oppStartIdx = state.opponentBatterIndex % (oppBatters.length || 1);
+      // Save my team's batting order position for next time we bat
+      const myBatterCount = updatedMyTeam.filter(isBatter).length || 1;
+      const nextMyBatterIndex = (state.batterIndex + 1) % myBatterCount;
+      // My pitcher rotation: check if they need to swap for the new top half
+      const newOpponentPitcherInnings = state.opponentPitcherInnings + 1;
+      const nextMyPitcher = resolveNextPitcher(
+        updatedMyTeam, updatedMyPitcher, state.myPitcherInnings
+      );
       return {
         ...state,
         myTeam: updatedMyTeam,
         opponentTeam: updatedOpponentTeam,
-        myPitcher: updatedMyPitcher,
+        myPitcher: nextMyPitcher,
         opponentPitcher: updatedOpponentPitcher,
         inning: state.inning + 1,
         isTop: true,
         outs: 0,
         bases: [false, false, false],
         baseRunnerIds: [null, null, null],
-        currentBatter: state.opponentTeam.filter(isBatter)[0],
-        currentPitcher: updatedMyPitcher,
-        batterIndex: 0,
+        currentBatter: oppBatters[oppStartIdx],
+        currentPitcher: nextMyPitcher,
+        batterIndex: oppStartIdx,
+        myBatterIndex: nextMyBatterIndex,
+        opponentBatterIndex: state.opponentBatterIndex, // unchanged — will advance as at-bats happen
         myRuns: newMyRuns,
         opponentRuns: newOpponentRuns,
         myHits: newMyHits,
@@ -774,7 +818,7 @@ export function simulateAtBat_Interactive(
         playByPlay: newPlayByPlay,
         lootDrops: newLootDrops,
         inningComplete: true,
-        opponentPitcherInnings: state.opponentPitcherInnings + 1,
+        opponentPitcherInnings: newOpponentPitcherInnings,
         myPitcherExtraFatigue: newMyPitcherExtraFatigue,
         opponentPitcherExtraFatigue: newOpponentPitcherExtraFatigue,
         // Reset adaptation for new half-inning
@@ -793,6 +837,9 @@ export function simulateAtBat_Interactive(
     const nextBatterIndex = (state.batterIndex + 1) % batters.length;
     const nextBatter = batters[nextBatterIndex];
 
+    // Walk-off: bottom of 9th (or extra innings), my team scores the winning run mid-inning
+    const isWalkoff = !isTop && state.inning >= 9 && newMyRuns > newOpponentRuns;
+
     return {
       ...state,
       myTeam: updatedMyTeam,
@@ -804,12 +851,16 @@ export function simulateAtBat_Interactive(
       baseRunnerIds: newRunnerIds,
       currentBatter: nextBatter,
       batterIndex: nextBatterIndex,
+      // Update persistent batting order — advance the active side's index
+      myBatterIndex: !isTop ? nextBatterIndex : state.myBatterIndex,
+      opponentBatterIndex: isTop ? nextBatterIndex : state.opponentBatterIndex,
       myRuns: newMyRuns,
       opponentRuns: newOpponentRuns,
       myHits: newMyHits,
       opponentHits: newOpponentHits,
       playByPlay: newPlayByPlay,
       lootDrops: newLootDrops,
+      isComplete: isWalkoff,
       inningComplete: false,
       myPitcherExtraFatigue: newMyPitcherExtraFatigue,
       opponentPitcherExtraFatigue: newOpponentPitcherExtraFatigue,
