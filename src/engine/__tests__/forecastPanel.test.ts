@@ -73,26 +73,26 @@ describe("forecastPanel", () => {
   });
 
   describe("adaptation + fatigue helpers", () => {
-    it("returns adaptation warning on repeated approach", () => {
+    it("returns null adaptation warning when no penalty (all PENALTY_SCALE = 1.0)", () => {
+      // Current design: PENALTY_SCALE is all 1.0 (no effectiveness loss)
+      // So repeated approaches have no penalty and return null
       const warning = getAdaptationWarning({
         mode: "batting",
         approach: "power",
         lastApproach: "power",
         consecutiveApproach: 2,
       });
-      expect(warning).toBeTruthy();
-      expect(warning).toContain("Repeat penalty active");
+      expect(warning).toBeNull();
     });
 
-    it("returns adaptation warning on repeated strategy", () => {
+    it("returns null adaptation warning for repeated strategy (no penalty)", () => {
       const warning = getAdaptationWarning({
         mode: "pitching",
         strategy: "paint",
         lastStrategy: "paint",
         consecutiveStrategy: 3,
       });
-      expect(warning).toBeTruthy();
-      expect(warning).toContain("Repeat penalty active");
+      expect(warning).toBeNull();
     });
 
     it("returns patient fatigue preview", () => {
