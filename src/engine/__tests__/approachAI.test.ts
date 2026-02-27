@@ -703,3 +703,91 @@ describe("Decision Consistency with RNG Seed", () => {
     expect(allSame).toBe(false);
   });
 });
+
+describe("Pitcher Fatigue Accumulation Context (Phase 3+4)", () => {
+  describe("decideBatterApproach - pitcherFatigueAccum", () => {
+    it("should treat high fatigueAccum (>=1.0) as tired pitcher → patient", () => {
+      const context: ApproachContext = {
+        outs: 0,
+        bases: [false, false, false],
+        myScore: 2,
+        opponentScore: 2,
+        inning: 3,
+        // Only 2 innings pitched (not tired by innings alone)
+        pitcherInningsPitched: 2,
+        // But accumulated a lot of extra fatigue (many patient at-bats)
+        pitcherFatigueAccum: 1.5,
+      };
+
+      const rng = new SeededRandomProvider(42);
+      const results: Record<BatterApproach, number> = { power: 0, contact: 0, patient: 0 };
+
+      for (let i = 0; i < 100; i++) {
+        const decision = decideBatterApproach(context, rng);
+        results[decision]++;
+      }
+
+      // Should recognize tired pitcher even before 5 innings
+      expect(results.patient).toBeGreaterThan(results.power);
+    });
+
+    it("should NOT treat low fatigueAccum as tired pitcher", () => {
+      const context: ApproachContext = {
+        outs: 0,
+        bases: [false, false, false],
+        myScore: 2,
+        opponentScore: 2,
+        inning: 3,
+        pitcherInningsPitched: 2,
+        pitcherFatigueAccum: 0.3, // Low — not tired
+      };
+
+      const rng = new SeededRandomProvider(42);
+      const results: Record<BatterApproach, number> = { power: 0, contact: 0, patient: 0 };
+
+      for (let i = 0; i < 100; i++) {
+        const decision = decideBatterApproach(context, rng);
+        results[decision]++;
+      }
+
+      // Should follow default distribution (not patient-heavy)
+      expect(results.contact).toBeGreaterThanOrEqual(results.patient);
+    });
+
+    it("should recognize tired pitcher via innings alone (legacy path)", () => {
+      const context: ApproachContext = {
+        outs: 0,
+        bases: [false, false, false],
+        myScore: 2,
+        opponentScore: 2,
+        inning: 7,
+        pitcherInningsPitched: 6,
+        pitcherFatigueAccum: 0,
+      };
+
+      const rng = new SeededRandomProvider(42);
+      const results: Record<BatterApproach, number> = { power: 0, contact: 0, patient: 0 };
+
+      for (let i = 0; i < 100; i++) {
+        const decision = decideBatterApproach(context, rng);
+        results[decision]++;
+      }
+
+      expect(results.patient).toBeGreaterThan(results.power);
+    });
+
+    it("should handle missing pitcherFatigueAccum gracefully (defaults to 0)", () => {
+      const context: ApproachContext = {
+        outs: 0,
+        bases: [false, false, false],
+        myScore: 2,
+        opponentScore: 2,
+        inning: 3,
+        pitcherInningsPitched: 2,
+      };
+
+      const rng = new SeededRandomProvider(42);
+      expect(() => decideBatterApproach(context, rng)).not.toThrow();
+    });
+  });
+});
