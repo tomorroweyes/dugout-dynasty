@@ -66,8 +66,8 @@ export const ARCHETYPES = {
   POWER: {
     label: "Power",
     emoji: "💥",
-    description: "Sluggers: high power, low contact. Swings for the fences.",
-    batter: { power: 78, contact: 42, glove: 50, speed: 40 } as BatterStats,
+    description: "Sluggers: high power, moderate contact. Swings for the fences, but can put the ball in play.",
+    batter: { power: 78, contact: 48, glove: 50, speed: 40 } as BatterStats,
     starter: { velocity: 72, control: 52, break: 48 } as PitcherStats,
     reliever: { velocity: 70, control: 50, break: 50 } as PitcherStats,
   },
@@ -90,26 +90,26 @@ export const ARCHETYPES = {
   SPEED: {
     label: "Speed",
     emoji: "⚡",
-    description: "Fast, disciplined hitters. Low power ceiling, high on-base.",
-    batter: { power: 38, contact: 72, glove: 58, speed: 80 } as BatterStats,
-    starter: { velocity: 58, control: 60, break: 60 } as PitcherStats,
-    reliever: { velocity: 55, control: 60, break: 60 } as PitcherStats,
+    description: "Fast, disciplined hitters. Gap power, high on-base, small ball.",
+    batter: { power: 38, contact: 72, glove: 58, speed: 82 } as BatterStats,  // Lower divisor handles their K problem
+    starter: { velocity: 58, control: 62, break: 60 } as PitcherStats,
+    reliever: { velocity: 55, control: 62, break: 60 } as PitcherStats,
   },
   PITCHING: {
     label: "Pitching",
     emoji: "⚾",
     description: "Elite pitching, below-average bats. Win 1-0, lose 0-5.",
-    batter: { power: 45, contact: 48, glove: 55, speed: 48 } as BatterStats,
-    starter: { velocity: 78, control: 72, break: 72 } as PitcherStats,
-    reliever: { velocity: 75, control: 70, break: 70 } as PitcherStats,
+    batter: { power: 45, contact: 50, glove: 55, speed: 48 } as BatterStats,
+    starter: { velocity: 68, control: 78, break: 76 } as PitcherStats,  // Elite via control+break, not raw heat
+    reliever: { velocity: 66, control: 75, break: 73 } as PitcherStats,
   },
   SLUGFEST: {
     label: "Slugfest",
     emoji: "🔥",
     description: "Power everywhere — batters AND pitchers throw heat.",
-    batter: { power: 80, contact: 40, glove: 45, speed: 38 } as BatterStats,
-    starter: { velocity: 82, control: 42, break: 40 } as PitcherStats,
-    reliever: { velocity: 80, control: 42, break: 40 } as PitcherStats,
+    batter: { power: 82, contact: 44, glove: 45, speed: 38 } as BatterStats,  // Slight contact raise (40→44) for fewer Ks
+    starter: { velocity: 74, control: 44, break: 42 } as PitcherStats,  // Hard but wild
+    reliever: { velocity: 72, control: 44, break: 42 } as PitcherStats,
   },
 } as const;
 
