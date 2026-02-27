@@ -29,6 +29,7 @@ import {
   mergeAbilityContexts,
 } from "./abilityAI";
 import { decideBatterApproach, decidePitchStrategy } from "./approachAI";
+import { BATTER_APPROACHES, PITCH_STRATEGIES } from "./approachConfig";
 import { generateNarrativeText } from "./narrativeEngine";
 import { getTrace } from "./traceContext";
 
@@ -226,6 +227,9 @@ export async function* simulateGameStepped(
   let awayRelieverIndex = 0;
   let homePitcherInnings = 0;
   let awayPitcherInnings = 0;
+  // Extra fatigue accumulated from Patient at-bats and Paint self-cost (resets on pitcher change)
+  let homePitcherFatigueAccum = 0;
+  let awayPitcherFatigueAccum = 0;
 
   if (emitEvents) {
     gameEvents.emit({ type: "game_start", homeTeam, awayTeam });
@@ -293,6 +297,7 @@ export async function* simulateGameStepped(
 
       // AI decides approach/strategy based on game state
       const pitcherInningsPitched = state.isTop ? homePitcherInnings : awayPitcherInnings;
+      const pitcherFatigueAccum = state.isTop ? homePitcherFatigueAccum : awayPitcherFatigueAccum;
       const batterApproach = decideBatterApproach({
         outs: state.outs,
         bases: state.bases,
@@ -300,6 +305,7 @@ export async function* simulateGameStepped(
         opponentScore: state.isTop ? state.homeRuns : state.awayRuns,
         inning: state.inning,
         pitcherInningsPitched,
+        pitcherFatigueAccum,
         batterPower: isBatter(batter) ? (batter.stats as BatterStats).power : undefined,
         batterContact: isBatter(batter) ? (batter.stats as BatterStats).contact : undefined,
       });
@@ -309,6 +315,7 @@ export async function* simulateGameStepped(
         myScore: state.isTop ? state.homeRuns : state.awayRuns,
         opponentScore: state.isTop ? state.awayRuns : state.homeRuns,
         inning: state.inning,
+        pitcherFatigueAccum,
         batterPower: isBatter(batter) ? (batter.stats as BatterStats).power : undefined,
         batterContact: isBatter(batter) ? (batter.stats as BatterStats).contact : undefined,
       });
@@ -347,6 +354,18 @@ export async function* simulateGameStepped(
         batterApproach,
         pitcherStrategy
       );
+
+      // Accumulate extra pitcher fatigue from Patient at-bats and Paint self-cost
+      if (batterApproach === "patient") {
+        const fatigueEffect = BATTER_APPROACHES.patient.fatigueEffect ?? 0;
+        if (state.isTop) homePitcherFatigueAccum += fatigueEffect;
+        else awayPitcherFatigueAccum += fatigueEffect;
+      }
+      if (pitcherStrategy === "paint") {
+        const fatigueCost = PITCH_STRATEGIES.paint.fatigueCost ?? 0;
+        if (state.isTop) homePitcherFatigueAccum += fatigueCost;
+        else awayPitcherFatigueAccum += fatigueCost;
+      }
 
       // Process spirit deduction for active abilities
       if (pitcherActive) {
@@ -593,12 +612,14 @@ export async function* simulateGameStepped(
       ) {
         state.homePitcher = homeRelievers[homeRelieverIndex++];
         homePitcherInnings = 0;
+        homePitcherFatigueAccum = 0; // Fresh arm
       } else if (
         state.inning === GAME_CONSTANTS.PITCHER_ROTATION.SECOND_RELIEVER_INNING &&
         homeRelieverIndex < homeRelievers.length
       ) {
         state.homePitcher = homeRelievers[homeRelieverIndex++];
         homePitcherInnings = 0;
+        homePitcherFatigueAccum = 0; // Fresh arm
       }
 
       if (
@@ -607,12 +628,14 @@ export async function* simulateGameStepped(
       ) {
         state.awayPitcher = awayRelievers[awayRelieverIndex++];
         awayPitcherInnings = 0;
+        awayPitcherFatigueAccum = 0; // Fresh arm
       } else if (
         state.inning === GAME_CONSTANTS.PITCHER_ROTATION.SECOND_RELIEVER_INNING &&
         awayRelieverIndex < awayRelievers.length
       ) {
         state.awayPitcher = awayRelievers[awayRelieverIndex++];
         awayPitcherInnings = 0;
+        awayPitcherFatigueAccum = 0; // Fresh arm
       }
 
       state.isTop = true;

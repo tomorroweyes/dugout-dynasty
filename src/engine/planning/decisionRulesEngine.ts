@@ -22,8 +22,13 @@ import {
  * Convert ApproachContext (existing API) to GameContext (rules engine)
  */
 function toGameContext(context: ApproachContext): GameContext {
-  const runnersOnBase = context.bases.filter(Boolean).length;
-  const pitcherTired = (context.pitcherInningsPitched ?? 0) >= 5;
+  // Compute pitcher fatigue on a 0-100 scale from available signals:
+  // - Each inning pitched contributes ~10 fatigue points
+  // - Accumulated extra fatigue (from Patient at-bats + Paint self-cost) contributes 20pts per unit
+  // - Threshold for "tired" in approachAI.ts: innings >= 5 (50pts) or fatigueAccum >= 1.0 (20pts)
+  const inningFatigue = (context.pitcherInningsPitched ?? 0) * 10;
+  const extraFatigue = (context.pitcherFatigueAccum ?? 0) * 20;
+  const pitcherFatigue = Math.min(100, inningFatigue + extraFatigue);
 
   return {
     outs: context.outs,
@@ -32,7 +37,7 @@ function toGameContext(context: ApproachContext): GameContext {
     scoreDiff: context.myScore - context.opponentScore,
     batterPower: context.batterPower ?? 50,
     batterContact: context.batterContact ?? 50,
-    pitcherFatigue: pitcherTired ? 60 : 20, // Rough estimate based on innings pitched
+    pitcherFatigue,
     lastDecision: context.lastApproach ?? context.lastStrategy,
     consecutiveCount: context.consecutiveCount,
   };

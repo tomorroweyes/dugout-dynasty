@@ -25,6 +25,13 @@ export interface ApproachContext {
   batterPower?: number;
   batterContact?: number;
   pitcherInningsPitched?: number;
+  /**
+   * Accumulated extra pitcher fatigue this game (from Patient at-bats + Paint self-cost).
+   * Units: raw float (0.15 per patient AB, 0.2 per paint pitch).
+   * Roughly: 1.0 = meaningfully tired beyond innings count alone.
+   * When combined with pitcherInningsPitched, gives a fuller picture of pitcher wear.
+   */
+  pitcherFatigueAccum?: number;
   // Adaptation awareness
   lastApproach?: BatterApproach;
   lastStrategy?: PitchStrategy;
@@ -44,7 +51,11 @@ export function decideBatterApproach(
   const isLate = context.inning >= 7;
   const runnerOnThird = context.bases[2];
   const runnersOnBase = context.bases.filter(Boolean).length;
-  const pitcherTired = (context.pitcherInningsPitched ?? 0) >= 5;
+  // Pitcher is tired if they've thrown 5+ innings OR accumulated significant fatigue
+  // (fatigueAccum > 1.0 means multiple patient at-bats / paint pitches have worn them down)
+  const pitcherTired =
+    (context.pitcherInningsPitched ?? 0) >= 5 ||
+    (context.pitcherFatigueAccum ?? 0) >= 1.0;
   const basesLoaded = context.bases[0] && context.bases[1] && context.bases[2];
 
   // Get the "natural" choice first, then maybe override for adaptation
