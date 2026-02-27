@@ -11,7 +11,9 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "sim": "vitest run src/sim/harness.test.ts --reporter verbose",
+    "sim:full": "GAMES=1000 vitest run src/sim/harness.test.ts --reporter verbose"
   },
   "dependencies": {
     "@dicebear/collection": "^9.3.1",
