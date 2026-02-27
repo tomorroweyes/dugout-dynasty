@@ -7,6 +7,7 @@
 
 import type { AggregateStats } from "./simRunner";
 import type { ArchetypeName } from "./teamFactory";
+import type { FlowMetrics } from "./flowAnalyzer";
 import { ARCHETYPES } from "./teamFactory";
 
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
@@ -165,6 +166,29 @@ export function printHeader(games: number, label = "DUGOUT DYNASTY SIM HARNESS")
   console.log(`  🎮 ${label}`);
   console.log(`  ${games} games per matchup | ${new Date().toISOString()}`);
   console.log(`${"═".repeat(70)}`);
+}
+
+export function printFlowReport(stats: AggregateStats, flow: FlowMetrics, label = ""): void {
+  const f = flow;
+  console.log(`\n  Game Flow Analysis ${label}:`);
+  console.log(`  ${"─".repeat(60)}`);
+  console.log(`  Pacing:`);
+  console.log(`    Avg Runs/Side: ${dec(f.avgRunsPerSide, 1)}  (target: 3-5)`);
+  console.log(`    Avg Inning Pairs: ${dec(f.avgGameLength, 1)}  (target: 8-10)`);
+  console.log(`    Avg ABs/Game: ${Math.floor(f.avgABsPerGame)}  (target: 50-70)`);
+
+  console.log(`\n  Variance & Excitement:`);
+  console.log(`    Avg Lead Changes: ${dec(f.avgLeadChanges, 1)}  (target: 1.5-3)`);
+  console.log(`    One-Run Games: ${pct(f.oneRunGameRate)}  (target: 15-25%)`);
+  console.log(`    Blowout Rate (>5R): ${pct(f.blowoutRate)}  (target: <20%)`);
+  console.log(`    Walk-Offs: ${pct(f.walkOffRate)}  (target: 2-5%)`);
+  console.log(`    Extra Innings: ${pct(f.extraInningRate)}  (target: 2-5%)`);
+  console.log(`    Clutch Moments: ${pct(f.clutchMomentRate)}  (target: 20-35%)`);
+
+  console.log(`\n  🎯 FUN SCORE: ${Math.floor(f.funScore)}/100`);
+  if (f.funScore >= 70) console.log(`     ✅ Likely feels exciting and engaging`);
+  else if (f.funScore >= 55) console.log(`     ⚠️  Decent but could be more fun`);
+  else console.log(`     ❌ Might feel slow or one-sided`);
 }
 
 export function printFooter(): void {

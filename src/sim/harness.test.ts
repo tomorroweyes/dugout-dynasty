@@ -26,12 +26,14 @@
 import { describe, it } from "vitest";
 import { buildTeam, ARCHETYPES, type ArchetypeName } from "./teamFactory";
 import { runSimulation, type AggregateStats } from "./simRunner";
+import { analyzeGameFlow, type FlowMetrics } from "./flowAnalyzer";
 import {
   printHeader,
   printMatchupReport,
   printScoreDistribution,
   printMatchupMatrix,
   printArchetypeSummary,
+  printFlowReport,
   printFooter,
 } from "./report";
 
@@ -127,6 +129,10 @@ describe("Game Balance Simulation Harness", () => {
 
         printMatchupReport(home, away, stats);
 
+        // Print flow metrics for this matchup
+        const flow = analyzeGameFlow(stats);
+        printFlowReport(stats, flow, `(${home} vs ${away})`);
+
         if (GAMES >= 200) {
           printScoreDistribution(stats, `(${home} vs ${away})`);
         }
@@ -134,8 +140,49 @@ describe("Game Balance Simulation Harness", () => {
 
       // ── Phase 6: Balance flags ─────────────────────────────────────────
       console.log(`\n${"═".repeat(70)}`);
-      console.log(`  BALANCE FLAGS (potential issues)`);
+      console.log(`  GAME FLOW SUMMARY (average across all matchups)`);
       console.log(`${"─".repeat(70)}`);
+
+      // Average flow metrics across all matchups
+      let totalFlows: FlowMetrics | null = null;
+      const flowCount = matrix.size;
+      for (const stats of matrix.values()) {
+        const flow = analyzeGameFlow(stats);
+        if (!totalFlows) {
+          totalFlows = flow;
+        } else {
+          totalFlows.avgRunsHome += flow.avgRunsHome;
+          totalFlows.avgRunsAway += flow.avgRunsAway;
+          totalFlows.avgRunsPerSide += flow.avgRunsPerSide;
+          totalFlows.avgGameLength += flow.avgGameLength;
+          totalFlows.avgABsPerGame += flow.avgABsPerGame;
+          totalFlows.avgLeadChanges += flow.avgLeadChanges;
+          totalFlows.blowoutRate += flow.blowoutRate;
+          totalFlows.oneRunGameRate += flow.oneRunGameRate;
+          totalFlows.extraInningRate += flow.extraInningRate;
+          totalFlows.walkOffRate += flow.walkOffRate;
+          totalFlows.clutchMomentRate += flow.clutchMomentRate;
+          totalFlows.funScore += flow.funScore;
+        }
+      }
+      if (totalFlows) {
+        totalFlows.avgRunsHome /= flowCount;
+        totalFlows.avgRunsAway /= flowCount;
+        totalFlows.avgRunsPerSide /= flowCount;
+        totalFlows.avgGameLength /= flowCount;
+        totalFlows.avgABsPerGame /= flowCount;
+        totalFlows.avgLeadChanges /= flowCount;
+        totalFlows.blowoutRate /= flowCount;
+        totalFlows.oneRunGameRate /= flowCount;
+        totalFlows.extraInningRate /= flowCount;
+        totalFlows.walkOffRate /= flowCount;
+        totalFlows.clutchMomentRate /= flowCount;
+        totalFlows.funScore /= flowCount;
+
+        printFlowReport({ rawGames: [] } as AggregateStats, totalFlows, "(overall)");
+      }
+
+      // ── Phase 7: Balance flags ──────────────────────────────────────────
 
       let flags = 0;
       for (const [key, stats] of matrix) {

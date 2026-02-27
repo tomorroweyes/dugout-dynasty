@@ -42,7 +42,7 @@ export const GAME_CONSTANTS = {
   // At-Bat Simulation Constants
   AT_BAT: {
     // Outcome probability modifiers
-    STRIKEOUT_DIVISOR: 1.8, // Lower = more strikeouts
+    STRIKEOUT_DIVISOR: 2.1, // Lower = more strikeouts. Sweet spot ~30-32% K for balanced matchups
     STRIKEOUT_CONTROL_WEIGHT: 0.4, // How much control contributes to strikeouts (0 = none, 1 = same as velocity)
     WALK_WILDNESS_DIVISOR: 12, // Pitcher wildness: (100 - control) / divisor. Lower = more wild walks
     WALK_DISCIPLINE_DIVISOR: 20, // Batter discipline: (contact - threshold) / divisor. Lower = more disciplined walks
