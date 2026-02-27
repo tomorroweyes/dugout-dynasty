@@ -590,6 +590,8 @@ function simulateInningWithStats(
       rbi: outcomeResult.runsScored > 0 ? outcomeResult.runsScored : undefined,
       outs,
       narrativeText,
+      batterApproach: batterApproach,
+      pitchStrategy: pitcherStrategy,
       batterAbilityUsed: !!batterActive,
       pitcherAbilityUsed: !!pitcherActive,
     });
