@@ -26,6 +26,56 @@ import type { BatterApproach, PitchStrategy } from "@/types/approach";
 import { getAbilityById } from "@/data/abilities";
 
 /**
+ * Tracks a batter's cumulative stats across the full game.
+ * Used to add contextual flavor (slumps, hot streaks, redemption) to narrative text.
+ */
+export interface BatterHistory {
+  abs: number;        // At-bats so far this game
+  hits: number;       // Hits so far
+  strikeouts: number; // Strikeouts so far
+  walks: number;      // Walks so far
+}
+
+/**
+ * Generates a short context prefix based on batter's game history.
+ * Returns empty string if there's nothing notable yet.
+ */
+export function generateBatterHistoryPrefix(
+  batter: Player,
+  history: BatterHistory,
+  result: AtBatResult
+): string {
+  const { abs, hits, strikeouts } = history;
+
+  // Only kick in after 2+ ABs so first PA is always clean
+  if (abs < 2) return "";
+
+  const surname = batter.surname;
+
+  // Redemption setup — 0-for-3+ coming up for another shot
+  if (abs >= 3 && hits === 0 && strikeouts >= 2) {
+    return `${surname}, 0-for-${abs} with ${strikeouts} strikeouts, steps in with something to prove. `;
+  }
+
+  // 0-for-X, hitless
+  if (abs >= 2 && hits === 0) {
+    return `${surname}, hitless today, steps back in. `;
+  }
+
+  // Struggling — multiple strikeouts even with some hits
+  if (strikeouts >= 3 && hits <= 1) {
+    return `${surname}, who has been battling the whole game, tries again. `;
+  }
+
+  // Hot — 2+ hits, pay it off
+  if (hits >= 2 && result !== "strikeout") {
+    return `${surname}, swinging the hot bat today, `;
+  }
+
+  return "";
+}
+
+/**
  * Generate narrative text for an at-bat result
  */
 export function generateNarrativeText(
@@ -40,7 +90,8 @@ export function generateNarrativeText(
   batterApproach?: BatterApproach,
   pitchStrategy?: PitchStrategy,
   runsScored: number = 0,
-  narrativeFlags?: { perfectContact?: boolean; paintedCorner?: boolean }
+  narrativeFlags?: { perfectContact?: boolean; paintedCorner?: boolean },
+  batterHistory?: BatterHistory
 ): string {
   // Get effective stats including equipment
   const batterStats = calculatePlayerStatsWithEquipment(batter) as BatterStats;
@@ -145,7 +196,12 @@ export function generateNarrativeText(
     }
   }
 
-  const prefix = [isClash ? "" : approachFlavor, abilityPrefix].filter(Boolean).join("");
+  // History context — prepended when batter has a notable game narrative
+  const historyPrefix = batterHistory
+    ? generateBatterHistoryPrefix(batter, batterHistory, result)
+    : "";
+
+  const prefix = [isClash ? "" : (historyPrefix || approachFlavor), abilityPrefix].filter(Boolean).join("");
   return prefix ? `${prefix}\n${outcomeText}` : outcomeText;
 }
 
