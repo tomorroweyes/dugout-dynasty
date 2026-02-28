@@ -181,7 +181,7 @@ describe("atBatSimulator", () => {
     });
 
     it("should return single for moderate roll", () => {
-      const result = determineHitOutcome(60, mockRng);
+      const result = determineHitOutcome(65, mockRng);  // 65 > SINGLE_THRESHOLD (62)
       expect(result).toBe("single");
     });
 
