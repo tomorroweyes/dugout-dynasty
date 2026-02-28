@@ -66,8 +66,8 @@ export const ARCHETYPES = {
   POWER: {
     label: "Power",
     emoji: "💥",
-    description: "Sluggers: high power, moderate contact. Swings for the fences, but can put the ball in play.",
-    batter: { power: 78, contact: 48, glove: 50, speed: 40 } as BatterStats,
+    description: "Sluggers: high power, moderate contact. Swings for the fences.",
+    batter: { power: 72, contact: 48, glove: 50, speed: 40 } as BatterStats,  // power 78→72 (was dominating)
     starter: { velocity: 72, control: 52, break: 48 } as PitcherStats,
     reliever: { velocity: 70, control: 50, break: 50 } as PitcherStats,
   },
@@ -91,7 +91,7 @@ export const ARCHETYPES = {
     label: "Speed",
     emoji: "⚡",
     description: "Fast, disciplined hitters. Gap power, high on-base, small ball.",
-    batter: { power: 38, contact: 72, glove: 58, speed: 82 } as BatterStats,  // Lower divisor handles their K problem
+    batter: { power: 38, contact: 72, glove: 58, speed: 82 } as BatterStats,
     starter: { velocity: 58, control: 62, break: 60 } as PitcherStats,
     reliever: { velocity: 55, control: 62, break: 60 } as PitcherStats,
   },
@@ -107,7 +107,7 @@ export const ARCHETYPES = {
     label: "Slugfest",
     emoji: "🔥",
     description: "Power everywhere — batters AND pitchers throw heat.",
-    batter: { power: 82, contact: 44, glove: 45, speed: 38 } as BatterStats,  // Slight contact raise (40→44) for fewer Ks
+    batter: { power: 82, contact: 44, glove: 45, speed: 38 } as BatterStats,  // contact 40→44
     starter: { velocity: 74, control: 44, break: 42 } as PitcherStats,  // Hard but wild
     reliever: { velocity: 72, control: 44, break: 42 } as PitcherStats,
   },
