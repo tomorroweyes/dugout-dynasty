@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useGameStore } from "@/store/gameStore";
 import { useSettingsStore } from "@/store/settingsStore";
@@ -12,7 +12,9 @@ import { StatDisplay } from "@/components/StatDisplay";
 import { EquipmentManager } from "@/components/EquipmentManager";
 import { Shop } from "@/components/Shop";
 import { InteractiveMatchView } from "@/components/InteractiveMatchView";
+import { PreGameCard } from "@/components/PreGameCard";
 import { initializeInteractiveMatch } from "@/engine/interactiveMatchEngine";
+import { generatePreGameContext } from "@/engine/preGameNarrative";
 import { GAME_CONSTANTS } from "@/engine/constants";
 import { Button } from "@/components/ui/8bit/button";
 import { CardTitle } from "@/components/ui/8bit/card";
@@ -39,8 +41,12 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { team, league, pendingDraft, activeInteractiveMatch, initializeGame, playWeekMatch, completeWeek, advanceToNextSeason, resetGame, setActiveInteractiveMatch } = useGameStore();
+  const { team, league, matchLog, pendingDraft, activeInteractiveMatch, initializeGame, playWeekMatch, completeWeek, advanceToNextSeason, resetGame, setActiveInteractiveMatch } = useGameStore();
   const { interactiveMatchMode, enable8bitTheme, enableEngineTrace } = useSettingsStore();
+
+  // Opponent ID set when player clicks "Play Match" in interactive mode.
+  // Drives the /pregame route — cleared once the match is actually started.
+  const [pendingOpponentId, setPendingOpponentId] = useState<string | null>(null);
 
   // Apply retro theme class to document root
   useEffect(() => {
@@ -52,48 +58,88 @@ function App() {
     }
   }, [enable8bitTheme]);
 
-  // Auto-redirect to full-page views when game state requires them
+  // Auto-redirect to full-page views when game state requires them.
+  // /pregame is excluded so the pre-game card isn't immediately clobbered.
   useEffect(() => {
     if (activeInteractiveMatch && location.pathname !== "/match") {
       navigate("/match", { replace: true });
-    } else if (!activeInteractiveMatch && pendingDraft && location.pathname !== "/draft") {
+    } else if (
+      !activeInteractiveMatch &&
+      pendingDraft &&
+      location.pathname !== "/draft"
+    ) {
       navigate("/draft", { replace: true });
-    } else if (!activeInteractiveMatch && !pendingDraft && league?.isComplete && league.seasonResult && location.pathname !== "/season-results") {
+    } else if (
+      !activeInteractiveMatch &&
+      !pendingDraft &&
+      league?.isComplete &&
+      league.seasonResult &&
+      location.pathname !== "/season-results"
+    ) {
       navigate("/season-results", { replace: true });
     }
-  }, [activeInteractiveMatch, pendingDraft, league?.isComplete, league?.seasonResult, location.pathname, navigate]);
+  }, [
+    activeInteractiveMatch,
+    pendingDraft,
+    league?.isComplete,
+    league?.seasonResult,
+    location.pathname,
+    navigate,
+  ]);
 
+  /**
+   * Called when the player clicks "Play This Week's Match" in LeagueView.
+   *
+   * - Interactive mode: find the opponent, navigate to /pregame so the
+   *   player sees stakes before the first pitch.
+   * - Auto-sim mode: unchanged — runs the match immediately.
+   */
   const handlePlayMatch = () => {
     if (!team || !league) return;
 
     if (interactiveMatchMode) {
-      // Start interactive match
       const currentWeek = league.schedule.weeks[league.currentWeek];
       const myMatch = currentWeek?.matches.find(
-        (m) => m.homeTeamId === league.humanTeamId || m.awayTeamId === league.humanTeamId
+        (m) =>
+          m.homeTeamId === league.humanTeamId ||
+          m.awayTeamId === league.humanTeamId
       );
-
       if (!myMatch) return;
 
       const opponentId =
-        myMatch.homeTeamId === league.humanTeamId ? myMatch.awayTeamId : myMatch.homeTeamId;
-      const opponentTeam = league.teams.find((t) => t.id === opponentId);
+        myMatch.homeTeamId === league.humanTeamId
+          ? myMatch.awayTeamId
+          : myMatch.homeTeamId;
 
-      if (!opponentTeam) return;
+      if (!league.teams.find((t) => t.id === opponentId)) return;
 
-      // Initialize interactive match and persist to store
-      const matchState = initializeInteractiveMatch(
-        { ...team, roster: team.roster },
-        opponentTeam,
-        undefined,
-        enableEngineTrace
-      );
-      setActiveInteractiveMatch(matchState);
-      navigate("/match");
+      // Park the opponent ID and let the /pregame route handle the rest
+      setPendingOpponentId(opponentId);
+      navigate("/pregame");
     } else {
-      // Auto-sim match
+      // Auto-sim — no pre-game screen needed
       playWeekMatch();
     }
+  };
+
+  /**
+   * Actually kicks off the interactive match (called from PreGameCard's
+   * "Play Ball!" and "Skip" buttons — identical outcome either way).
+   */
+  const handleStartMatch = (opponentId: string) => {
+    if (!team || !league) return;
+    const opponentTeam = league.teams.find((t) => t.id === opponentId);
+    if (!opponentTeam) return;
+
+    const matchState = initializeInteractiveMatch(
+      { ...team, roster: team.roster },
+      opponentTeam,
+      undefined,
+      enableEngineTrace
+    );
+    setActiveInteractiveMatch(matchState);
+    setPendingOpponentId(null);
+    navigate("/match");
   };
 
   const handleInteractiveMatchComplete = () => {
@@ -105,6 +151,38 @@ function App() {
 
   return (
     <Routes>
+      {/* Pre-game stakes card — shown before each interactive match */}
+      <Route
+        path="/pregame"
+        element={(() => {
+          if (!pendingOpponentId || !league || !team) {
+            return <Navigate to="/league" replace />;
+          }
+          const opponentTeam = league.teams.find(
+            (t) => t.id === pendingOpponentId
+          );
+          if (!opponentTeam) return <Navigate to="/league" replace />;
+
+          const preGameCtx = generatePreGameContext(
+            league,
+            league.humanTeamId,
+            opponentTeam,
+            matchLog
+          );
+          const myStandingsEntry = league.standings.find(
+            (s) => s.teamId === league.humanTeamId
+          );
+
+          return (
+            <PreGameCard
+              context={preGameCtx}
+              myTeamName={myStandingsEntry?.teamName ?? "Your Team"}
+              onPlay={() => handleStartMatch(pendingOpponentId)}
+              onSkip={() => handleStartMatch(pendingOpponentId)}
+            />
+          );
+        })()}
+      />
       <Route
         path="/match"
         element={
