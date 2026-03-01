@@ -29,6 +29,25 @@ import { GameTraceCollector, setActiveTrace, getTrace } from "./traceContext";
  * pausing for player input (ability selection).
  */
 
+/** Coarse pitcher fatigue level derived from innings pitched and accumulated extra fatigue. */
+export type PitcherFatigueLevel = "fresh" | "tired" | "gassed";
+
+/**
+ * Derive a human-readable fatigue level from raw fatigue numbers.
+ * Thresholds:
+ *   fresh  → innings < 4 AND extraFatigue < 0.5
+ *   gassed → innings >= 6 OR extraFatigue >= 1.5
+ *   tired  → everything in between
+ */
+export function derivePitcherFatigueLevel(
+  innings: number,
+  extraFatigue: number
+): PitcherFatigueLevel {
+  if (innings >= 6 || extraFatigue >= 1.5) return "gassed";
+  if (innings < 4 && extraFatigue < 0.5) return "fresh";
+  return "tired";
+}
+
 export interface InteractiveMatchState {
   // Teams
   myTeam: Player[];
@@ -45,6 +64,9 @@ export interface InteractiveMatchState {
   myPitcherInnings: number;
   opponentPitcher: Player;
   opponentPitcherInnings: number;
+  /** Derived fatigue level for each pitcher — updated after every AB. */
+  myPitcherFatigueLevel: PitcherFatigueLevel;
+  opponentPitcherFatigueLevel: PitcherFatigueLevel;
 
   // Current at-bat state
   outs: number;
@@ -276,6 +298,8 @@ export function initializeInteractiveMatch(
     rng,
     myPitcherExtraFatigue: 0,
     opponentPitcherExtraFatigue: 0,
+    myPitcherFatigueLevel: "fresh",
+    opponentPitcherFatigueLevel: "fresh",
     lastBatterApproach: null,
     consecutiveBatterApproach: 0,
     lastPitchStrategy: null,
@@ -749,6 +773,8 @@ export function simulateAtBat_Interactive(
         myPitcherInnings: newMyPitcherInnings,
         myPitcherExtraFatigue: newMyPitcherExtraFatigue,
         opponentPitcherExtraFatigue: newOpponentPitcherExtraFatigue,
+        myPitcherFatigueLevel: derivePitcherFatigueLevel(newMyPitcherInnings, newMyPitcherExtraFatigue),
+        opponentPitcherFatigueLevel: derivePitcherFatigueLevel(state.opponentPitcherInnings, newOpponentPitcherExtraFatigue),
         // Reset adaptation for new half-inning
         lastBatterApproach: null,
         consecutiveBatterApproach: 0,
@@ -775,6 +801,8 @@ export function simulateAtBat_Interactive(
           inningComplete: true,
           myPitcherExtraFatigue: newMyPitcherExtraFatigue,
           opponentPitcherExtraFatigue: newOpponentPitcherExtraFatigue,
+          myPitcherFatigueLevel: derivePitcherFatigueLevel(state.myPitcherInnings, newMyPitcherExtraFatigue),
+          opponentPitcherFatigueLevel: derivePitcherFatigueLevel(state.opponentPitcherInnings, newOpponentPitcherExtraFatigue),
           lastBatterApproach: null,
           consecutiveBatterApproach: 0,
           lastPitchStrategy: null,
@@ -821,6 +849,8 @@ export function simulateAtBat_Interactive(
         opponentPitcherInnings: newOpponentPitcherInnings,
         myPitcherExtraFatigue: newMyPitcherExtraFatigue,
         opponentPitcherExtraFatigue: newOpponentPitcherExtraFatigue,
+        myPitcherFatigueLevel: derivePitcherFatigueLevel(state.myPitcherInnings, newMyPitcherExtraFatigue),
+        opponentPitcherFatigueLevel: derivePitcherFatigueLevel(newOpponentPitcherInnings, newOpponentPitcherExtraFatigue),
         // Reset adaptation for new half-inning
         lastBatterApproach: null,
         consecutiveBatterApproach: 0,
@@ -864,6 +894,8 @@ export function simulateAtBat_Interactive(
       inningComplete: false,
       myPitcherExtraFatigue: newMyPitcherExtraFatigue,
       opponentPitcherExtraFatigue: newOpponentPitcherExtraFatigue,
+      myPitcherFatigueLevel: derivePitcherFatigueLevel(state.myPitcherInnings, newMyPitcherExtraFatigue),
+      opponentPitcherFatigueLevel: derivePitcherFatigueLevel(state.opponentPitcherInnings, newOpponentPitcherExtraFatigue),
       // Update adaptation tracking (stays within same half-inning)
       lastBatterApproach: newLastBatterApproach,
       consecutiveBatterApproach: newConsecutiveBatter,
