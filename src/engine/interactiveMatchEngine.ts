@@ -911,6 +911,250 @@ export function simulateAtBat_Interactive(
 }
 
 /**
+ * Build a BoxScore from play-by-play events and teams.
+ * Maps player names back to IDs and aggregates stats.
+ */
+export function buildBoxScoreFromPlayByPlay(
+  playByPlay: PlayByPlayEvent[],
+  myTeam: Player[],
+  opponentTeam: Player[]
+): {
+  boxScore: import("@/types/game").BoxScore;
+  myHits: number;
+  opponentHits: number;
+} {
+  // Create name → player lookup
+  const myTeamByName = new Map<string, Player>();
+  const opponentTeamByName = new Map<string, Player>();
+  myTeam.forEach((p) => myTeamByName.set(p.name, p));
+  opponentTeam.forEach((p) => opponentTeamByName.set(p.name, p));
+
+  // Accumulate stats by player
+  const myBatterStats = new Map<
+    string,
+    {
+      playerId: string;
+      name: string;
+      atBats: number;
+      hits: number;
+      runs: number;
+      rbis: number;
+      strikeouts: number;
+      walks: number;
+      doubles: number;
+      triples: number;
+      homeRuns: number;
+    }
+  >();
+  const opponentBatterStats = new Map<
+    string,
+    {
+      playerId: string;
+      name: string;
+      atBats: number;
+      hits: number;
+      runs: number;
+      rbis: number;
+      strikeouts: number;
+      walks: number;
+      doubles: number;
+      triples: number;
+      homeRuns: number;
+    }
+  >();
+  const myPitcherStats = new Map<
+    string,
+    {
+      playerId: string;
+      name: string;
+      inningsPitched: number;
+      hitsAllowed: number;
+      runsAllowed: number;
+      strikeouts: number;
+      walks: number;
+      homeRunsAllowed: number;
+    }
+  >();
+  const opponentPitcherStats = new Map<
+    string,
+    {
+      playerId: string;
+      name: string;
+      inningsPitched: number;
+      hitsAllowed: number;
+      runsAllowed: number;
+      strikeouts: number;
+      walks: number;
+      homeRunsAllowed: number;
+    }
+  >();
+
+  let myHits = 0;
+  let opponentHits = 0;
+
+  for (const event of playByPlay) {
+    const { batter: batterName, pitcher: pitcherName, outcome, rbi, isTop } = event;
+
+    // Get player IDs from names
+    const batter = isTop ? opponentTeamByName.get(batterName) : myTeamByName.get(batterName);
+    const pitcher = isTop ? myTeamByName.get(pitcherName) : opponentTeamByName.get(pitcherName);
+
+    if (!batter || !pitcher) continue; // Skip if player not found
+
+    // Initialize stats if not exists
+    const batterMap = isTop ? opponentBatterStats : myBatterStats;
+    const pitcherMap = isTop ? myPitcherStats : opponentPitcherStats;
+
+    if (!batterMap.has(batter.id)) {
+      batterMap.set(batter.id, {
+        playerId: batter.id,
+        name: batter.name,
+        atBats: 0,
+        hits: 0,
+        runs: 0,
+        rbis: rbi ?? 0,
+        strikeouts: 0,
+        walks: 0,
+        doubles: 0,
+        triples: 0,
+        homeRuns: 0,
+      });
+    }
+    if (!pitcherMap.has(pitcher.id)) {
+      pitcherMap.set(pitcher.id, {
+        playerId: pitcher.id,
+        name: pitcher.name,
+        inningsPitched: 0,
+        hitsAllowed: 0,
+        runsAllowed: 0,
+        strikeouts: 0,
+        walks: 0,
+        homeRunsAllowed: 0,
+      });
+    }
+
+    const bStats = batterMap.get(batter.id)!;
+    const pStats = pitcherMap.get(pitcher.id)!;
+
+    // Count AB and outcome
+    if (outcome !== "walk") bStats.atBats++;
+    if (outcome === "strikeout") bStats.strikeouts++;
+    if (outcome === "walk") bStats.walks++;
+
+    // Count hits and types
+    if (outcome === "single" || outcome === "double" || outcome === "triple" || outcome === "homerun") {
+      bStats.hits++;
+      if (isTop) opponentHits++;
+      else myHits++;
+    }
+    if (outcome === "double") bStats.doubles++;
+    if (outcome === "triple") bStats.triples++;
+    if (outcome === "homerun") bStats.homeRuns++;
+
+    // Count RBIs
+    if (rbi && rbi > 0) bStats.rbis += rbi;
+
+    // Pitcher stats
+    if (outcome === "strikeout") pStats.strikeouts++;
+    if (outcome === "walk") pStats.walks++;
+    if (outcome === "single" || outcome === "double" || outcome === "triple" || outcome === "homerun") {
+      pStats.hitsAllowed++;
+    }
+    if (outcome === "homerun") pStats.homeRunsAllowed++;
+  }
+
+  // Track innings pitched (each full half-inning = 1 IP)
+  for (let inning = 1; inning <= 9; inning++) {
+    for (const isTop of [true, false]) {
+      const halfInningEvents = playByPlay.filter((e) => e.inning === inning && e.isTop === isTop);
+      if (halfInningEvents.length === 0) continue;
+
+      const lastEvent = halfInningEvents[halfInningEvents.length - 1];
+      const pitcherName = lastEvent.pitcher;
+      const pitcher = isTop ? myTeamByName.get(pitcherName) : opponentTeamByName.get(pitcherName);
+      if (!pitcher) continue;
+
+      const pitcherMap = isTop ? myPitcherStats : opponentPitcherStats;
+      if (pitcherMap.has(pitcher.id)) {
+        pitcherMap.get(pitcher.id)!.inningsPitched += 1;
+      }
+    }
+  }
+
+  // Count runs allowed per pitcher (sum of RBIs in their half-inning)
+  for (const event of playByPlay) {
+    if (!event.rbi || event.rbi === 0) continue;
+    const pitcher = event.isTop ? myTeamByName.get(event.pitcher) : opponentTeamByName.get(event.pitcher);
+    if (!pitcher) continue;
+    const pitcherMap = event.isTop ? myPitcherStats : opponentPitcherStats;
+    if (pitcherMap.has(pitcher.id)) {
+      pitcherMap.get(pitcher.id)!.runsAllowed += event.rbi;
+    }
+  }
+
+  // Build final BoxScore arrays
+  const myBatters = Array.from(myBatterStats.values()).map((s) => ({
+    playerId: s.playerId,
+    name: s.name,
+    atBats: s.atBats,
+    hits: s.hits,
+    runs: s.runs,
+    rbis: s.rbis,
+    strikeouts: s.strikeouts,
+    walks: s.walks,
+    doubles: s.doubles,
+    triples: s.triples,
+    homeRuns: s.homeRuns,
+  }));
+  const opponentBatters = Array.from(opponentBatterStats.values()).map((s) => ({
+    playerId: s.playerId,
+    name: s.name,
+    atBats: s.atBats,
+    hits: s.hits,
+    runs: s.runs,
+    rbis: s.rbis,
+    strikeouts: s.strikeouts,
+    walks: s.walks,
+    doubles: s.doubles,
+    triples: s.triples,
+    homeRuns: s.homeRuns,
+  }));
+  const myPitchers = Array.from(myPitcherStats.values()).map((s) => ({
+    playerId: s.playerId,
+    name: s.name,
+    inningsPitched: s.inningsPitched,
+    hitsAllowed: s.hitsAllowed,
+    runsAllowed: s.runsAllowed,
+    strikeouts: s.strikeouts,
+    walks: s.walks,
+    homeRunsAllowed: s.homeRunsAllowed,
+  }));
+  const opponentPitchers = Array.from(opponentPitcherStats.values()).map((s) => ({
+    playerId: s.playerId,
+    name: s.name,
+    inningsPitched: s.inningsPitched,
+    hitsAllowed: s.hitsAllowed,
+    runsAllowed: s.runsAllowed,
+    strikeouts: s.strikeouts,
+    walks: s.walks,
+    homeRunsAllowed: s.homeRunsAllowed,
+  }));
+
+  return {
+    boxScore: {
+      myBatters,
+      myPitchers,
+      opponentBatters,
+      opponentPitchers,
+      myHits,
+      opponentHits,
+    },
+    myHits,
+    opponentHits,
+  };
+}
+
+/**
  * Convert interactive match state to final MatchResult
  */
 export function finalizeInteractiveMatch(
@@ -923,6 +1167,13 @@ export function finalizeInteractiveMatch(
   const lossBase = matchRewards?.loss ?? GAME_CONSTANTS.MATCH_REWARDS.BASE_LOSS;
   const cashEarned = isWin ? Math.floor(winBase * fans) : lossBase;
 
+  // Build BoxScore from play-by-play
+  const { boxScore } = buildBoxScoreFromPlayByPlay(
+    state.playByPlay,
+    state.myTeam,
+    state.opponentTeam
+  );
+
   return {
     myRuns: state.myRuns,
     opponentRuns: state.opponentRuns,
@@ -930,6 +1181,7 @@ export function finalizeInteractiveMatch(
     cashEarned,
     totalInnings: state.inning,
     playByPlay: state.playByPlay,
+    boxScore,
     lootDrops: state.lootDrops,
     traceLog: state.trace?.build(
       { home: state.myRuns, away: state.opponentRuns },

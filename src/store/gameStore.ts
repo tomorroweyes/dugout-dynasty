@@ -40,6 +40,7 @@ interface GameState {
   // Actions
   initializeGame: () => void;
   playWeekMatch: () => void;
+  applyInteractiveMatchResult: (result: MatchResult, myTeam: Team, opponentTeam: Team, matchRewards?: { win: number; loss: number }) => void;
   completeWeek: () => void;
   advanceToNextSeason: () => void;
   pickDraftPlayer: (player: Player) => void;
@@ -122,6 +123,126 @@ export const useGameStore = create<GameState>()(
             historicalRecords: [],
           },
         });
+      },
+
+      /**
+       * Apply a pre-played interactive match result (from manual play) to the league
+       * WITHOUT re-simulating. This replaces playWeekMatch when an interactive match completes.
+       */
+      applyInteractiveMatchResult: (
+        result: MatchResult,
+        myTeam: Team,
+        opponentTeam: Team,
+        matchRewards?: { win: number; loss: number }
+      ) => {
+        const { league } = get();
+        if (!league || !myTeam || !opponentTeam) return;
+
+        // Find this week's match
+        const currentWeek = league.schedule.weeks[league.currentWeek];
+        if (!currentWeek) return;
+
+        const myMatch = currentWeek.matches.find(
+          (m) =>
+            m.homeTeamId === league.humanTeamId ||
+            m.awayTeamId === league.humanTeamId
+        );
+
+        if (!myMatch || myMatch.completed) return;
+
+        // Calculate XP from the result's BoxScore (if available)
+        const xpGains = result.boxScore
+          ? calculateMatchXp(
+              result.boxScore.myBatters,
+              result.boxScore.myPitchers,
+              result.isWin,
+              myTeam.lineup
+            )
+          : [];
+
+        // Apply XP to all players, regenerate spirit, and collect level-ups
+        const allLevelUps: LevelUpResult[] = [];
+        let updatedRoster = myTeam.roster.map((player) => {
+          let updatedPlayer = player;
+
+          // Apply XP if player earned any
+          const xpGain = xpGains.find((g) => g.playerId === player.id);
+          if (xpGain) {
+            const xpResult = applyXpToPlayer(player, xpGain.xpEarned);
+            updatedPlayer = xpResult.updatedPlayer;
+            allLevelUps.push(...xpResult.levelUps);
+          }
+
+          // Always regenerate spirit after match for players with a class
+          return updatedPlayer.class ? regenerateSpirit(updatedPlayer) : updatedPlayer;
+        });
+
+        // Accumulate season/career stats from BoxScore for both teams
+        let updatedOpponentRoster = opponentTeam.roster;
+        if (result.boxScore) {
+          const accumulated = accumulateMatchStats(updatedRoster, opponentTeam.roster, result.boxScore);
+          updatedRoster = accumulated.homeRoster;
+          updatedOpponentRoster = accumulated.awayRoster;
+        }
+
+        // Create team with updated XP and record
+        let updatedTeam: Team = {
+          ...myTeam,
+          cash: myTeam.cash + result.cashEarned,
+          wins: myTeam.wins + (result.isWin ? 1 : 0),
+          losses: myTeam.losses + (result.isWin ? 0 : 1),
+          roster: updatedRoster,
+        };
+
+        // Apply auto-rotation if enabled
+        const settings = useSettingsStore.getState();
+        if (settings.autoRotatePitchers) {
+          const rotationResult = gameController.autoRotatePitchers(updatedTeam);
+          if (rotationResult) {
+            updatedTeam = {
+              ...updatedTeam,
+              lineup: rotationResult.lineup,
+            };
+          }
+        }
+
+        // Mark match as complete
+        myMatch.completed = true;
+        myMatch.result = result;
+
+        // Update league teams array with updated human team and opponent stats
+        const opponentId = myMatch.homeTeamId === league.humanTeamId
+          ? myMatch.awayTeamId
+          : myMatch.homeTeamId;
+        const updatedLeagueTeams = league.teams.map((t) => {
+          if (t.id === league.humanTeamId) {
+            return { ...t, roster: updatedTeam.roster, wins: updatedTeam.wins, losses: updatedTeam.losses };
+          }
+          if (t.id === opponentId) {
+            return { ...t, roster: updatedOpponentRoster };
+          }
+          return t;
+        });
+
+        set({
+          team: updatedTeam,
+          league: {
+            ...league,
+            teams: updatedLeagueTeams,
+          },
+          matchLog: [
+            {
+              ...result,
+              timestamp: Date.now(),
+              opponent: opponentTeam.name,
+            },
+            ...get().matchLog,
+          ].slice(0, 200),
+          pendingLevelUps: allLevelUps,
+        });
+
+        // Refresh shop stock after each match
+        useShopStore.getState().refreshStock(updatedTeam.roster);
       },
 
       /**
