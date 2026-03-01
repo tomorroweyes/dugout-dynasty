@@ -142,19 +142,39 @@ function App() {
     navigate("/match");
   };
 
-    const handleInteractiveMatchComplete = (result: MatchResult) => {
+  const handleInteractiveMatchComplete = (result: MatchResult) => {
     // Apply the actual interactive match result to the league WITHOUT re-simulating
-    if (!team || !league || !pendingOpponentId) return;
+    const state = useGameStore.getState();
+    const { team: currentTeam, league: currentLeague } = state;
+    if (!currentTeam || !currentLeague) return;
+
+    // Find this week's incomplete match from the schedule
+    const currentWeek = currentLeague.schedule.weeks[currentLeague.currentWeek];
+    if (!currentWeek) return;
+
+    const myMatch = currentWeek.matches.find(
+      (m) =>
+        !m.completed &&
+        (m.homeTeamId === currentLeague.humanTeamId ||
+          m.awayTeamId === currentLeague.humanTeamId)
+    );
+    if (!myMatch) return;
+
+    // Get opponent ID from the match
+    const opponentId =
+      myMatch.homeTeamId === currentLeague.humanTeamId
+        ? myMatch.awayTeamId
+        : myMatch.homeTeamId;
 
     // Find opponent team
-    const opponentTeam = league.teams.find((t) => t.id === pendingOpponentId);
+    const opponentTeam = currentLeague.teams.find((t) => t.id === opponentId);
     if (!opponentTeam) return;
 
     // Get tier-specific rewards
-    const tierConfig = GAME_CONSTANTS.LEAGUE_TIERS[league.tier];
+    const tierConfig = GAME_CONSTANTS.LEAGUE_TIERS[currentLeague.tier];
 
     // Apply the result using the new action
-    applyInteractiveMatchResult(result, team, opponentTeam, tierConfig.matchRewards);
+    applyInteractiveMatchResult(result, currentTeam, opponentTeam, tierConfig.matchRewards);
     setActiveInteractiveMatch(null);
     navigate("/league", { replace: true });
   };
