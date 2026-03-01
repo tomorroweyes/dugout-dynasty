@@ -154,7 +154,7 @@ export type AtBatOutcome = PlayOutcome;
 
 export interface PlayByPlayEvent {
   inning: number;
-  isTop: boolean; // true = top (your team batting), false = bottom (opponent batting)
+  isTop: boolean; // true = top (away team batting / opponent in match context), false = bottom (home team batting / my team in match context)
   batter: string;
   pitcher: string;
   outcome: PlayOutcome;

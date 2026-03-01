@@ -126,6 +126,10 @@ function analyzeGameFlowSingle(game: GameStats): {
   }
 
   // ── Cliffhanger ───────────────────────────────────────────────────────────
+  // Fires for any 1-run game in regulation or longer (totalInnings >= 9).
+  // This captures the drama of a tight finish, regardless of which inning the
+  // winning run scored. In practice: regulation games end at inning 9, extra-inning
+  // games extend beyond. So isCliffhanger = any close finish, not specifically 9th-inning drama.
   const isCliffhanger = game.totalInnings >= 9 && isOneRunGame;
 
   // ── Clutch conversion rate ────────────────────────────────────────────────
@@ -232,6 +236,10 @@ export function analyzeGameFlow(stats: AggregateStats): FlowMetrics {
 
   funScore = Math.max(0, Math.min(100, funScore));
 
+  // Drama Score (0–100): uncapped average clamped to scale
+  // avgDramaScore can theoretically exceed 100 (maxed clutch + comeback + cliffhanger + lead changes),
+  // so we cap it. Keep both values: avgDramaScore for diagnostics if components ever exceed bounds,
+  // dramaScore for the canonical 0–100 scale.
   const avgDramaScore = games.length > 0 ? totalDramaScore / games.length : 0;
   const dramaScore = Math.max(0, Math.min(100, avgDramaScore));
 
