@@ -590,11 +590,24 @@ function simulateInningWithStats(
     if (crossInningBatterHistory) {
       const prev = crossInningBatterHistory.get(batter.id) ?? { abs: 0, hits: 0, strikeouts: 0, walks: 0 };
       const isHit = ["single", "double", "triple", "homerun"].includes(result);
+
+      // Determine if this AB should arm the redemption flag for the batter's NEXT AB:
+      // failed (out/strikeout) with RISP (2nd or 3rd occupied) in a high-leverage spot
+      // (inning 7+, close game within 2 runs). Flag is always cleared entering any AB,
+      // then re-armed here if conditions are met. basesBeforeHit = pre-AB base state.
+      const isOutOrStrikeout = ["groundout", "flyout", "lineout", "popout", "strikeout"].includes(result);
+      const hadRISP = basesBeforeHit[1] || basesBeforeHit[2];
+      const isHighLeverageInning = inning >= 7;
+      const isCloseAtAB = Math.abs(narrativeGameState.scoreDiff) <= 2;
+      const armRedemption = isOutOrStrikeout && hadRISP && isHighLeverageInning && isCloseAtAB;
+
       crossInningBatterHistory.set(batter.id, {
         abs: prev.abs + 1,
         hits: prev.hits + (isHit ? 1 : 0),
         strikeouts: prev.strikeouts + (result === "strikeout" ? 1 : 0),
         walks: prev.walks + (result === "walk" ? 1 : 0),
+        // Clear existing flag (consumed this AB); re-arm if this AB qualifies
+        redemptionOpportunity: armRedemption,
       });
     }
     // Append speed narrative if a runner tried for an extra base

@@ -37,6 +37,8 @@ import {
   CLUTCH_HIT_TEXTS,
   COMEBACK_HIT_TEXTS,
   CLUTCH_OUT_TEXTS,
+  REDEMPTION_SETUP_TEXTS,
+  REDEMPTION_PAYOFF_TEXTS,
 } from "./situationalPools";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -206,7 +208,27 @@ export const NARRATIVE_RULES: NarrativeRule[] = [
     pool: REDEMPTION_HIT_TEXTS,
   },
 
+  {
+    id: "redemption_payoff",
+    name: "Redemption Payoff — tracked flag set, batter delivers a hit",
+    priority: 93,
+    matches: (ctx) =>
+      ctx.batterHistory?.redemptionOpportunity === true &&
+      isHit(ctx.result),
+    pool: REDEMPTION_PAYOFF_TEXTS,
+  },
+
   // ── Priority 70: Meaningful situational flavor ────────────────────────────
+
+  {
+    id: "setup_for_redemption",
+    name: "Setup for Redemption — tracked flag set, batter fails again (out/strikeout)",
+    priority: 75,
+    matches: (ctx) =>
+      ctx.batterHistory?.redemptionOpportunity === true &&
+      (isOut(ctx.result) || ctx.result === "strikeout"),
+    pool: REDEMPTION_SETUP_TEXTS,
+  },
 
   {
     id: "clutch_hit_risp",
