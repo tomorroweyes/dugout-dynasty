@@ -4,6 +4,7 @@ import {
   AtBatDecision,
   simulateAtBat_Interactive,
   finalizeInteractiveMatch,
+  type PitcherFatigueLevel,
 } from "@/engine/interactiveMatchEngine";
 import { Card } from "@/components/ui/8bit/card";
 import { Button } from "@/components/ui/8bit/button";
@@ -709,6 +710,29 @@ export function InteractiveMatchView({
                 <span className="text-sm font-bold uppercase tracking-widest">
                   {isMyBatter ? "⚾ At Bat" : "🔥 On the Mound"}
                 </span>
+
+                {/* Pitcher fatigue badge — shown when the active pitcher is tired or gassed */}
+                {(() => {
+                  const fatigueLevel: PitcherFatigueLevel = isMyBatter
+                    ? matchState.opponentPitcherFatigueLevel
+                    : matchState.myPitcherFatigueLevel;
+                  if (fatigueLevel === "gassed") {
+                    return (
+                      <span className="text-xs font-bold text-red-500 uppercase tracking-wide px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/30">
+                        🔴 Gassed — arm running out
+                      </span>
+                    );
+                  }
+                  if (fatigueLevel === "tired") {
+                    return (
+                      <span className="text-xs font-bold text-orange-400 uppercase tracking-wide px-1.5 py-0.5 rounded bg-orange-400/10 border border-orange-400/30">
+                        🟡 Tired — showing wear
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
+
                 {isClutch && (
                   <span className="text-xs font-bold text-amber-500 uppercase tracking-wide ml-auto">
                     ⚡ Clutch

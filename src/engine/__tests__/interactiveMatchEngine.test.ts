@@ -6,6 +6,7 @@ import {
   initializeInteractiveMatch,
   simulateAtBat_Interactive,
   finalizeInteractiveMatch,
+  derivePitcherFatigueLevel,
 } from "../interactiveMatchEngine";
 
 function createTeam(id: string, seed: number): Team {
@@ -69,5 +70,40 @@ describe("interactiveMatchEngine deterministic parity", () => {
     const runB = runSeededInteractiveSimulation(424242);
 
     expect(runA).toEqual(runB);
+  });
+});
+
+describe("derivePitcherFatigueLevel", () => {
+  // fresh: innings < 4 AND fatigue < 0.5
+  it("returns 'fresh' when well under both thresholds", () => {
+    expect(derivePitcherFatigueLevel(0, 0.0)).toBe("fresh");
+    expect(derivePitcherFatigueLevel(3, 0.4)).toBe("fresh");
+  });
+
+  it("returns 'tired' when innings reach the fresh threshold", () => {
+    expect(derivePitcherFatigueLevel(4, 0.4)).toBe("tired");
+  });
+
+  it("returns 'tired' when fatigue reaches the fresh threshold", () => {
+    expect(derivePitcherFatigueLevel(3, 0.5)).toBe("tired");
+  });
+
+  it("returns 'tired' when both thresholds crossed but below gassed", () => {
+    expect(derivePitcherFatigueLevel(5, 1.4)).toBe("tired");
+  });
+
+  // gassed: innings >= 6 OR fatigue >= 1.5
+  it("returns 'gassed' when innings hit the gassed threshold", () => {
+    expect(derivePitcherFatigueLevel(6, 0.0)).toBe("gassed");
+    expect(derivePitcherFatigueLevel(7, 0.0)).toBe("gassed");
+  });
+
+  it("returns 'gassed' when fatigue hits the gassed threshold", () => {
+    expect(derivePitcherFatigueLevel(0, 1.5)).toBe("gassed");
+    expect(derivePitcherFatigueLevel(2, 2.0)).toBe("gassed");
+  });
+
+  it("returns 'gassed' when both gassed conditions are met", () => {
+    expect(derivePitcherFatigueLevel(6, 1.5)).toBe("gassed");
   });
 });
