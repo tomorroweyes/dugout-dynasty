@@ -37,7 +37,8 @@ export function generatePlayerAvatar(
   options?: AvatarOptions,
 ): string {
   // Baseball-themed customization for pixelArt style
-  const baseballOptions =
+  // Typed as Record<string, unknown> so the spread is compatible with the avatar library's Partial<Options>
+  const baseballOptions: Record<string, unknown> =
     style === "pixelArt"
       ? {
           // variant02 looks like baseball caps!
@@ -77,7 +78,8 @@ export function generatePlayerAvatarSvg(
   options?: AvatarOptions,
 ): string {
   // Baseball-themed customization
-  const baseballOptions =
+  // Typed as Record<string, unknown> so the spread is compatible with the avatar library's Partial<Options>
+  const baseballOptions: Record<string, unknown> =
     style === "pixelArt"
       ? {
           hat: ["variant02"],

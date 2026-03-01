@@ -3,13 +3,13 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 // https://vite.dev/config/
-export default defineConfig({
-  // GitHub Pages serves from /dugout-dynasty/ when deployed to tomorroweyes.github.io
-  base: process.env.GITHUB_ACTIONS ? "/dugout-dynasty/" : "/",
+// base is "/" in dev (serve) and "/dugout-dynasty/" in production builds (GitHub Pages)
+export default defineConfig(({ command }) => ({
+  base: command === "serve" ? "/" : "/dugout-dynasty/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       "@": "/src",
     },
   },
-});
+}));
