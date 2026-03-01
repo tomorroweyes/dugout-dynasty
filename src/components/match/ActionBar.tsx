@@ -148,7 +148,11 @@ export function ActionBar({
           onClick={onContinue}
           className="w-full py-6 text-base"
         >
-          {matchState.isComplete ? "See Final Score" : "Next Inning"}
+          {matchState.isComplete
+            ? "See Final Score"
+            : matchState.inningComplete
+              ? "Next Inning"
+              : "Next Batter"}
           {" ›"}
           <kbd className="ml-2 text-[10px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1.5 py-0.5">
             Space
