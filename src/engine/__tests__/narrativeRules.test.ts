@@ -771,3 +771,106 @@ describe("redemption flag tracking (matchEngine)", () => {
     expect(finalHistory?.redemptionOpportunity).not.toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Walk + redemption flag — rules stay silent (#15 review)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("walk with redemption flag set — rules stay silent", () => {
+  const flaggedWalk = ctx({
+    result: "walk",
+    inning: 4,
+    scoreDiff: 0,
+    batterHistory: { abs: 3, hits: 1, strikeouts: 0, walks: 0, redemptionOpportunity: true },
+  });
+
+  it("setup_for_redemption does NOT fire on walk (walk is not failure)", () => {
+    const rule = matchingRule(flaggedWalk);
+    expect(rule?.id).not.toBe("setup_for_redemption");
+  });
+
+  it("redemption_payoff does NOT fire on walk (walk is not a hit)", () => {
+    const rule = matchingRule(flaggedWalk);
+    expect(rule?.id).not.toBe("redemption_payoff");
+  });
+
+  it("evaluator returns null for a flagged walk in non-special context", () => {
+    // The flag is set but walk doesn't match any rule — should fall through to stat-tier
+    const result = evaluateNarrativeRules(flaggedWalk, rng);
+    expect(result).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Redemption flag arming — positive case (#15 review)
+// Uses a weaker pitcher + higher-contact offense to generate RISP + out scenario
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("redemption flag arming — positive arm case", () => {
+  function makePitcherWeak(id: string): Player {
+    return {
+      id,
+      name: `Pitcher ${id}`,
+      surname: `P${id}`,
+      role: "Starter" as const,
+      stats: { velocity: 42, control: 42, break: 42 } as PitcherStats,
+      salary: 100_000,
+      level: 1,
+      xp: 0,
+      totalXpEarned: 0,
+      equipment: { bat: null, glove: null, cap: null, cleats: null, accessory: null },
+    };
+  }
+
+  function makeContactBatter(id: string): Player {
+    return {
+      id,
+      name: `Batter ${id}`,
+      surname: `B${id}`,
+      role: "Batter" as const,
+      stats: { power: 35, contact: 78, glove: 55, speed: 60 } as BatterStats,
+      salary: 100_000,
+      level: 1,
+      xp: 0,
+      totalXpEarned: 0,
+      equipment: { bat: null, glove: null, cap: null, cleats: null, accessory: null },
+    };
+  }
+
+  it("arms the flag on at least one batter across many seeded runs in late high-leverage innings", () => {
+    // Run 20 seeded simulations with late inning + close scores.
+    // High-contact offense vs. weak pitcher: some singles/walks get runners to RISP,
+    // then subsequent at-bats with RISP + late inning + close game arm the flag.
+    let flagArmedInAnyRun = false;
+    const batters = ["b1", "b2", "b3", "b4", "b5"].map(makeContactBatter);
+    const pitcher = makePitcherWeak("p-weak");
+    const defense = [pitcher];
+
+    for (let seed = 1; seed <= 20 && !flagArmedInAnyRun; seed++) {
+      const history = new Map<string, BatterHistory>();
+      batters.forEach((b) => history.set(b.id, { abs: 0, hits: 0, strikeouts: 0, walks: 0 }));
+
+      simulateInningWithStats(
+        batters, defense, pitcher, 0, 0,
+        /* inning= */ 8, // late game — flag arming requires inning >= 7
+        true, new SeededRandomProvider(seed * 17),
+        undefined,
+        /* offenseScore= */ 0,
+        /* defenseScore= */ 0, // tied — close game
+        0, undefined, undefined,
+        history
+      );
+
+      for (const entry of history.values()) {
+        if (entry.redemptionOpportunity === true) {
+          flagArmedInAnyRun = true;
+          break;
+        }
+      }
+    }
+
+    // With 20 seeds, a contact team vs. weak pitcher in a tied inning 8 should
+    // eventually produce RISP + out, arming the flag at least once.
+    expect(flagArmedInAnyRun).toBe(true);
+  });
+});

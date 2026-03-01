@@ -595,6 +595,10 @@ function simulateInningWithStats(
       // failed (out/strikeout) with RISP (2nd or 3rd occupied) in a high-leverage spot
       // (inning 7+, close game within 2 runs). Flag is always cleared entering any AB,
       // then re-armed here if conditions are met. basesBeforeHit = pre-AB base state.
+      //
+      // Note: walks are neither a failure (isOutOrStrikeout=false) nor a hit, so armRedemption
+      // stays false and a walk silently clears the flag. This is intentional — a walk isn't
+      // a failure, and the batter took their free pass rather than swinging in the clutch.
       const isOutOrStrikeout = ["groundout", "flyout", "lineout", "popout", "strikeout"].includes(result);
       const hadRISP = basesBeforeHit[1] || basesBeforeHit[2];
       const isHighLeverageInning = inning >= 7;

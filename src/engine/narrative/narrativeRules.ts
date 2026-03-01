@@ -209,6 +209,10 @@ export const NARRATIVE_RULES: NarrativeRule[] = [
   },
 
   {
+    // Priority 93 intentionally supersedes redemption_homer (90) and redemption_hit (87).
+    // When the redemptionOpportunity flag is set, the tracked-flag context is more specific
+    // than the generic hitless-batter checks, so the payoff text takes precedence.
+    // A hitless batter with the flag who hits a HR gets payoff text, not redemption-homer text.
     id: "redemption_payoff",
     name: "Redemption Payoff — tracked flag set, batter delivers a hit",
     priority: 93,
