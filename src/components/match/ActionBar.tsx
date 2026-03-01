@@ -18,6 +18,18 @@ import {
 
 const ABILITY_SHORTCUT_KEYS = ["z", "x", "c"];
 
+// Display metadata for each at-bat outcome
+const OUTCOME_META: Record<string, { icon: string; label: string; color: string; bg: string }> = {
+  homerun:      { icon: "🏠", label: "Home Run!",  color: "text-yellow-500 dark:text-yellow-400", bg: "bg-yellow-500/10 border border-yellow-500/30" },
+  triple:       { icon: "🔺", label: "Triple!",    color: "text-green-500 dark:text-green-400",   bg: "bg-green-500/10 border border-green-500/30"  },
+  double:       { icon: "⬆️",  label: "Double!",   color: "text-blue-500 dark:text-blue-400",     bg: "bg-blue-500/10 border border-blue-500/30"    },
+  single:       { icon: "➡️",  label: "Single",    color: "text-blue-400 dark:text-blue-300",     bg: "bg-blue-500/8 border border-blue-500/20"     },
+  walk:         { icon: "🟡",  label: "Walk",      color: "text-orange-400",                       bg: "bg-orange-500/10 border border-orange-500/30" },
+  strikeout:    { icon: "🔴",  label: "Strikeout", color: "text-red-500",                          bg: "bg-red-500/10 border border-red-500/30"      },
+  bunt_attempt: { icon: "📍",  label: "Bunt",      color: "text-muted-foreground",                 bg: "bg-muted/60 border border-border"            },
+  out:          { icon: "⚫",  label: "Out",        color: "text-muted-foreground",                 bg: "bg-muted/60 border border-border"            },
+};
+
 // Batting approach order + keyboard shortcuts (q/w/e)
 const APPROACH_ORDER: BatterApproach[] = ["power", "contact", "patient"];
 const APPROACH_SHORTCUTS = ["q", "w", "e"];
@@ -141,18 +153,58 @@ export function ActionBar({
   }
 
   if (showingResult) {
+    const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
+    const meta = lastPlay
+      ? (OUTCOME_META[lastPlay.outcome] ?? OUTCOME_META.out)
+      : OUTCOME_META.out;
+    const isHit = lastPlay && ["homerun", "triple", "double", "single"].includes(lastPlay.outcome);
+    const isMoment = lastPlay?.perfectContact || lastPlay?.paintedCorner;
+    const scoreLine = `${matchState.myRuns} – ${matchState.opponentRuns}`;
+    const halfLabel = matchState.isTop ? "Top" : "Bot";
+    const continueLabel = matchState.isComplete
+      ? "See Final Score"
+      : matchState.inningComplete
+        ? "Next Inning"
+        : "Next Batter";
+
     return (
-      <div className="h-full flex items-center justify-center">
-        <Button
-          size="lg"
-          onClick={onContinue}
-          className="w-full py-6 text-base"
-        >
-          {matchState.isComplete
-            ? "See Final Score"
-            : matchState.inningComplete
-              ? "Next Inning"
-              : "Next Batter"}
+      <div className="h-full flex flex-col gap-2.5 py-1">
+        {/* Outcome headline */}
+        <div className={`text-center py-3 px-3 rounded-lg ${meta.bg}`}>
+          <div className="text-2xl mb-1 leading-none">{meta.icon}</div>
+          <div className={`text-sm font-bold uppercase tracking-wide ${meta.color}`}>
+            {meta.label}
+            {isMoment && <span className="ml-1.5 text-amber-400">✨</span>}
+          </div>
+          {isHit && lastPlay?.rbi != null && lastPlay.rbi > 0 && (
+            <div className="text-xs text-muted-foreground mt-1">
+              {lastPlay.rbi} RBI
+            </div>
+          )}
+        </div>
+
+        {/* Narrative text */}
+        {lastPlay?.narrativeText && (
+          <p className="text-xs text-muted-foreground italic text-center px-1 leading-snug line-clamp-3">
+            "{lastPlay.narrativeText}"
+          </p>
+        )}
+
+        {/* Score + situation */}
+        <div className="flex items-center justify-between px-1 mt-auto">
+          <span className="font-mono font-bold text-base tabular-nums">
+            {scoreLine}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {matchState.outs} out{matchState.outs !== 1 ? "s" : ""}
+            {" · "}
+            {halfLabel} {matchState.inning}
+          </span>
+        </div>
+
+        {/* Continue button */}
+        <Button size="lg" onClick={onContinue} className="w-full py-5 text-sm">
+          {continueLabel}
           {" ›"}
           <kbd className="ml-2 text-[10px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1.5 py-0.5">
             Space
@@ -163,9 +215,70 @@ export function ActionBar({
   }
 
   if (matchState.inningComplete) {
+    // Summarise the half-inning that just ended
+    const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
+    const halfInningPlays = lastPlay
+      ? matchState.playByPlay.filter(
+          (p) => p.inning === lastPlay.inning && p.isTop === lastPlay.isTop,
+        )
+      : [];
+    const runsThisHalf = halfInningPlays.reduce((sum, p) => sum + (p.rbi ?? 0), 0);
+    const hitsThisHalf = halfInningPlays.filter((p) =>
+      ["single", "double", "triple", "homerun"].includes(p.outcome),
+    ).length;
+    const halfLabel = matchState.isTop ? "Top" : "Bottom";
+    const halfEndLabel = matchState.isTop ? "Middle" : "End";
+    const pitcher = matchState.isTop ? matchState.myPitcher : matchState.opponentPitcher;
+    const pitcherInnings = matchState.isTop
+      ? matchState.myPitcherInnings
+      : matchState.opponentPitcherInnings;
+    const nextHalfLabel = matchState.isTop ? "Bottom" : `Top ${matchState.inning + 1}`;
+    const scoreLine = `${matchState.myRuns} – ${matchState.opponentRuns}`;
+
     return (
-      <div className="h-full flex items-center justify-center text-muted-foreground">
-        {matchState.isTop ? "Middle" : "End"} of Inning {matchState.inning}...
+      <div className="h-full flex flex-col gap-2.5 py-1">
+        {/* Inning end header */}
+        <div className="text-center py-3 px-3 rounded-lg bg-muted/50 border border-border">
+          <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+            {halfEndLabel} of {halfLabel} {matchState.inning}
+          </div>
+          <div className="font-mono font-bold text-xl tabular-nums">{scoreLine}</div>
+        </div>
+
+        {/* Half-inning summary */}
+        <div className="space-y-1.5 px-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Runs scored</span>
+            <span className={`font-semibold ${runsThisHalf > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+              {runsThisHalf > 0 ? `+${runsThisHalf}` : "None"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Hits</span>
+            <span className="font-semibold">{hitsThisHalf}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Pitcher</span>
+            <span className="font-semibold">
+              {pitcher.name}
+              <span className="ml-1 font-normal text-muted-foreground">
+                ({pitcherInnings} IP)
+              </span>
+            </span>
+          </div>
+        </div>
+
+        {/* Continue */}
+        <Button
+          size="lg"
+          onClick={onContinue}
+          className="w-full mt-auto py-5 text-sm"
+        >
+          {matchState.isComplete ? "See Final Score" : `Start ${nextHalfLabel} ›`}
+          <kbd className="ml-2 text-[10px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1.5 py-0.5">
+            Space
+          </kbd>
+        </Button>
       </div>
     );
   }

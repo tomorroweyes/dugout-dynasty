@@ -126,12 +126,8 @@ export function InteractiveMatchView({
     [matchState.currentPitcher.id, isMyBatter]
   );
 
-  // Auto-advance past inning transitions (no delay)
-  useEffect(() => {
-    if (matchState.inningComplete && !matchState.isComplete && !showingResult) {
-      setMatchState((prev) => ({ ...prev, inningComplete: false }));
-    }
-  }, [matchState.inningComplete, matchState.isComplete, showingResult]);
+  // Inning transitions now require user input (ActionBar shows summary + button).
+  // handleContinue clears both showingResult and inningComplete.
 
   // Auto-scroll play log to bottom
   const playLogRef = useRef<HTMLDivElement>(null);
@@ -540,6 +536,11 @@ export function InteractiveMatchView({
   const handleContinue = () => {
     setShowingResult(false);
     setLastRunsScored(0);
+    // Clear inning transition — both the clutch-result+inning-end case
+    // and the standalone inning-end case (user clicks "Start Next Half")
+    if (matchState.inningComplete) {
+      setMatchState((prev) => ({ ...prev, inningComplete: false }));
+    }
   };
 
   const handleSelectGamePlan = (plan: BatterApproach) => {
