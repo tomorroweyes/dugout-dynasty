@@ -232,6 +232,120 @@ export const OUT_TEXTS = {
 };
 
 // ============================================
+// APPROACH & STRATEGY FLAVOR
+// Tokens: {batter}, {pitcher}
+// Add new strings freely — engine picks one at random each time.
+// ============================================
+
+export const APPROACH_TEXTS = {
+  /** Batter approach: power swing */
+  batterPower: [
+    "{batter} digs in, looking to drive one.",
+    "{batter} widens his stance. He's hunting.",
+    "Looking for something to pull — {batter} digs in.",
+    "{batter} is swinging big here.",
+    "Hacking mode: {batter} is sitting on a fastball.",
+  ],
+
+  /** Batter approach: patient / walk the zone */
+  batterPatient: [
+    "{batter} takes a patient approach.",
+    "{batter} works the count.",
+    "Plate discipline on display — {batter} lays off.",
+    "{batter} is in no hurry here.",
+    "Taking pitches: {batter} works the at-bat.",
+  ],
+
+  /** Pitcher strategy: finesse / mix speeds */
+  pitcherFinesse: [
+    "{pitcher} mixes speeds.",
+    "{pitcher} keeps the hitter off-balance.",
+    "Changing speeds — {pitcher} works the sequence.",
+    "{pitcher} paints with different looks.",
+    "Off-speed and away — {pitcher} goes to the well.",
+  ],
+
+  /** Pitcher strategy: paint corners */
+  pitcherPaint: [
+    "{pitcher} works the corners.",
+    "{pitcher} nibbles. Living on the edges.",
+    "Precision mode: {pitcher} targets the black.",
+    "{pitcher} threads the needle.",
+    "High and tight, down and away — {pitcher} mixing locations.",
+  ],
+
+  /** Zone read natural 20 — batter guessed perfectly */
+  perfectContact: [
+    "{batter} reads it perfectly —",
+    "{batter} was all over that pitch —",
+    "Dead red, right location — {batter} locks in —",
+    "{batter} guessed right. All of it —",
+    "Called it. {batter} was sitting on exactly that —",
+  ],
+
+  /** Zone read painted corner — pitcher won the exchange */
+  paintedCorner: [
+    "{pitcher} paints the corner — no chance.",
+    "{pitcher} hits the spot. {batter} had no read on that.",
+    "Perfect execution — {pitcher} was unhittable there.",
+    "Right where he wanted it. {pitcher} owns that corner.",
+    "{pitcher} freezes {batter}. Wasn't going to hit that.",
+  ],
+};
+
+// ============================================
+// BATTER GAME HISTORY CONTEXT
+// Tokens: {name} = surname, {abs} = at-bats, {k} = strikeouts, {hits} = hits
+// Add new strings freely — engine picks one at random each time.
+// ============================================
+
+export const BATTER_HISTORY_TEXTS = {
+  /** 0-for-3+ with 2+ strikeouts — full redemption arc setup */
+  redemption: [
+    "{name}, 0-for-{abs} with {k} strikeouts, steps in with something to prove.",
+    "Looking for redemption — {name} is oh-for-{abs} on the day.",
+    "The crowd's watching {name}. {k} punchouts already today.",
+    "Oh-for-{abs} so far. {name} needs something here.",
+    "{name} hasn't found the barrel all game. {k} Ks. This one matters.",
+    "A rough day for {name} — 0-for-{abs}, {k} strikeouts. Time to change that.",
+    "{name} digs in. 0-for-{abs} today. Redemption knocks.",
+  ],
+
+  /** 0-for-X, no hits but not necessarily multiple Ks */
+  hitless: [
+    "{name}, hitless today, steps back in.",
+    "Still looking for the first hit — {name} 0-for-{abs}.",
+    "{name} hasn't found one yet. 0-for-{abs} on the day.",
+    "No hits yet for {name}.",
+    "{name} is searching. 0-for-{abs} so far.",
+    "Oh-for-{abs} for {name}. A hit would change everything.",
+    "{name} steps in. Hitless today — that could change right now.",
+  ],
+
+  /** Multiple Ks but not necessarily hitless */
+  struggling: [
+    "{name}, who has been battling all game, tries again.",
+    "It's been a tough one for {name}.",
+    "{name} has been in rough spots all night.",
+    "Another big moment for {name} to turn it around.",
+    "{name} keeps coming up. {k} strikeouts already today, but still fighting.",
+    "{name} digs in. The plate hasn't been kind today.",
+    "Tough day for {name} at the dish. Not done yet though.",
+  ],
+
+  /** Hot — 2+ hits, on a roll */
+  hot: [
+    "{name}, swinging the hot bat today,",
+    "{name} already with {hits} hits — locked in.",
+    "Don't sleep on {name}. {hits} for {abs} so far.",
+    "{name} has been on fire all game.",
+    "Hot bat at the plate — {name} already with {hits} hits today.",
+    "{name} is seeing it well. {hits} hits on the day.",
+    "{hits} hits in {abs} trips. {name} is dealing.",
+  ],
+};
+
+// ============================================
 // SITUATIONAL FLAVOR TEXT
 // ============================================
 
