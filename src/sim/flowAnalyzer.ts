@@ -28,10 +28,16 @@ export interface FlowMetrics {
 
   // Composite fun score (0-100)
   funScore: number;
+
+  // Drama Score (0-100) — narrative shape metric
+  // Components: lead changes weighted by inning (40), comeback win (20),
+  //             clutch conversion rate (30), cliffhanger 9th+ (15)
+  dramaScore: number;
+  avgDramaScore: number; // per-game drama score average
 }
 
 /**
- * Analyze a single game for flow metrics
+ * Analyze a single game for flow metrics, including Drama Score.
  */
 function analyzeGameFlowSingle(game: GameStats): {
   leadChanges: number;
@@ -41,6 +47,7 @@ function analyzeGameFlowSingle(game: GameStats): {
   hasClutchMoment: boolean;
   isWalkOff: boolean;
   ABsPlayed: number;
+  dramaScore: number;
 } {
   const isBlowout = Math.abs(game.homeRuns - game.awayRuns) > 5;
   const isOneRunGame = Math.abs(game.homeRuns - game.awayRuns) === 1;
@@ -53,17 +60,91 @@ function analyzeGameFlowSingle(game: GameStats): {
     hits: game.homeHits + game.awayHits,
   }).reduce((s, v) => s + v, 0);
 
-  // Lead changes: guess based on run distribution
-  // (real lead changes would need inning-by-inning data)
-  const leadChanges = isOneRunGame ? 1 : isBlowout ? 0 : 2;
+  // ── True lead changes from inning-by-inning scores ────────────────────────
+  // Walk through the running score after each inning pair and detect flips.
+  // isTop: true = away bats; isTop: false = home bats.
+  let leadChanges = 0;
+  let weightedLeadChangePts = 0;
+  let wasHomeAhead: boolean | null = null; // null = tied
 
-  // Clutch moment: game decided by a run in late inning
-  // We'd need play-by-play timing, so use heuristic: close game + late inning
+  const { home: homeByInning, away: awayByInning } = game.inningScores;
+  const totalInnPairs = Math.max(homeByInning.length, awayByInning.length);
+  let cumulativeHome = 0;
+  let cumulativeAway = 0;
+
+  for (let i = 0; i < totalInnPairs; i++) {
+    // Apply away half (top) then home half (bottom)
+    cumulativeAway += awayByInning[i] ?? 0;
+    cumulativeHome += homeByInning[i] ?? 0;
+
+    const inningNumber = i + 1;
+    const nowHomeAhead = cumulativeHome > cumulativeAway
+      ? true
+      : cumulativeAway > cumulativeHome
+      ? false
+      : null; // tied
+
+    // Lead change = away had lead, now home does (or vice versa); ties don't count
+    if (wasHomeAhead !== null && nowHomeAhead !== null && wasHomeAhead !== nowHomeAhead) {
+      leadChanges++;
+      // Weight by inning: late-inning lead changes are more dramatic
+      weightedLeadChangePts += inningNumber / 9;
+    }
+    if (nowHomeAhead !== null) wasHomeAhead = nowHomeAhead;
+  }
+
+  // Fallback if inningScores are empty (shouldn't happen after simRunner update)
+  if (totalInnPairs === 0) {
+    leadChanges = isOneRunGame ? 1 : isBlowout ? 0 : 2;
+    weightedLeadChangePts = leadChanges * 0.8; // rough middle-inning estimate
+  }
+
+  // ── Clutch moment heuristic ───────────────────────────────────────────────
   const hasClutchMoment = isOneRunGame || (isExtraInning && !isBlowout);
 
-  // Walk-off: game ends in bottom 9+  and winning team won on last play
-  // Estimate: isExtraInning and isOneRunGame
-  const isWalkOff = isExtraInning && Math.abs(game.homeRuns - game.awayRuns) === 1;
+  // ── Walk-off heuristic ────────────────────────────────────────────────────
+  // Extra inning game + 1-run margin = very likely walk-off
+  const isWalkOff = isExtraInning && isOneRunGame;
+
+  // ── Comeback win detection ────────────────────────────────────────────────
+  // Did the eventual loser hold a lead at any inning, but the winner came back?
+  let comebackWin = false;
+  if (!isBlowout && (game.winner === "home" || game.winner === "away")) {
+    let cHome2 = 0;
+    let cAway2 = 0;
+    const winnerIsHome = game.winner === "home";
+    for (let i = 0; i < totalInnPairs; i++) {
+      cAway2 += awayByInning[i] ?? 0;
+      cHome2 += homeByInning[i] ?? 0;
+      // If loser was ahead at any point mid-game (not after full game), it's a comeback
+      const loserWasAhead = winnerIsHome ? cAway2 > cHome2 : cHome2 > cAway2;
+      if (loserWasAhead && i < totalInnPairs - 1) {
+        comebackWin = true;
+        break;
+      }
+    }
+  }
+
+  // ── Cliffhanger ───────────────────────────────────────────────────────────
+  const isCliffhanger = game.totalInnings >= 9 && isOneRunGame;
+
+  // ── Clutch conversion rate ────────────────────────────────────────────────
+  const clutchRate = game.clutchABs > 0
+    ? Math.min(game.clutchHits / game.clutchABs, 1)
+    : 0.25; // fallback to league average ~.250
+
+  // ── Drama Score (0–100) ───────────────────────────────────────────────────
+  // Component 1: Weighted lead changes (cap at 40)
+  const leadChangePts = Math.min(weightedLeadChangePts * 10, 40);
+  // Component 2: Comeback win (+20)
+  const comebackPts = comebackWin ? 20 : 0;
+  // Component 3: Clutch conversion (* 30)
+  const clutchPts = clutchRate * 30;
+  // Component 4: Cliffhanger — decided in 9th+ (+15)
+  const cliffhangerPts = isCliffhanger ? 15 : 0;
+
+  const rawDrama = leadChangePts + comebackPts + clutchPts + cliffhangerPts;
+  const dramaScore = Math.max(0, Math.min(100, rawDrama));
 
   return {
     leadChanges,
@@ -73,6 +154,7 @@ function analyzeGameFlowSingle(game: GameStats): {
     hasClutchMoment,
     isWalkOff,
     ABsPlayed: totalABs,
+    dramaScore,
   };
 }
 
@@ -89,6 +171,7 @@ export function analyzeGameFlow(stats: AggregateStats): FlowMetrics {
   let walkOffCount = 0;
   let clutchCount = 0;
   let totalABs = 0;
+  let totalDramaScore = 0;
 
   for (const game of games) {
     const flow = analyzeGameFlowSingle(game);
@@ -99,6 +182,7 @@ export function analyzeGameFlow(stats: AggregateStats): FlowMetrics {
     walkOffCount += flow.isWalkOff ? 1 : 0;
     clutchCount += flow.hasClutchMoment ? 1 : 0;
     totalABs += flow.ABsPlayed;
+    totalDramaScore += flow.dramaScore;
   }
 
   const avgRunsHome = stats.avgHomeRuns;
@@ -148,6 +232,9 @@ export function analyzeGameFlow(stats: AggregateStats): FlowMetrics {
 
   funScore = Math.max(0, Math.min(100, funScore));
 
+  const avgDramaScore = games.length > 0 ? totalDramaScore / games.length : 0;
+  const dramaScore = Math.max(0, Math.min(100, avgDramaScore));
+
   return {
     avgRunsHome,
     avgRunsAway,
@@ -161,5 +248,7 @@ export function analyzeGameFlow(stats: AggregateStats): FlowMetrics {
     walkOffRate,
     clutchMomentRate,
     funScore,
+    dramaScore,
+    avgDramaScore,
   };
 }

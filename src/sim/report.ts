@@ -189,6 +189,12 @@ export function printFlowReport(stats: AggregateStats, flow: FlowMetrics, label 
   if (f.funScore >= 70) console.log(`     ✅ Likely feels exciting and engaging`);
   else if (f.funScore >= 55) console.log(`     ⚠️  Decent but could be more fun`);
   else console.log(`     ❌ Might feel slow or one-sided`);
+
+  console.log(`\n  🎭 DRAMA SCORE: ${Math.floor(f.dramaScore)}/100`);
+  console.log(`     Components: lead changes (×inning weight, cap 40) + comeback (20) + clutch rate (30) + cliffhanger 9th+ (15)`);
+  if (f.dramaScore >= 55) console.log(`     ✅ Strong narrative shape — games tell a story`);
+  else if (f.dramaScore >= 35) console.log(`     ⚠️  Moderate drama — some memorable moments`);
+  else console.log(`     ❌ Low drama — games tend to be flat or one-sided`);
 }
 
 export function printFooter(): void {

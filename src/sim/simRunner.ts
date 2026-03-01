@@ -27,6 +27,12 @@ export interface GameStats {
   strategies: Record<PitchStrategy, number>;
   // Outcomes
   outcomes: Record<string, number>;
+  // Inning-by-inning run scoring (index = inning - 1; derived from play-by-play)
+  // isTop: true = away bats; isTop: false = home bats
+  inningScores: { home: number[]; away: number[] };
+  // Clutch metrics: ABs and hits in innings 7+ with game within 2 runs
+  clutchHits: number;
+  clutchABs: number;
 }
 
 export interface AggregateStats {
@@ -78,11 +84,91 @@ function runOneGame(homeTeam: Team, awayTeam: Team): GameStats {
   const strategies: Record<PitchStrategy, number> = { challenge: 0, finesse: 0, paint: 0 };
   const outcomes: Record<string, number> = {};
 
+  // Inning-by-inning run scoring derived from play-by-play.
+  // isTop: true = away team batting (opponentTeam = awayTeam in simRunner)
+  // isTop: false = home team batting (myTeam = homeTeam in simRunner)
+  const maxInningIdx = result.totalInnings; // 1-based count
+  const inningScores: { home: number[]; away: number[] } = {
+    home: new Array(maxInningIdx).fill(0),
+    away: new Array(maxInningIdx).fill(0),
+  };
+
+  // Clutch tracking: ABs/hits in innings 7+ when game is within 2 runs.
+  // We track a running score so we can evaluate game state at each AB.
+  let runningHome = 0;
+  let runningAway = 0;
+  let clutchHits = 0;
+  let clutchABs = 0;
+  const HIT_OUTCOMES = new Set(["single", "double", "triple", "homerun"]);
+  // Non-AB outcomes (walks are not ABs in baseball)
+  const NON_AB_OUTCOMES = new Set(["walk"]);
+
+  // Sort plays by inning then isTop (away=top first, home=bottom second)
+  // Play-by-play is already in order; process sequentially for running score
+  let lastInning = 0;
+  let lastIsTop = true;
+  let inningHomeRuns = 0;
+  let inningAwayRuns = 0;
+
   for (const play of result.playByPlay) {
     if (play.batterApproach) approaches[play.batterApproach]++;
     if (play.pitchStrategy) strategies[play.pitchStrategy]++;
     const key = play.outcome;
     outcomes[key] = (outcomes[key] ?? 0) + 1;
+
+    // Track inning transitions to flush accumulated runs into inningScores
+    const isNewHalf = play.inning !== lastInning || play.isTop !== lastIsTop;
+    if (isNewHalf && lastInning > 0) {
+      const idx = lastInning - 1;
+      if (idx < inningScores.home.length) {
+        if (lastIsTop) {
+          // away bats top — flush to away
+          inningScores.away[idx] += inningAwayRuns;
+        } else {
+          // home bats bottom — flush to home
+          inningScores.home[idx] += inningHomeRuns;
+        }
+      }
+      inningHomeRuns = 0;
+      inningAwayRuns = 0;
+    }
+    lastInning = play.inning;
+    lastIsTop = play.isTop;
+
+    // Accumulate runs scored on this play
+    const runs = play.rbi ?? 0;
+    if (runs > 0) {
+      if (play.isTop) {
+        runningAway += runs;
+        inningAwayRuns += runs;
+      } else {
+        runningHome += runs;
+        inningHomeRuns += runs;
+      }
+    }
+
+    // Clutch AB detection: inning 7+, game within 2 runs ENTERING this AB
+    if (play.inning >= 7) {
+      const diff = Math.abs(runningHome - runningAway);
+      if (diff <= 2 && !NON_AB_OUTCOMES.has(play.outcome)) {
+        clutchABs++;
+        if (HIT_OUTCOMES.has(play.outcome)) {
+          clutchHits++;
+        }
+      }
+    }
+  }
+
+  // Flush the last half-inning
+  if (lastInning > 0) {
+    const idx = lastInning - 1;
+    if (idx < inningScores.home.length) {
+      if (lastIsTop) {
+        inningScores.away[idx] += inningAwayRuns;
+      } else {
+        inningScores.home[idx] += inningHomeRuns;
+      }
+    }
   }
 
   const winner =
@@ -108,6 +194,9 @@ function runOneGame(homeTeam: Team, awayTeam: Team): GameStats {
     approaches,
     strategies,
     outcomes,
+    inningScores,
+    clutchHits,
+    clutchABs,
   };
 }
 

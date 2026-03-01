@@ -163,6 +163,8 @@ describe("Game Balance Simulation Harness", () => {
           totalFlows.walkOffRate += flow.walkOffRate;
           totalFlows.clutchMomentRate += flow.clutchMomentRate;
           totalFlows.funScore += flow.funScore;
+          totalFlows.dramaScore += flow.dramaScore;
+          totalFlows.avgDramaScore += flow.avgDramaScore;
         }
       }
       if (totalFlows) {
@@ -178,6 +180,8 @@ describe("Game Balance Simulation Harness", () => {
         totalFlows.walkOffRate /= flowCount;
         totalFlows.clutchMomentRate /= flowCount;
         totalFlows.funScore /= flowCount;
+        totalFlows.dramaScore /= flowCount;
+        totalFlows.avgDramaScore /= flowCount;
 
         printFlowReport({ rawGames: [] } as AggregateStats, totalFlows, "(overall)");
       }
