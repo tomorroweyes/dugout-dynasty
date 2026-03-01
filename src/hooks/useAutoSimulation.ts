@@ -94,10 +94,8 @@ export function useAutoSimulation({
           }
           setAutoSimulating(false);
           setSimMode(null);
-          if (prev.isComplete) {
-            const result = finalizeInteractiveMatch(prev, matchRewards, fans);
-            setTimeout(() => onComplete(result), 500);
-          }
+          // Match complete — show game summary screen, let user click Continue to trigger onComplete
+          // (Don't auto-call onComplete; user must acknowledge the result)
           return prev;
         }
 

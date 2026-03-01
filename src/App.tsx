@@ -41,7 +41,7 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { team, league, matchLog, pendingDraft, activeInteractiveMatch, initializeGame, playWeekMatch, completeWeek, advanceToNextSeason, resetGame, setActiveInteractiveMatch } = useGameStore();
+    const { team, league, matchLog, pendingDraft, activeInteractiveMatch, initializeGame, playWeekMatch, completeWeek, advanceToNextSeason, resetGame, setActiveInteractiveMatch, applyInteractiveMatchResult } = useGameStore();
   const { interactiveMatchMode, enable8bitTheme, enableEngineTrace } = useSettingsStore();
 
   // Opponent ID set when player clicks "Play Match" in interactive mode.
