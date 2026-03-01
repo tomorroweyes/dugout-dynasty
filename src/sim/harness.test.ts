@@ -36,6 +36,11 @@ import {
   printFlowReport,
   printFooter,
 } from "./report";
+import { runSeasonSimulation, runMultipleSeasons } from "./seasonSimulator";
+import {
+  printSeasonReport,
+  printMultiSeasonReport,
+} from "./seasonReport";
 
 // ── Config ──────────────────────────────────────────────────────────────────
 
@@ -230,6 +235,62 @@ describe("Game Balance Simulation Harness", () => {
 
       // ── Done ───────────────────────────────────────────────────────────
       printFooter();
+    }
+  );
+});
+
+// ── Season Arc Simulation ─────────────────────────────────────────────────
+
+/**
+ * Season Arc Harness
+ *
+ * Simulates full 30-game seasons across all 6 archetype teams and verifies
+ * that the engine produces engaging seasons with real narrative hooks.
+ *
+ * USAGE:
+ *   npm run sim            → runs once as part of balance suite
+ *   SEASONS=20 npm run sim → custom season count
+ *
+ * SUCCESS CRITERIA (issue #18):
+ *   80%+ of simulated seasons produce ≥1 "must-play" moment.
+ */
+const SEASONS = parseInt(process.env.SEASONS ?? "5");
+
+describe("Season Arc Simulator", () => {
+  it(
+    `simulates ${SEASONS} full 30-game season(s) and measures hook metrics`,
+    { timeout: 300_000 }, // seasons can take a while
+    () => {
+      console.log(`\n${"═".repeat(70)}`);
+      console.log(`  SEASON ARC SIMULATION`);
+      console.log(`  ${SEASONS} season(s) × 30 games × 6 archetypes`);
+      console.log(`${"═".repeat(70)}`);
+
+      if (SEASONS === 1) {
+        // Single season: print full detail
+        const result = runSeasonSimulation({
+          archetypes: ["POWER", "CONTACT", "BALANCED", "SPEED", "PITCHING", "SLUGFEST"],
+          gamesPerTeam: 30,
+          playoffSpots: 2,
+        });
+        printSeasonReport(result);
+      } else {
+        // Multi-season: aggregate analysis
+        console.log(`\n  Running ${SEASONS} seasons...`);
+        const multi = runMultipleSeasons(SEASONS, {
+          archetypes: ["POWER", "CONTACT", "BALANCED", "SPEED", "PITCHING", "SLUGFEST"],
+          gamesPerTeam: 30,
+          playoffSpots: 2,
+        });
+        printMultiSeasonReport(multi);
+
+        // Print detail on the most interesting season (most narrative moments)
+        const mostInteresting = multi.seasons.reduce((best, s) =>
+          s.hookMetrics.narrativeMoments.length > best.hookMetrics.narrativeMoments.length ? s : best
+        );
+        console.log(`\n  Most interesting season (${mostInteresting.hookMetrics.narrativeMoments.length} storylines):`);
+        printSeasonReport(mostInteresting);
+      }
     }
   );
 });
