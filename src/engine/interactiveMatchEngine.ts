@@ -783,7 +783,9 @@ export function simulateAtBat_Interactive(
         lastSpiritDelta,
       };
     } else {
-      // Was bottom of inning, check if game is over
+      // Was bottom of inning — opponent pitcher just completed this half
+      // Hoist increment before isGameOver check so both branches use the correct count
+      const newOpponentPitcherInnings = state.opponentPitcherInnings + 1;
       const isGameOver = state.inning >= 9 && newMyRuns !== newOpponentRuns;
 
       if (isGameOver) {
@@ -801,8 +803,10 @@ export function simulateAtBat_Interactive(
           inningComplete: true,
           myPitcherExtraFatigue: newMyPitcherExtraFatigue,
           opponentPitcherExtraFatigue: newOpponentPitcherExtraFatigue,
+          // state.myPitcherInnings is already post-top-half-increment (set when top ended)
           myPitcherFatigueLevel: derivePitcherFatigueLevel(state.myPitcherInnings, newMyPitcherExtraFatigue),
-          opponentPitcherFatigueLevel: derivePitcherFatigueLevel(state.opponentPitcherInnings, newOpponentPitcherExtraFatigue),
+          // newOpponentPitcherInnings hoisted above — opponent just finished pitching this half
+          opponentPitcherFatigueLevel: derivePitcherFatigueLevel(newOpponentPitcherInnings, newOpponentPitcherExtraFatigue),
           lastBatterApproach: null,
           consecutiveBatterApproach: 0,
           lastPitchStrategy: null,
@@ -819,7 +823,7 @@ export function simulateAtBat_Interactive(
       const myBatterCount = updatedMyTeam.filter(isBatter).length || 1;
       const nextMyBatterIndex = (state.batterIndex + 1) % myBatterCount;
       // My pitcher rotation: check if they need to swap for the new top half
-      const newOpponentPitcherInnings = state.opponentPitcherInnings + 1;
+      // newOpponentPitcherInnings already declared above (hoisted for game-over branch)
       const nextMyPitcher = resolveNextPitcher(
         updatedMyTeam, updatedMyPitcher, state.myPitcherInnings
       );
