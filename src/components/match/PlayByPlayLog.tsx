@@ -46,29 +46,42 @@ export function PlayByPlayLog({
         {halfInningPlays.length > 0 ? (
           halfInningPlays.map((play, i) => {
             const isLatest = i === halfInningPlays.length - 1;
-            const showRunsBanner = isLatest && lastRunsScored > 0;
+            const isScoring = (play.rbi ?? 0) > 0;
+            const isRoutine = isRoutineOut(play) && !isLatest;
+
+            // Scoring plays stay visually distinct even as they age in the log
+            let rowClass: string;
+            if (isLatest) {
+              rowClass = "text-base leading-relaxed text-foreground";
+            } else if (isScoring) {
+              rowClass = "text-xs leading-relaxed text-amber-600 dark:text-amber-400 border-b border-amber-500/20 pb-1.5";
+            } else if (isRoutine) {
+              rowClass = "text-[10px] leading-tight text-muted-foreground/30";
+            } else {
+              rowClass = "text-xs leading-relaxed text-muted-foreground/60 border-b border-border/30 pb-1.5";
+            }
+
             return (
-              <div
-                key={`${play.inning}-${play.isTop}-${i}`}
-                className={
-                  isLatest
-                    ? "text-base leading-relaxed text-foreground"
-                    : isRoutineOut(play)
-                      ? "text-[10px] leading-tight text-muted-foreground/30"
-                      : "text-xs leading-relaxed text-muted-foreground/60 border-b border-border/30 pb-1.5"
-                }
-              >
-                {isRoutineOut(play) && !isLatest
+              <div key={`${play.inning}-${play.isTop}-${i}`} className={rowClass}>
+                {isRoutine
                   ? `${play.batter}: ${play.outcome}`
                   : (play.narrativeText ?? `${play.batter}: ${play.outcome}`)}
+
+                {/* Scoring badge — appears on any scoring play, not just latest */}
+                {isScoring && !isLatest && (
+                  <span className="ml-1.5 text-[10px] font-bold text-amber-500">
+                    +{play.rbi} {play.rbi === 1 ? "run" : "runs"}
+                  </span>
+                )}
                 {play.perfectContact && (
                   <span className="ml-1 text-amber-400 font-bold text-[10px]">⭐ PERFECT</span>
                 )}
                 {play.paintedCorner && (
                   <span className="ml-1 text-blue-400 font-bold text-[10px]">🎯 CORNER</span>
                 )}
-                {showRunsBanner && (
-                  <div className="mt-1.5 text-sm font-bold text-yellow-600 dark:text-yellow-300 animate-pulse">
+                {/* Latest play scoring banner */}
+                {isLatest && isScoring && (
+                  <div className="mt-1.5 text-sm font-bold text-amber-500 dark:text-amber-400">
                     {lastRunsScored === 1
                       ? "A RUN SCORES!"
                       : `${lastRunsScored} RUNS SCORE!`}

@@ -126,12 +126,8 @@ export function InteractiveMatchView({
     [matchState.currentPitcher.id, isMyBatter]
   );
 
-  // Auto-advance past inning transitions (no delay)
-  useEffect(() => {
-    if (matchState.inningComplete && !matchState.isComplete && !showingResult) {
-      setMatchState((prev) => ({ ...prev, inningComplete: false }));
-    }
-  }, [matchState.inningComplete, matchState.isComplete, showingResult]);
+  // Inning transitions now require user input (ActionBar shows summary + button).
+  // handleContinue clears both showingResult and inningComplete.
 
   // Auto-scroll play log to bottom
   const playLogRef = useRef<HTMLDivElement>(null);
@@ -507,31 +503,56 @@ export function InteractiveMatchView({
       }
     }
 
-    // Big moment detection — only during manual play, only for my team's offense
-    if (!autoSimulating && newState.playByPlay.length > 0) {
+    // Big moment detection — fires during both auto-sim and manual play, for both teams.
+    // Auto-sim uses shorter durations to keep pace; manual play gets full cinematic durations.
+    if (newState.playByPlay.length > 0) {
       const ev = newState.playByPlay[newState.playByPlay.length - 1];
       const outcome = ev.outcome;
       const runsScored = ev.rbi ?? 0;
 
-      if (!matchState.isTop) {
-        // Offensive moments
+      // Shorter moments during auto-sim so they don't pile up
+      const dur = {
+        notable: autoSimulating ? 1800 : 3000,
+        epic:    autoSimulating ? 2200 : 3500,
+        legend:  autoSimulating ? 2200 : 5000,
+      };
+
+      const isMyTeamOffense = !ev.isTop; // isTop=true means opponent is batting
+
+      if (isMyTeamOffense) {
+        // ── My team scoring ──────────────────────────────────────────────────
         const isWalkoff = newState.isComplete && newState.myRuns > newState.opponentRuns;
         if (isWalkoff) {
-          setBigMoment({ tier: "legendary", headline: "WALK-OFF!", narrativeText: ev.narrativeText ?? "", durationMs: 5000 });
+          setBigMoment({ tier: "legendary", headline: "WALK-OFF!", narrativeText: ev.narrativeText ?? "", durationMs: dur.legend });
         } else if (outcome === "homerun" && runsScored >= 4) {
-          setBigMoment({ tier: "legendary", headline: "GRAND SLAM!", narrativeText: ev.narrativeText ?? "", durationMs: 5000 });
+          setBigMoment({ tier: "legendary", headline: "GRAND SLAM!", narrativeText: ev.narrativeText ?? "", durationMs: dur.legend });
         } else if (outcome === "homerun") {
-          setBigMoment({ tier: "epic", headline: "HOME RUN!", narrativeText: ev.narrativeText ?? "", durationMs: 3500 });
+          setBigMoment({ tier: "epic", headline: "HOME RUN!", narrativeText: ev.narrativeText ?? "", durationMs: dur.epic });
         } else if (runsScored >= 3) {
-          setBigMoment({ tier: "epic", headline: `${runsScored} RUNS SCORE!`, narrativeText: ev.narrativeText ?? "", durationMs: 3500 });
-        } else if (runsScored >= 2 && newState.inning >= 7) {
-          setBigMoment({ tier: "notable", headline: "CLUTCH RBI!", narrativeText: ev.narrativeText ?? "", durationMs: 3000 });
+          setBigMoment({ tier: "epic", headline: `${runsScored} RUNS SCORE!`, narrativeText: ev.narrativeText ?? "", durationMs: dur.epic });
+        } else if (runsScored >= 2) {
+          const label = newState.inning >= 7 ? "CLUTCH RBI!" : "2 RUNS SCORE!";
+          setBigMoment({ tier: "notable", headline: label, narrativeText: ev.narrativeText ?? "", durationMs: dur.notable });
+        } else if (runsScored >= 1) {
+          // Single RBI — was previously uncovered at any inning
+          const surname = ev.batter.split(" ").pop() ?? ev.batter;
+          const label = outcome === "homerun" ? "SOLO SHOT!" : `${surname} DRIVES ONE IN!`;
+          setBigMoment({ tier: "notable", headline: label, narrativeText: ev.narrativeText ?? "", durationMs: dur.notable });
         }
       } else {
-        // Defensive notable: my pitcher Ks the 3rd out in a close game
-        const scoreDiff = Math.abs(newState.myRuns - newState.opponentRuns);
-        if (outcome === "strikeout" && newState.outs >= 3 && scoreDiff <= 2) {
-          setBigMoment({ tier: "notable", headline: "SIDE RETIRED!", narrativeText: ev.narrativeText ?? "", durationMs: 3000 });
+        // ── Opponent scoring ─────────────────────────────────────────────────
+        if (runsScored >= 3) {
+          setBigMoment({ tier: "epic", headline: `⚠️ ${runsScored} RUNS SCORE`, narrativeText: ev.narrativeText ?? "", durationMs: dur.epic });
+        } else if (runsScored >= 2) {
+          setBigMoment({ tier: "notable", headline: "⚠️ 2 RUNS SCORE", narrativeText: ev.narrativeText ?? "", durationMs: dur.notable });
+        } else if (runsScored >= 1) {
+          setBigMoment({ tier: "notable", headline: "⚠️ OPPONENT SCORES", narrativeText: ev.narrativeText ?? "", durationMs: dur.notable });
+        } else {
+          // Defensive notable: strikeout to end close game
+          const scoreDiff = Math.abs(newState.myRuns - newState.opponentRuns);
+          if (outcome === "strikeout" && newState.outs >= 3 && scoreDiff <= 2) {
+            setBigMoment({ tier: "notable", headline: "SIDE RETIRED!", narrativeText: ev.narrativeText ?? "", durationMs: dur.notable });
+          }
         }
       }
     }
@@ -540,6 +561,11 @@ export function InteractiveMatchView({
   const handleContinue = () => {
     setShowingResult(false);
     setLastRunsScored(0);
+    // Clear inning transition — both the clutch-result+inning-end case
+    // and the standalone inning-end case (user clicks "Start Next Half")
+    if (matchState.inningComplete) {
+      setMatchState((prev) => ({ ...prev, inningComplete: false }));
+    }
   };
 
   const handleSelectGamePlan = (plan: BatterApproach) => {
