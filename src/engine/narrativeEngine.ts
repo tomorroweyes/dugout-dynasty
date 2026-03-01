@@ -17,6 +17,8 @@ import {
   WALK_TEXTS,
   OUT_TEXTS,
   CRITICAL_HIT_PREFIXES,
+  BATTER_HISTORY_TEXTS,
+  APPROACH_TEXTS,
   getVerbTier,
   randomChoice,
 } from "./textPools";
@@ -24,6 +26,73 @@ import { calculatePlayerStatsWithEquipment } from "./itemStatsCalculator";
 import type { ActiveAbilityContext } from "@/types/ability";
 import type { BatterApproach, PitchStrategy } from "@/types/approach";
 import { getAbilityById } from "@/data/abilities";
+
+/**
+ * Tracks a batter's cumulative stats across the full game.
+ * Used to add contextual flavor (slumps, hot streaks, redemption) to narrative text.
+ */
+export interface BatterHistory {
+  abs: number;        // At-bats so far this game
+  hits: number;       // Hits so far
+  strikeouts: number; // Strikeouts so far
+  walks: number;      // Walks so far
+}
+
+/**
+ * Fills {name}, {abs}, {k}, {hits} tokens in a batter history template string.
+ */
+function fillHistoryTemplate(
+  template: string,
+  surname: string,
+  history: BatterHistory
+): string {
+  return template
+    .replace("{name}", surname)
+    .replace("{abs}", String(history.abs))
+    .replace("{k}", String(history.strikeouts))
+    .replace("{hits}", String(history.hits));
+}
+
+/**
+ * Generates a short context prefix based on batter's game history.
+ * Picks randomly from pools in textPools.ts — add new strings there.
+ * Returns empty string if nothing notable yet (first 2 ABs always clean).
+ */
+export function generateBatterHistoryPrefix(
+  batter: Player,
+  history: BatterHistory,
+  rng: RandomProvider = getDefaultRandomProvider()
+): string {
+  const { abs, hits, strikeouts } = history;
+
+  // Only kick in after 2+ ABs so first PA is always clean
+  if (abs < 2) return "";
+
+  const surname = batter.surname;
+  let pool: string[] | null = null;
+
+  // Redemption setup — 0-for-3+ with multiple Ks (most specific, check first)
+  if (abs >= 3 && hits === 0 && strikeouts >= 2) {
+    pool = BATTER_HISTORY_TEXTS.redemption;
+  }
+  // Hitless but not necessarily striking out
+  else if (abs >= 2 && hits === 0) {
+    pool = BATTER_HISTORY_TEXTS.hitless;
+  }
+  // Struggling — multiple Ks even with some hits
+  else if (strikeouts >= 3 && hits <= 1) {
+    pool = BATTER_HISTORY_TEXTS.struggling;
+  }
+  // Hot — 2+ hits, pay it off
+  else if (hits >= 2) {
+    pool = BATTER_HISTORY_TEXTS.hot;
+  }
+
+  if (!pool) return "";
+
+  const filled = fillHistoryTemplate(randomChoice(pool, rng), surname, history);
+  return filled.endsWith(" ") ? filled : `${filled} `;
+}
 
 /**
  * Generate narrative text for an at-bat result
@@ -40,7 +109,8 @@ export function generateNarrativeText(
   batterApproach?: BatterApproach,
   pitchStrategy?: PitchStrategy,
   runsScored: number = 0,
-  narrativeFlags?: { perfectContact?: boolean; paintedCorner?: boolean }
+  narrativeFlags?: { perfectContact?: boolean; paintedCorner?: boolean },
+  batterHistory?: BatterHistory
 ): string {
   // Get effective stats including equipment
   const batterStats = calculatePlayerStatsWithEquipment(batter) as BatterStats;
@@ -51,23 +121,29 @@ export function generateNarrativeText(
   const isCritical = rng.random() * 100 < critChance;
 
   // Generate approach/strategy flavor (subtle, before ability callouts)
+  // Picks randomly from pools in textPools.ts — add new strings there.
+  const fillApproach = (template: string) =>
+    template
+      .replace("{batter}", batter.surname)
+      .replace("{pitcher}", pitcher.surname);
+
   let approachFlavor = "";
   if (batterApproach === "power") {
-    approachFlavor = `${batter.surname} digs in, looking to drive one. `;
+    approachFlavor = fillApproach(randomChoice(APPROACH_TEXTS.batterPower, rng)) + " ";
   } else if (batterApproach === "patient") {
-    approachFlavor = `${batter.surname} takes a patient approach. `;
+    approachFlavor = fillApproach(randomChoice(APPROACH_TEXTS.batterPatient, rng)) + " ";
   }
   if (pitchStrategy === "finesse") {
-    approachFlavor += `${pitcher.surname} mixes speeds. `;
+    approachFlavor += fillApproach(randomChoice(APPROACH_TEXTS.pitcherFinesse, rng)) + " ";
   } else if (pitchStrategy === "paint") {
-    approachFlavor += `${pitcher.surname} works the corners. `;
+    approachFlavor += fillApproach(randomChoice(APPROACH_TEXTS.pitcherPaint, rng)) + " ";
   }
 
   // Zone read natural 20 flavor — overrides approach flavor when present
   if (narrativeFlags?.perfectContact) {
-    approachFlavor = `${batter.surname} reads it perfectly — `;
+    approachFlavor = fillApproach(randomChoice(APPROACH_TEXTS.perfectContact, rng)) + " ";
   } else if (narrativeFlags?.paintedCorner) {
-    approachFlavor = `${pitcher.surname} paints the corner — no chance. `;
+    approachFlavor = fillApproach(randomChoice(APPROACH_TEXTS.paintedCorner, rng)) + " ";
   }
 
   // Generate ability prefix if abilities were used
@@ -145,7 +221,12 @@ export function generateNarrativeText(
     }
   }
 
-  const prefix = [isClash ? "" : approachFlavor, abilityPrefix].filter(Boolean).join("");
+  // History context — prepended when batter has a notable game narrative
+  const historyPrefix = batterHistory
+    ? generateBatterHistoryPrefix(batter, batterHistory, rng)
+    : "";
+
+  const prefix = [isClash ? "" : (historyPrefix || approachFlavor), abilityPrefix].filter(Boolean).join("");
   return prefix ? `${prefix}\n${outcomeText}` : outcomeText;
 }
 

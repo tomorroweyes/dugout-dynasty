@@ -19,7 +19,7 @@ import { applyOutcome, resolveExtraBaseAttempts, BaseRunnerIds } from "./outcome
 import { calculatePlayerStatsWithEquipment } from "./itemStatsCalculator";
 import { gameEvents } from "./gameEvents";
 import { RandomProvider } from "./randomProvider";
-import { generateNarrativeText } from "./narrativeEngine";
+import { generateNarrativeText, type BatterHistory } from "./narrativeEngine";
 import {
   decideBatterAbility,
   decidePitcherAbility,
@@ -167,7 +167,8 @@ function simulateInningWithStats(
   defenseScore: number = 0,
   incomingExtraPitcherFatigue: number = 0,
   offenseSynergies?: ActiveSynergies,
-  defenseSynergies?: ActiveSynergies
+  defenseSynergies?: ActiveSynergies,
+  crossInningBatterHistory?: Map<string, BatterHistory>
 ): InningStats {
   let runs = 0;
   let outs = 0;
@@ -562,6 +563,7 @@ function simulateInningWithStats(
     trace?.endAtBat(result, totalRunsOnPlay, outs, [...bases] as [boolean, boolean, boolean]);
 
     // Record the play with narrative text
+    const currentBatterHistory = crossInningBatterHistory?.get(batter.id);
     let narrativeText = generateNarrativeText(
       result,
       batter,
@@ -573,8 +575,22 @@ function simulateInningWithStats(
       clashOccurred,
       batterApproach,
       pitcherStrategy,
-      outcomeResult.runsScored
+      outcomeResult.runsScored,
+      undefined,
+      currentBatterHistory
     );
+
+    // Update cross-inning batter history after each AB
+    if (crossInningBatterHistory) {
+      const prev = crossInningBatterHistory.get(batter.id) ?? { abs: 0, hits: 0, strikeouts: 0, walks: 0 };
+      const isHit = ["single", "double", "triple", "homerun"].includes(result);
+      crossInningBatterHistory.set(batter.id, {
+        abs: prev.abs + 1,
+        hits: prev.hits + (isHit ? 1 : 0),
+        strikeouts: prev.strikeouts + (result === "strikeout" ? 1 : 0),
+        walks: prev.walks + (result === "walk" ? 1 : 0),
+      });
+    }
     // Append speed narrative if a runner tried for an extra base
     if (speedNarrative) {
       narrativeText = narrativeText
@@ -747,6 +763,10 @@ function simulateGame(
   const mySynergies = calculateSynergies(myTeam);
   const opponentSynergies = calculateSynergies(opponentTeam);
 
+  // Cross-inning batter history for narrative context (slumps, streaks, redemption)
+  const myBatterHistory = new Map<string, BatterHistory>();
+  const opponentBatterHistory = new Map<string, BatterHistory>();
+
   let inning = 0;
   const MAX_INNINGS = 18; // Safety limit for extra innings
 
@@ -824,7 +844,8 @@ function simulateGame(
       myRuns,
       myPitcherExtraFatigue,
       opponentSynergies, // offense synergies (opponent is batting)
-      mySynergies        // defense synergies (my team is pitching)
+      mySynergies,       // defense synergies (my team is pitching)
+      opponentBatterHistory
     );
     opponentRuns += opponentInning.runs;
     opponentBatterIndex = opponentInning.nextBatterIndex;
@@ -919,7 +940,8 @@ function simulateGame(
       opponentRuns,
       opponentPitcherExtraFatigue,
       mySynergies,       // offense synergies (my team is batting)
-      opponentSynergies  // defense synergies (opponent is pitching)
+      opponentSynergies, // defense synergies (opponent is pitching)
+      myBatterHistory
     );
     myRuns += myInning.runs;
     myBatterIndex = myInning.nextBatterIndex;
