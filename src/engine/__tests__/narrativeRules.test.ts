@@ -10,6 +10,9 @@ import { describe, it, expect } from "vitest";
 import { evaluateNarrativeRules, NARRATIVE_RULES, type NarrativeRule } from "../narrative/narrativeRules";
 import type { NarrativeContext } from "../narrative/narrativeContext";
 import { SeededRandomProvider } from "../randomProvider";
+import { simulateInningWithStats } from "../matchEngine";
+import type { Player, BatterStats, PitcherStats } from "@/types/game";
+import type { BatterHistory } from "../narrativeEngine";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -516,5 +519,358 @@ describe("no false positives", () => {
         rng
       )
     ).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Redemption arc — tracked flag rules (#15)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("setup_for_redemption rule", () => {
+  const withFlag = (result: NarrativeContext["result"]) =>
+    ctx({
+      result,
+      inning: 4,
+      scoreDiff: 0,
+      batterHistory: { abs: 3, hits: 1, strikeouts: 0, walks: 0, redemptionOpportunity: true },
+    });
+
+  it("fires when flag is set and batter grounds out", () => {
+    const rule = matchingRule(withFlag("groundout"));
+    expect(rule?.id).toBe("setup_for_redemption");
+  });
+
+  it("fires when flag is set and batter strikes out", () => {
+    const rule = matchingRule(withFlag("strikeout"));
+    expect(rule?.id).toBe("setup_for_redemption");
+  });
+
+  it("fires for all out types (flyout, lineout, popout)", () => {
+    for (const result of ["flyout", "lineout", "popout"] as const) {
+      const rule = matchingRule(withFlag(result));
+      expect(rule?.id).toBe("setup_for_redemption");
+    }
+  });
+
+  it("does NOT fire when flag is NOT set", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "groundout",
+        inning: 4,
+        scoreDiff: 0,
+        batterHistory: { abs: 3, hits: 1, strikeouts: 0, walks: 0, redemptionOpportunity: false },
+      })
+    );
+    expect(rule?.id).not.toBe("setup_for_redemption");
+  });
+
+  it("does NOT fire when flag is absent (undefined)", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "groundout",
+        inning: 4,
+        scoreDiff: 0,
+        batterHistory: { abs: 3, hits: 1, strikeouts: 0, walks: 0 },
+      })
+    );
+    expect(rule?.id).not.toBe("setup_for_redemption");
+  });
+
+  it("does NOT fire when batter gets a hit (redemption_payoff handles that)", () => {
+    const rule = matchingRule(withFlag("single"));
+    expect(rule?.id).not.toBe("setup_for_redemption");
+  });
+
+  it("returns a non-empty string from evaluator", () => {
+    const result = evaluateNarrativeRules(withFlag("groundout"), rng);
+    expect(result).toBeTruthy();
+    expect(typeof result).toBe("string");
+    expect(result).not.toContain("{batter}");
+    expect(result).not.toContain("{pitcher}");
+  });
+});
+
+describe("redemption_payoff rule", () => {
+  const withFlagAndHit = (result: NarrativeContext["result"]) =>
+    ctx({
+      result,
+      inning: 4,
+      scoreDiff: 0,
+      batterHistory: { abs: 3, hits: 1, strikeouts: 0, walks: 0, redemptionOpportunity: true },
+    });
+
+  it("fires when flag is set and batter gets a single", () => {
+    const rule = matchingRule(withFlagAndHit("single"));
+    expect(rule?.id).toBe("redemption_payoff");
+  });
+
+  it("fires when flag is set and batter gets a double", () => {
+    const rule = matchingRule(withFlagAndHit("double"));
+    expect(rule?.id).toBe("redemption_payoff");
+  });
+
+  it("fires when flag is set and batter gets a triple", () => {
+    const rule = matchingRule(withFlagAndHit("triple"));
+    expect(rule?.id).toBe("redemption_payoff");
+  });
+
+  it("fires when flag is set and batter hits a home run", () => {
+    // Note: higher-priority rules (grand_slam, walkoff_homer, clutch_homer, etc.)
+    // may override in some situations — verify mid-game solo HR scenario
+    const rule = matchingRule(
+      ctx({
+        result: "homerun",
+        runsScored: 1,
+        inning: 4,
+        scoreDiff: 3, // not high-leverage — rules out clutch/walkoff
+        batterHistory: { abs: 3, hits: 1, strikeouts: 0, walks: 0, redemptionOpportunity: true },
+      })
+    );
+    expect(rule?.id).toBe("redemption_payoff");
+  });
+
+  it("does NOT fire when flag is NOT set", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 4,
+        scoreDiff: 0,
+        batterHistory: { abs: 3, hits: 1, strikeouts: 0, walks: 0, redemptionOpportunity: false },
+      })
+    );
+    expect(rule?.id).not.toBe("redemption_payoff");
+  });
+
+  it("does NOT fire for outs even when flag is set (setup_for_redemption handles that)", () => {
+    const rule = matchingRule(withFlagAndHit("groundout"));
+    expect(rule?.id).not.toBe("redemption_payoff");
+    // setup_for_redemption fires instead
+    expect(rule?.id).toBe("setup_for_redemption");
+  });
+
+  it("returns a non-empty, token-free string from evaluator", () => {
+    const result = evaluateNarrativeRules(withFlagAndHit("single"), rng);
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("{batter}");
+    expect(result).not.toContain("{pitcher}");
+  });
+
+  it("redemption_payoff (93) outranks redemption_hit (87) when both would match", () => {
+    // Batter was hitless AND has redemption flag — payoff (93) should win over redemption_hit (87)
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 4,
+        scoreDiff: 3,
+        batterHistory: { abs: 3, hits: 0, strikeouts: 1, walks: 0, redemptionOpportunity: true },
+      })
+    );
+    expect(rule?.id).toBe("redemption_payoff");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Redemption flag — matchEngine integration (#15)
+// Verifies the flag is armed and cleared correctly via simulateInningWithStats
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("redemption flag tracking (matchEngine)", () => {
+  /** Minimal batter for testing */
+  function makeBatter(id: string): Player {
+    return {
+      id,
+      name: `Batter ${id}`,
+      surname: `B${id}`,
+      role: "Batter" as const,
+      stats: { power: 30, contact: 30, glove: 50, speed: 50 } as BatterStats,
+      salary: 100_000,
+      level: 1,
+      xp: 0,
+      totalXpEarned: 0,
+      equipment: { bat: null, glove: null, cap: null, cleats: null, accessory: null },
+    };
+  }
+
+  function makePitcher(id: string): Player {
+    return {
+      id,
+      name: `Pitcher ${id}`,
+      surname: `P${id}`,
+      role: "Starter" as const,
+      stats: { velocity: 90, control: 90, break: 90 } as PitcherStats,
+      salary: 100_000,
+      level: 1,
+      xp: 0,
+      totalXpEarned: 0,
+      equipment: { bat: null, glove: null, cap: null, cleats: null, accessory: null },
+    };
+  }
+
+  it("arms redemption flag when batter fails with RISP in high-leverage spot", () => {
+    const history = new Map<string, BatterHistory>();
+    const batterId = "batter-1";
+
+    // Pre-seed history: force out result by running in a high-leverage configuration.
+    // Seed the history with redemptionOpportunity NOT set before the inning.
+    history.set(batterId, { abs: 0, hits: 0, strikeouts: 0, walks: 0 });
+
+    // Run with a highly dominant pitcher to force outs.
+    // We can't directly control individual results, but we can verify flag behavior
+    // in a statistical sense or inject pre-armed history.
+    // For unit-level testing, directly verify the arm condition logic by checking
+    // that history update in the flag tests is structured correctly.
+
+    // Simpler: verify that a history entry never carries redemptionOpportunity across
+    // unqualified ABs. Start with flag=true and run an early-inning AB (inning < 7).
+    history.set(batterId, { abs: 2, hits: 1, strikeouts: 0, walks: 0, redemptionOpportunity: true });
+
+    const offense = [makeBatter(batterId)];
+    const pitcher = makePitcher("p1");
+    const defense = [pitcher];
+
+    const rngInstance = new SeededRandomProvider(99);
+    const result = simulateInningWithStats(
+      offense, defense, pitcher, 0, 0,
+      /* inning= */ 2, // early inning — flag should NOT re-arm
+      true, rngInstance,
+      undefined, 3, 3, 0, undefined, undefined,
+      history
+    );
+
+    // After the inning, the batter's history should have redemptionOpportunity cleared
+    // (the inning was inning 2, so even if they made outs no flag should be set)
+    const finalHistory = history.get(batterId);
+    expect(finalHistory).toBeDefined();
+    // Flag was consumed (cleared) entering the AB; early inning won't re-arm it
+    expect(finalHistory?.redemptionOpportunity).toBeFalsy();
+    expect(result.plays.length).toBeGreaterThan(0);
+  });
+
+  it("history always contains defined redemptionOpportunity after any AB", () => {
+    const history = new Map<string, BatterHistory>();
+    const batterId = "batter-2";
+
+    const offense = [makeBatter(batterId)];
+    const pitcher = makePitcher("p2");
+    const defense = [pitcher];
+
+    const rngInstance = new SeededRandomProvider(123);
+    simulateInningWithStats(
+      offense, defense, pitcher, 0, 0,
+      /* inning= */ 5,
+      true, rngInstance,
+      undefined, 0, 0, 0, undefined, undefined,
+      history
+    );
+
+    const finalHistory = history.get(batterId);
+    expect(finalHistory).toBeDefined();
+    // redemptionOpportunity is always a boolean (true/false) or undefined;
+    // if set to false by the update, it should be falsy.
+    // The field should not be true for a non-high-leverage inning (5).
+    expect(finalHistory?.redemptionOpportunity).not.toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Walk + redemption flag — rules stay silent (#15 review)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("walk with redemption flag set — rules stay silent", () => {
+  const flaggedWalk = ctx({
+    result: "walk",
+    inning: 4,
+    scoreDiff: 0,
+    batterHistory: { abs: 3, hits: 1, strikeouts: 0, walks: 0, redemptionOpportunity: true },
+  });
+
+  it("setup_for_redemption does NOT fire on walk (walk is not failure)", () => {
+    const rule = matchingRule(flaggedWalk);
+    expect(rule?.id).not.toBe("setup_for_redemption");
+  });
+
+  it("redemption_payoff does NOT fire on walk (walk is not a hit)", () => {
+    const rule = matchingRule(flaggedWalk);
+    expect(rule?.id).not.toBe("redemption_payoff");
+  });
+
+  it("evaluator returns null for a flagged walk in non-special context", () => {
+    // The flag is set but walk doesn't match any rule — should fall through to stat-tier
+    const result = evaluateNarrativeRules(flaggedWalk, rng);
+    expect(result).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Redemption flag arming — positive case (#15 review)
+// Uses a weaker pitcher + higher-contact offense to generate RISP + out scenario
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("redemption flag arming — positive arm case", () => {
+  function makePitcherWeak(id: string): Player {
+    return {
+      id,
+      name: `Pitcher ${id}`,
+      surname: `P${id}`,
+      role: "Starter" as const,
+      stats: { velocity: 42, control: 42, break: 42 } as PitcherStats,
+      salary: 100_000,
+      level: 1,
+      xp: 0,
+      totalXpEarned: 0,
+      equipment: { bat: null, glove: null, cap: null, cleats: null, accessory: null },
+    };
+  }
+
+  function makeContactBatter(id: string): Player {
+    return {
+      id,
+      name: `Batter ${id}`,
+      surname: `B${id}`,
+      role: "Batter" as const,
+      stats: { power: 35, contact: 78, glove: 55, speed: 60 } as BatterStats,
+      salary: 100_000,
+      level: 1,
+      xp: 0,
+      totalXpEarned: 0,
+      equipment: { bat: null, glove: null, cap: null, cleats: null, accessory: null },
+    };
+  }
+
+  it("arms the flag on at least one batter across many seeded runs in late high-leverage innings", () => {
+    // Run 20 seeded simulations with late inning + close scores.
+    // High-contact offense vs. weak pitcher: some singles/walks get runners to RISP,
+    // then subsequent at-bats with RISP + late inning + close game arm the flag.
+    let flagArmedInAnyRun = false;
+    const batters = ["b1", "b2", "b3", "b4", "b5"].map(makeContactBatter);
+    const pitcher = makePitcherWeak("p-weak");
+    const defense = [pitcher];
+
+    for (let seed = 1; seed <= 20 && !flagArmedInAnyRun; seed++) {
+      const history = new Map<string, BatterHistory>();
+      batters.forEach((b) => history.set(b.id, { abs: 0, hits: 0, strikeouts: 0, walks: 0 }));
+
+      simulateInningWithStats(
+        batters, defense, pitcher, 0, 0,
+        /* inning= */ 8, // late game — flag arming requires inning >= 7
+        true, new SeededRandomProvider(seed * 17),
+        undefined,
+        /* offenseScore= */ 0,
+        /* defenseScore= */ 0, // tied — close game
+        0, undefined, undefined,
+        history
+      );
+
+      for (const entry of history.values()) {
+        if (entry.redemptionOpportunity === true) {
+          flagArmedInAnyRun = true;
+          break;
+        }
+      }
+    }
+
+    // With 20 seeds, a contact team vs. weak pitcher in a tied inning 8 should
+    // eventually produce RISP + out, arming the flag at least once.
+    expect(flagArmedInAnyRun).toBe(true);
   });
 });

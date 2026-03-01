@@ -48,6 +48,13 @@ export interface BatterHistory {
   hits: number;       // Hits so far
   strikeouts: number; // Strikeouts so far
   walks: number;      // Walks so far
+  /**
+   * Set to true when the batter failed in a high-leverage RISP spot (inning 7+,
+   * close game, runner on 2nd/3rd, result was out/strikeout).
+   * Cleared after the batter's very next AB regardless of outcome.
+   * Drives setup_for_redemption and redemption_payoff narrative rules.
+   */
+  redemptionOpportunity?: boolean;
 }
 
 /**

@@ -138,6 +138,40 @@ export const COMEBACK_HIT_TEXTS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// REDEMPTION ARC (tracked flag)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Batter failed in a key spot last AB; this one matters.
+ * Fires when redemptionOpportunity is set and the batter does NOT get a hit.
+ * Tokens: {batter}, {pitcher}
+ */
+export const REDEMPTION_SETUP_TEXTS = [
+  "Still haunted by that last at-bat. {batter} steps back in — and can't deliver.",
+  "The ghosts are still there. {batter} has another chance and comes up short.",
+  "Opportunity knocks again for {batter}. Knocks go unanswered — out.",
+  "{batter} looking to erase that last memory. The out hangs in the air instead.",
+  "That moment is still on everyone's mind. {batter} at the plate — still searching.",
+  "Another at-bat, another chance to make it right. {batter} can't quite get there.",
+  "The weight of that last at-bat is still on {batter}'s shoulders. Doesn't shake it this time.",
+];
+
+/**
+ * Batter gets a hit after failing in a key spot — the payoff.
+ * Fires when redemptionOpportunity is set and the batter gets any hit.
+ * Tokens: {batter}, {pitcher}
+ */
+export const REDEMPTION_PAYOFF_TEXTS = [
+  "{batter} makes up for it. Right here, right now — base hit!",
+  "That's the redemption. {batter} doesn't miss this one.",
+  "Last time hurt. This time {batter} makes it count. Hit!",
+  "Been waiting for this. {batter} delivers — the comeback starts here.",
+  "That previous at-bat? Forgotten. {batter} comes through with a clutch knock.",
+  "The story writes itself — {batter} erases the bad memory with a base hit.",
+  "{batter} had unfinished business. Settled right here. Hit!",
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 // OUT SITUATIONS
 // ─────────────────────────────────────────────────────────────────────────────
 
