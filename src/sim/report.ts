@@ -168,7 +168,7 @@ export function printHeader(games: number, label = "DUGOUT DYNASTY SIM HARNESS")
   console.log(`${"═".repeat(70)}`);
 }
 
-export function printFlowReport(stats: AggregateStats, flow: FlowMetrics, label = ""): void {
+export function printFlowReport(_stats: AggregateStats, flow: FlowMetrics, label = ""): void {
   const f = flow;
   console.log(`\n  Game Flow Analysis ${label}:`);
   console.log(`  ${"─".repeat(60)}`);

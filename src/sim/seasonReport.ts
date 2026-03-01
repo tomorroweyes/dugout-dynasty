@@ -5,7 +5,7 @@
  * Mirrors the style of report.ts for consistency.
  */
 
-import type { SeasonResult, SeasonHookMetrics, SeasonTeamEntry } from "./seasonSimulator";
+import type { SeasonResult, SeasonHookMetrics } from "./seasonSimulator";
 
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 const dec = (n: number, places = 2) => n.toFixed(places);

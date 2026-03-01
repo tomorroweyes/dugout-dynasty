@@ -69,6 +69,10 @@ export interface AggregateStats {
 function runOneGame(homeTeam: Team, awayTeam: Team): GameStats {
   const result = simulateMatch(homeTeam, awayTeam, false);
 
+  if (!result.boxScore || !result.playByPlay) {
+    throw new Error("simulateMatch returned incomplete result (missing boxScore or playByPlay)");
+  }
+
   // Aggregate batter stats
   const homeKs = result.boxScore.myBatters.reduce((s, b) => s + b.strikeouts, 0);
   const awayKs = result.boxScore.opponentBatters.reduce((s, b) => s + b.strikeouts, 0);
@@ -236,11 +240,6 @@ export function runSimulation(
   const totalABs = Object.entries(totalOutcomes)
     .filter(([k]) => k !== "walk")
     .reduce((s, [, v]) => s + v, 0);
-
-  const totalKs = games.reduce((s, g) => s + g.homeKs + g.awayKs, 0);
-  const totalBBs = games.reduce((s, g) => s + g.homeBBs + g.awayBBs, 0);
-  const totalHRs = games.reduce((s, g) => s + g.homeHRs + g.awayHRs, 0);
-  const totalHits = games.reduce((s, g) => s + g.homeHits + g.awayHits, 0);
 
   const homeKs = games.reduce((s, g) => s + g.homeKs, 0);
   const awayKs = games.reduce((s, g) => s + g.awayKs, 0);
