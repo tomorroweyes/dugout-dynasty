@@ -142,9 +142,19 @@ function App() {
     navigate("/match");
   };
 
-  const handleInteractiveMatchComplete = () => {
-    // Apply XP and results through the regular flow
-    playWeekMatch();
+    const handleInteractiveMatchComplete = (result: MatchResult) => {
+    // Apply the actual interactive match result to the league WITHOUT re-simulating
+    if (!team || !league || !pendingOpponentId) return;
+
+    // Find opponent team
+    const opponentTeam = league.teams.find((t) => t.id === pendingOpponentId);
+    if (!opponentTeam) return;
+
+    // Get tier-specific rewards
+    const tierConfig = GAME_CONSTANTS.LEAGUE_TIERS[league.tier];
+
+    // Apply the result using the new action
+    applyInteractiveMatchResult(result, team, opponentTeam, tierConfig.matchRewards);
     setActiveInteractiveMatch(null);
     navigate("/league", { replace: true });
   };
