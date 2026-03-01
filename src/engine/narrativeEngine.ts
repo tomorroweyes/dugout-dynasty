@@ -26,6 +26,18 @@ import { calculatePlayerStatsWithEquipment } from "./itemStatsCalculator";
 import type { ActiveAbilityContext } from "@/types/ability";
 import type { BatterApproach, PitchStrategy } from "@/types/approach";
 import { getAbilityById } from "@/data/abilities";
+import { evaluateNarrativeRules } from "./narrative/narrativeRules";
+import type { NarrativeContext } from "./narrative/narrativeContext";
+
+/**
+ * Game-situation state passed from the match engine for context-aware narrative.
+ * All fields are optional — narrativeEngine degrades gracefully without them.
+ */
+export interface NarrativeGameState {
+  inning?: number;
+  scoreDiff?: number;   // offense POV: positive = offense winning
+  bases?: [boolean, boolean, boolean];
+}
 
 /**
  * Tracks a batter's cumulative stats across the full game.
@@ -95,7 +107,10 @@ export function generateBatterHistoryPrefix(
 }
 
 /**
- * Generate narrative text for an at-bat result
+ * Generate narrative text for an at-bat result.
+ *
+ * Runs through the narrative rules engine first (situation-aware text),
+ * falls back to stat-tier generators for everything else.
  */
 export function generateNarrativeText(
   result: AtBatResult,
@@ -110,7 +125,8 @@ export function generateNarrativeText(
   pitchStrategy?: PitchStrategy,
   runsScored: number = 0,
   narrativeFlags?: { perfectContact?: boolean; paintedCorner?: boolean },
-  batterHistory?: BatterHistory
+  batterHistory?: BatterHistory,
+  gameState?: NarrativeGameState
 ): string {
   // Get effective stats including equipment
   const batterStats = calculatePlayerStatsWithEquipment(batter) as BatterStats;
@@ -178,46 +194,72 @@ export function generateNarrativeText(
     }
   }
 
-  let outcomeText = "";
-  switch (result) {
-    case "homerun":
-      outcomeText = generateHomeRunText(batter, pitcher, batterStats, isCritical, rng);
-      break;
-    case "triple":
-      outcomeText = generateTripleText(batter, batterStats, isCritical, rng);
-      break;
-    case "double":
-      outcomeText = generateDoubleText(batter, batterStats, isCritical, rng);
-      break;
-    case "single":
-      outcomeText = generateSingleText(batter, batterStats, rng);
-      break;
-    case "strikeout":
-      outcomeText = generateStrikeoutText(batter, pitcher, pitcherStats, rng);
-      break;
-    case "walk":
-      outcomeText = generateWalkText(batter, pitcher, pitcherStats, rng);
-      break;
-    case "groundout":
-    case "flyout":
-    case "lineout":
-    case "popout":
-      outcomeText = generateOutText(result, batter, outs, rng);
-      break;
-    default:
-      outcomeText = `${batter.name} - ${result}`;
-  }
+  // ── Narrative rules engine ─────────────────────────────────────────────────
+  // Build context and run situation-aware rules first.
+  // Rules return a complete outcome string; null means fall through to
+  // the stat-tier generators below.
+  const narrativeCtx: NarrativeContext = {
+    result,
+    runsScored,
+    inning: gameState?.inning ?? 1,
+    outs,
+    scoreDiff: gameState?.scoreDiff ?? 0,
+    bases: gameState?.bases ?? [false, false, false],
+    batterName: batter.surname,
+    pitcherName: pitcher.surname,
+    batterPower: batterStats.power,
+    batterContact: batterStats.contact,
+    pitcherVelocity: (pitcherStats as { velocity?: number }).velocity ?? 50,
+    pitcherControl: (pitcherStats as { control?: number }).control ?? 50,
+    isCritical,
+    batterHistory,
+  };
 
-  // Append run-scoring info
-  if (runsScored > 0) {
-    if (result === "homerun") {
-      if (runsScored >= 4) outcomeText += " GRAND SLAM!";
-      else if (runsScored === 3) outcomeText += " 3 runs score!";
-      else if (runsScored === 2) outcomeText += " 2 runs score!";
-      // Solo homer text already implies it
-    } else {
-      if (runsScored === 1) outcomeText += " A run scores!";
-      else outcomeText += ` ${runsScored} runs score!`;
+  let outcomeText = evaluateNarrativeRules(narrativeCtx, rng) ?? "";
+
+  // ── Stat-tier fallback generators ─────────────────────────────────────────
+  // Used when no situational rule matched.
+  if (!outcomeText) {
+    switch (result) {
+      case "homerun":
+        outcomeText = generateHomeRunText(batter, pitcher, batterStats, isCritical, rng);
+        break;
+      case "triple":
+        outcomeText = generateTripleText(batter, batterStats, isCritical, rng);
+        break;
+      case "double":
+        outcomeText = generateDoubleText(batter, batterStats, isCritical, rng);
+        break;
+      case "single":
+        outcomeText = generateSingleText(batter, batterStats, rng);
+        break;
+      case "strikeout":
+        outcomeText = generateStrikeoutText(batter, pitcher, pitcherStats, rng);
+        break;
+      case "walk":
+        outcomeText = generateWalkText(batter, pitcher, pitcherStats, rng);
+        break;
+      case "groundout":
+      case "flyout":
+      case "lineout":
+      case "popout":
+        outcomeText = generateOutText(result, batter, outs, rng);
+        break;
+      default:
+        outcomeText = `${batter.name} - ${result}`;
+    }
+
+    // Append run-scoring info (only for stat-tier fallback;
+    // situational rules include run context in their text)
+    if (runsScored > 0) {
+      if (result === "homerun") {
+        if (runsScored >= 4) outcomeText += " GRAND SLAM!";
+        else if (runsScored === 3) outcomeText += " 3 runs score!";
+        else if (runsScored === 2) outcomeText += " 2 runs score!";
+      } else {
+        if (runsScored === 1) outcomeText += " A run scores!";
+        else outcomeText += ` ${runsScored} runs score!`;
+      }
     }
   }
 

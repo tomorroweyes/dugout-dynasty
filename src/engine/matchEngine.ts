@@ -19,7 +19,7 @@ import { applyOutcome, resolveExtraBaseAttempts, BaseRunnerIds } from "./outcome
 import { calculatePlayerStatsWithEquipment } from "./itemStatsCalculator";
 import { gameEvents } from "./gameEvents";
 import { RandomProvider } from "./randomProvider";
-import { generateNarrativeText, type BatterHistory } from "./narrativeEngine";
+import { generateNarrativeText, type BatterHistory, type NarrativeGameState } from "./narrativeEngine";
 import {
   decideBatterAbility,
   decidePitcherAbility,
@@ -564,6 +564,11 @@ function simulateInningWithStats(
 
     // Record the play with narrative text
     const currentBatterHistory = crossInningBatterHistory?.get(batter.id);
+    const narrativeGameState: NarrativeGameState = {
+      inning,
+      scoreDiff: offenseScore + runs - defenseScore, // offense POV at time of AB
+      bases: [...bases] as [boolean, boolean, boolean],
+    };
     let narrativeText = generateNarrativeText(
       result,
       batter,
@@ -577,7 +582,8 @@ function simulateInningWithStats(
       pitcherStrategy,
       outcomeResult.runsScored,
       undefined,
-      currentBatterHistory
+      currentBatterHistory,
+      narrativeGameState
     );
 
     // Update cross-inning batter history after each AB
