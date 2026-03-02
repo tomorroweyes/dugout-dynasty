@@ -33,7 +33,6 @@ import {
   derivePitchTendency,
   resolvePitchLanding,
   calcBattingZoneModifier,
-  calcPitchingZoneModifier,
   type ZoneCell,
   type ZoneMap,
   type ZoneModifier,
@@ -531,10 +530,9 @@ export function InteractiveMatchView({
           const label = newState.inning >= 7 ? "CLUTCH RBI!" : "2 RUNS SCORE!";
           setBigMoment({ tier: "notable", headline: label, narrativeText: ev.narrativeText ?? "", durationMs: dur.notable });
         } else if (runsScored >= 1) {
-          // Single RBI — was previously uncovered at any inning
+          // Single RBI — homerun cases already handled above; this is a hit/walk RBI
           const surname = ev.batter.split(" ").pop() ?? ev.batter;
-          const label = outcome === "homerun" ? "SOLO SHOT!" : `${surname} DRIVES ONE IN!`;
-          setBigMoment({ tier: "notable", headline: label, narrativeText: ev.narrativeText ?? "", durationMs: dur.notable });
+          setBigMoment({ tier: "notable", headline: `${surname} DRIVES ONE IN!`, narrativeText: ev.narrativeText ?? "", durationMs: dur.notable });
         }
       } else {
         // ── Opponent scoring ─────────────────────────────────────────────────

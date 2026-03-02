@@ -3,7 +3,7 @@ import { applyPitcherFatigue } from "./gameModifiers";
 import { GAME_CONSTANTS } from "./constants";
 import { RandomProvider, getDefaultRandomProvider } from "./randomProvider";
 import { calculatePlayerStatsWithEquipment } from "./itemStatsCalculator";
-import { getArchetypeBaseStats, calculateTechniqueBonus, calculateEquipmentBonus } from "./techniqueStats";
+import { getArchetypeBaseStats, calculateTechniqueBonus } from "./techniqueStats";
 import type { ActiveAbilityContext } from "@/types/ability";
 import type { BatterApproach, PitchStrategy } from "@/types/approach";
 import { BATTER_APPROACHES, PITCH_STRATEGIES } from "./approachConfig";
@@ -12,7 +12,6 @@ import {
   applyPitcherAbilityEffects,
   applyOutcomeModifiers,
   getGuaranteedOutcome,
-  rollGuaranteedOutcome,
   resolveMultiOutcome,
   getGuaranteedOutcomePower,
   negatesFatigue,

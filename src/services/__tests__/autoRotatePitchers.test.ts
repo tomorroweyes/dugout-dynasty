@@ -16,6 +16,7 @@ describe("Auto-Rotate Pitchers", () => {
   ): Player => ({
     id,
     name: `Player ${id}`,
+    surname: id,
     role,
     stats:
       role === "Batter"
@@ -32,6 +33,10 @@ describe("Auto-Rotate Pitchers", () => {
       cleats: null,
       accessory: null,
     },
+    spirit: { current: 50, max: 50 },
+    abilities: [],
+    skillPoints: 0,
+    traits: [],
   });
 
   const createMockTeam = (): Team => {
@@ -61,7 +66,8 @@ describe("Auto-Rotate Pitchers", () => {
         relievers[0].id,
         relievers[1].id, // r1, r2 in lineup
       ],
-      bench: [starters[1].id, starters[2].id, relievers[2].id], // s2, s3, r3 on bench
+      cash: 5000,
+      fans: 1.0,
       wins: 0,
       losses: 0,
     };

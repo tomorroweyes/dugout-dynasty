@@ -1,7 +1,7 @@
 import type { Player } from "@/types/game";
 import type { Ability, AbilityRecommendation } from "@/types/ability";
 import { getPlayerAbilities, canActivateAbility } from "./abilitySystem";
-import { isPitcher } from "@/types/game";
+
 
 /**
  * Ability Recommendation System

@@ -135,7 +135,7 @@ export interface OutcomeModifier {
 
 export interface GuaranteedOutcome {
   type: "guaranteed_outcome";
-  outcome: "single" | "walk" | "bunt_attempt" | "homerun" | "strikeout"; // Specific forced outcome
+  outcome: "single" | "walk" | "bunt_attempt" | "homerun" | "strikeout" | "out"; // Specific forced outcome
   successChance: number; // 0-100, for outcomes that can fail
   // Multi-outcome distribution (when present, replaces outcome+successChance)
   // Each entry has a result and a chance percentage; all chances should sum to 100

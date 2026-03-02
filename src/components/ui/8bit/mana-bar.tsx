@@ -1,5 +1,4 @@
 import { type BitProgressProps, Progress } from "@/components/ui/8bit/progress";
-import { STAT_TIER_COLORS } from "@/engine/statConfig";
 
 interface ManaBarProps extends React.ComponentProps<"div"> {
   className?: string;

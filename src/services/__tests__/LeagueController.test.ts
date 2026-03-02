@@ -14,11 +14,13 @@ function createMockBatter(
   return {
     id,
     name: `Batter ${id}`,
+    surname: id,
     role: "Batter",
     stats: {
       power: rating,
       contact: rating,
       glove: rating,
+      speed: rating,
     },
     salary: 100000,
     level: 1,
@@ -31,6 +33,10 @@ function createMockBatter(
       cleats: null,
       accessory: null,
     },
+    spirit: { current: 50, max: 50 },
+    abilities: [],
+    skillPoints: 0,
+    traits: [],
   };
 }
 
@@ -42,6 +48,7 @@ function createMockPitcher(
   return {
     id,
     name: `Pitcher ${id}`,
+    surname: id,
     role,
     stats: {
       velocity: rating,
@@ -59,6 +66,10 @@ function createMockPitcher(
       cleats: null,
       accessory: null,
     },
+    spirit: { current: 50, max: 50 },
+    abilities: [],
+    skillPoints: 0,
+    traits: [],
   };
 }
 
@@ -87,8 +98,6 @@ function createMockOpponentTeam(teamId: string, rating: number): OpponentTeam {
     ...relievers.slice(0, 2).map((p) => p.id),
   ];
 
-  const bench = roster.filter((p) => !lineup.includes(p.id)).map((p) => p.id);
-
   return {
     id: teamId,
     name: `Team ${teamId}`,
@@ -103,7 +112,6 @@ function createMockOpponentTeam(teamId: string, rating: number): OpponentTeam {
     colors: { primary: "#000", secondary: "#fff" },
     roster,
     lineup,
-    bench,
     cash: 5000,
     fans: 1.0,
     wins: 0,
@@ -123,13 +131,10 @@ function createMockHumanTeam(): Team {
     ...relievers.slice(0, 2).map((p) => p.id),
   ];
 
-  const bench = roster.filter((p) => !lineup.includes(p.id)).map((p) => p.id);
-
   return {
     id: "human-team",
     roster,
     lineup,
-    bench,
     cash: 5000,
     fans: 1.0,
     wins: 0,

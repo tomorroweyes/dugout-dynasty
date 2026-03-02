@@ -96,17 +96,6 @@ function CardDescription({ ...props }: BitCardProps) {
   );
 }
 
-function CardAction({ ...props }: BitCardProps) {
-  const { className, font } = props;
-
-  return (
-    <ShadcnCardAction
-      className={cn(font !== "normal" && "retro", className)}
-      {...props}
-    />
-  );
-}
-
 function CardContent({ ...props }: BitCardProps) {
   const { className, font } = props;
 
@@ -135,7 +124,6 @@ export {
   CardHeader,
   CardFooter,
   CardTitle,
-  CardAction,
   CardDescription,
   CardContent,
 };

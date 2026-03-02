@@ -1,12 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { Player, BatterStats, PitcherStats } from "@/types/game";
+import { Player, PitcherStats } from "@/types/game";
 import type { PlayerAbility } from "@/types/ability";
 import { calculateDerivedStats, calculateTechniqueBonus } from "../techniqueStats";
 import {
   getPassiveAbilityContext,
   mergeAbilityContexts,
   decideBatterAbility,
-  decidePitcherAbility,
   processAbilityActivation,
 } from "../abilityAI";
 import { getAbilityById } from "@/data/abilities";
@@ -45,6 +44,7 @@ function createAbilityBatter(overrides: Partial<Player> = {}): Player {
     spirit: { current: 50, max: 50 },
     abilities: [],
     skillPoints: 0,
+    traits: [],
     ...overrides,
   };
 }
@@ -71,6 +71,7 @@ function createAbilityPitcher(overrides: Partial<Player> = {}): Player {
     spirit: { current: 50, max: 50 },
     abilities: [],
     skillPoints: 0,
+    traits: [],
     ...overrides,
   };
 }
@@ -120,7 +121,7 @@ describe("Stat Double-Application Fix", () => {
     const passiveAbilities: PlayerAbility[] = [
       { abilityId: "patience", rank: 1, timesUsed: 0 },
     ];
-    const bonus = calculateTechniqueBonus(passiveAbilities);
+    const bonus = calculateTechniqueBonus(passiveAbilities) as Record<string, number | undefined>;
     expect(bonus.contact).toBe(15);
   });
 
@@ -129,7 +130,7 @@ describe("Stat Double-Application Fix", () => {
     const activeAbilities: PlayerAbility[] = [
       { abilityId: "heat_up", rank: 1, timesUsed: 0 },
     ];
-    const bonus = calculateTechniqueBonus(activeAbilities);
+    const bonus = calculateTechniqueBonus(activeAbilities) as Record<string, number | undefined>;
     expect(bonus.velocity).toBeUndefined();
   });
 

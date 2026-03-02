@@ -15,7 +15,7 @@ export function InventoryPanel() {
   const equipItem = useGameStore((state) => state.equipItem);
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [_selectedItem, setSelectedItem] = useState<Item | null>(null);
 
   const filledSlots = getInventoryCount();
   const maxSlots = inventory.length;

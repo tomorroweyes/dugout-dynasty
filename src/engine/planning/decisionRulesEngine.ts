@@ -9,6 +9,7 @@
 import type { BatterApproach, PitchStrategy } from "@/types/approach";
 import type { ApproachContext } from "../approachAI";
 import type { RandomProvider } from "../randomProvider";
+import { getDefaultRandomProvider } from "./randomProvider";
 import {
   BATTER_APPROACH_RULES,
   PITCHER_STRATEGY_RULES,
@@ -53,27 +54,6 @@ interface DecisionResult<T extends string> {
 }
 
 /**
- * Apply adaptation switching logic (same as before)
- */
-function applyAdaptationLogic<T extends string>(
-  result: DecisionResult<T>,
-  lastDecision: T | undefined,
-  consecutiveCount: number | undefined,
-  alternatives: T[],
-  rng: RandomProvider
-): T {
-  // No penalty phase: adaptation happens in decision logic, not in outcome modifiers
-  // If we want to re-add penalties, they'd apply here
-  // For now: just return the decision from the rule
-
-  // But we still track adaptation in logging/audit trail
-  // The old code would have switched here if penalized
-  // New code: decision logic is aware of last decision, so switching is implicit
-
-  return result.decision;
-}
-
-/**
  * Refactored decideBatterApproach using rules engine
  *
  * Maintains identical external API and behavior, but internally uses rules.
@@ -91,7 +71,7 @@ export function decideBatterApproachRules(
     BATTER_APPROACH_RULES,
     gameCtx,
     BATTER_APPROACH_DEFAULTS,
-    rng || { random: randomFn }
+    rng ?? getDefaultRandomProvider()
   );
 
   let decision = result.decision;
@@ -134,7 +114,7 @@ export function decidePitchStrategyRules(
     PITCHER_STRATEGY_RULES,
     gameCtx,
     PITCHER_STRATEGY_DEFAULTS,
-    rng || { random: randomFn }
+    rng ?? getDefaultRandomProvider()
   );
 
   let decision = result.decision;

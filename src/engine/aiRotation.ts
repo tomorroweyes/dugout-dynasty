@@ -1,6 +1,6 @@
 import { OpponentTeam, AIPersonality } from "@/types/league";
 import { Player, isBatter, isPitcher } from "@/types/game";
-import { GAME_CONSTANTS } from "./constants";
+
 
 /**
  * Context for AI rotation decisions

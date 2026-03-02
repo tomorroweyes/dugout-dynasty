@@ -17,6 +17,7 @@ function createMockBatter(
   return {
     id,
     name: `Batter ${id}`,
+    surname: id,
     role: "Batter",
     stats: {
       power: 50,
@@ -36,6 +37,10 @@ function createMockBatter(
       cleats: null,
       accessory: null,
     },
+    spirit: { current: 50, max: 50 },
+    abilities: [],
+    skillPoints: 0,
+    traits: [],
   };
 }
 
@@ -47,6 +52,7 @@ function createMockPitcher(
   return {
     id,
     name: `Pitcher ${id}`,
+    surname: id,
     role,
     stats: {
       velocity: 50,
@@ -65,6 +71,10 @@ function createMockPitcher(
       cleats: null,
       accessory: null,
     },
+    spirit: { current: 50, max: 50 },
+    abilities: [],
+    skillPoints: 0,
+    traits: [],
   };
 }
 
@@ -91,7 +101,6 @@ function createFullTeam(teamId: string): Team {
     fans: 1.0,
     roster,
     lineup: roster.map((p) => p.id),
-    bench: [],
     wins: 0,
     losses: 0,
   };
@@ -873,9 +882,8 @@ describe("matchEngine", () => {
     });
 
     describe("edge cases", () => {
-      it("should handle empty bench gracefully", () => {
+      it("should handle empty lineup gracefully", () => {
         const myTeam = createFullTeam("my");
-        myTeam.bench = []; // Empty bench
         const opponentTeam = createFullTeam("opp");
 
         const result = simulateMatch(myTeam, opponentTeam);
@@ -892,7 +900,6 @@ describe("matchEngine", () => {
           fans: 1.0,
           roster,
           lineup: roster.map((p) => p.id), // All players in lineup
-          bench: [],
           wins: 0,
           losses: 0,
         };
