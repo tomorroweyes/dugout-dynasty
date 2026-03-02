@@ -50,16 +50,22 @@ export interface PhysicalPotential {
 
 /** XP required to advance from rank N → N+1 */
 export const MENTAL_SKILL_RANK_XP: Record<MentalSkillRank, number> = {
-  0: 100,
-  1: 250,
-  2: 500,
-  3: 1000,
-  4: 2000,
+  0: 40,
+  1: 60,
+  2: 100,
+  3: 160,
+  4: 240,
   5: 0, // maxed
 } as const;
 
-export const DEFAULT_DECAY_RATE = 5;          // % confidence lost per game without trigger
-export const CONFIDENCE_ACTIVE_THRESHOLD = 20; // isActive = false below this
+/** XP earned per trigger type */
+export const MENTAL_SKILL_XP_GAIN = {
+  HIGH_LEVERAGE: 3,
+  NORMAL:        1,
+} as const;
+
+export const DEFAULT_DECAY_RATE = 5;          // confidence points lost per game without trigger
+export const CONFIDENCE_ACTIVE_THRESHOLD = 10; // isActive = false below this
 export const REACTIVATION_XP_MULTIPLIER = 2;   // relearning a lapsed skill earns 2x XP
 
 // ─── Core Mental Skill Interface ─────────────────────────────────────────────

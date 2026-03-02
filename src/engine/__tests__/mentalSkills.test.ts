@@ -60,8 +60,8 @@ describe("TRAIT_TO_MENTAL_SKILL mapping", () => {
 });
 
 describe("MENTAL_SKILL_RANK_XP", () => {
-  it("rank 0 costs 100 XP to start progression", () => {
-    expect(MENTAL_SKILL_RANK_XP[0]).toBe(100);
+  it("rank 0 costs 40 XP to start progression", () => {
+    expect(MENTAL_SKILL_RANK_XP[0]).toBe(40);
   });
 
   it("XP costs increase with rank", () => {
@@ -142,8 +142,8 @@ describe("Constants", () => {
     expect(DEFAULT_DECAY_RATE).toBe(5);
   });
 
-  it("CONFIDENCE_ACTIVE_THRESHOLD is 20", () => {
-    expect(CONFIDENCE_ACTIVE_THRESHOLD).toBe(20);
+  it("CONFIDENCE_ACTIVE_THRESHOLD is 10", () => {
+    expect(CONFIDENCE_ACTIVE_THRESHOLD).toBe(10);
   });
 
   it("REACTIVATION_XP_MULTIPLIER is 2", () => {
