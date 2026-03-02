@@ -107,7 +107,6 @@ describe("League Generator", () => {
         fans: 1.0,
         roster: [],
         lineup: [],
-        bench: [],
         wins: 0,
         losses: 0,
       };
@@ -132,7 +131,6 @@ describe("League Generator", () => {
         fans: 1.0,
         roster: [],
         lineup: [],
-        bench: [],
         wins: 0,
         losses: 0,
       };

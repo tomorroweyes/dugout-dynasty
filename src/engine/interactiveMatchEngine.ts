@@ -20,7 +20,7 @@ import { BATTER_APPROACHES, PITCH_STRATEGIES } from "./approachConfig";
 import type { ZoneModifier } from "./zoneSystem";
 import { GAME_CONSTANTS } from "./constants";
 import { processAbilityActivation } from "./abilityAI";
-import { GameTraceCollector, setActiveTrace, getTrace } from "./traceContext";
+import { GameTraceCollector, setActiveTrace } from "./traceContext";
 
 /**
  * Interactive Match Engine
@@ -260,7 +260,7 @@ export function initializeInteractiveMatch(
     trace.seed = Date.now();
   }
 
-  const myBatters = myTeam.roster.filter(isBatter);
+  const _myBatters = myTeam.roster.filter(isBatter); // available for lineup init if needed
   const myPitchers = myTeam.roster.filter(isPitcher);
   const opponentBatters = opponentTeam.roster.filter(isBatter);
   const opponentPitchers = opponentTeam.roster.filter(isPitcher);

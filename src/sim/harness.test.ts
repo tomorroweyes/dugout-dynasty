@@ -188,7 +188,23 @@ describe("Game Balance Simulation Harness", () => {
         totalFlows.dramaScore /= flowCount;
         totalFlows.avgDramaScore /= flowCount;
 
-        printFlowReport({ rawGames: [] } as AggregateStats, totalFlows, "(overall)");
+        const emptyStats: AggregateStats = {
+          games: 0,
+          homeWins: 0,
+          awayWins: 0,
+          ties: 0,
+          totalRuns: 0,
+          avgHomeRuns: 0,
+          avgAwayRuns: 0,
+          shutouts: 0,
+          homeShutouts: 0,
+          awayShutouts: 0,
+          extraInnings: 0,
+          oneRunGames: 0,
+          walkoffs: 0,
+          rawGames: [],
+        };
+        printFlowReport(emptyStats, totalFlows, "(overall)");
       }
 
       // ── Phase 7: Balance flags ──────────────────────────────────────────

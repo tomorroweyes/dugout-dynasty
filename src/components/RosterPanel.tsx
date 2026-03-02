@@ -10,12 +10,12 @@ import {
 } from "@/components/ui/8bit/card";
 import { Badge } from "@/components/ui/8bit/badge";
 import { Button } from "@/components/ui/8bit/button";
-import { GAME_CONSTANTS } from "@/engine/constants";
+
 import { Player } from "@/types/game";
 import { ClassSelectionDialog } from "@/components/ClassSelectionDialog";
 import { PlayerClass } from "@/types/ability";
 import { calculateSynergies } from "@/engine/synergySystem";
-import { SINGLE_TRAIT_SYNERGIES, COMBO_SYNERGIES } from "@/engine/synergyConfig";
+
 
 function RosterPanel() {
   const { team, autoFix, selectClass } = useGameStore();

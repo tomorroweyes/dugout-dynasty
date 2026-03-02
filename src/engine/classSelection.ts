@@ -114,8 +114,6 @@ export interface ClassRecommendation {
 export function getClassRecommendations(
   player: Player
 ): ClassRecommendation[] {
-  const availableClasses = getAvailableClasses(player);
-
   // Pitchers get Flamethrower, Painter, or Trickster recommendations
   if (isPitcher(player)) {
     const stats = player.stats as PitcherStats;

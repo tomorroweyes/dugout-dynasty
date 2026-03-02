@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { Team, Player, DraftState } from "@/types/game";
+import { Team, Player, DraftState, MatchResult } from "@/types/game";
 import { SaveData, MatchLogEntry } from "@/types/save";
-import { League, LeagueTier, CareerStats } from "@/types/league";
+import { League, LeagueTier, CareerStats, OpponentTeam } from "@/types/league";
 import { gameController } from "@/services/GameController";
 import { leagueController } from "@/services/LeagueController";
 import { GAME_CONSTANTS } from "@/engine/constants";
@@ -40,7 +40,7 @@ interface GameState {
   // Actions
   initializeGame: () => void;
   playWeekMatch: () => void;
-  applyInteractiveMatchResult: (result: MatchResult, myTeam: Team, opponentTeam: Team, matchRewards?: { win: number; loss: number }) => void;
+  applyInteractiveMatchResult: (result: MatchResult, myTeam: Team, opponentTeam: OpponentTeam, matchRewards?: { win: number; loss: number }) => void;
   completeWeek: () => void;
   advanceToNextSeason: () => void;
   pickDraftPlayer: (player: Player) => void;
@@ -132,8 +132,8 @@ export const useGameStore = create<GameState>()(
       applyInteractiveMatchResult: (
         result: MatchResult,
         myTeam: Team,
-        opponentTeam: Team,
-        matchRewards?: { win: number; loss: number }
+        opponentTeam: OpponentTeam,
+        _matchRewards?: { win: number; loss: number }
       ) => {
         const { league } = get();
         if (!league || !myTeam || !opponentTeam) return;

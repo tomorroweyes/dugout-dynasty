@@ -3,12 +3,11 @@ import type {
   Ability,
   PlayerAbility,
   AbilityEffect,
-  ABILITY_CONSTANTS,
 } from "@/types/ability";
 import { calculateMaxSpirit } from "@/types/ability";
 import { getAbilityById } from "@/data/abilities";
 import { ALL_TECHNIQUES } from "@/data/techniques";
-import { getPrerequisites } from "@/data/skillTrees";
+
 
 /**
  * Ability System Engine

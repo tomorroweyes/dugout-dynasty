@@ -688,8 +688,8 @@ describe("Decision Consistency with RNG Seed", () => {
     const rng1 = new SeededRandomProvider(11111);
     const rng2 = new SeededRandomProvider(22222);
 
-    const decision1 = decideBatterApproach(context, rng1);
-    const decision2 = decideBatterApproach(context, rng2);
+    const _decision1 = decideBatterApproach(context, rng1);
+    const _decision2 = decideBatterApproach(context, rng2);
 
     // Extremely unlikely to be the same 10 times in a row
     let allSame = true;

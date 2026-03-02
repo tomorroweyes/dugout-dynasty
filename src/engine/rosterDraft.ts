@@ -1,6 +1,6 @@
 import { Player, DraftSlot } from "@/types/game";
 import { LeagueTier } from "@/types/league";
-import { GAME_CONSTANTS } from "./constants";
+
 import { generatePlayer, getRosterSizeByTier } from "./playerGenerator";
 import { PlayerQualityTier } from "./statConfig";
 import { RandomProvider, getDefaultRandomProvider } from "./randomProvider";

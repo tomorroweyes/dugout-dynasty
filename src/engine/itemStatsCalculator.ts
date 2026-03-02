@@ -1,4 +1,4 @@
-import { Player, BatterStats, PitcherStats, isBatter } from "@/types/game";
+import { Player, BatterStats, PitcherStats } from "@/types/game";
 import { Item, ItemStats, EquippedItems } from "@/types/item";
 import { calculateDerivedStats } from "./techniqueStats";
 

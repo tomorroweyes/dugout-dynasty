@@ -3,7 +3,6 @@ import {
   CardContent,
 } from "@/components/ui/8bit/card";
 import {
-  FIELD_POSITIONS,
   OUT_TYPES,
   HIT_TYPES,
   TEXT_MARKERS,

@@ -15,6 +15,7 @@ import { InteractiveMatchView } from "@/components/InteractiveMatchView";
 import { PreGameCard } from "@/components/PreGameCard";
 import { initializeInteractiveMatch } from "@/engine/interactiveMatchEngine";
 import { generatePreGameContext } from "@/engine/preGameNarrative";
+import type { MatchResult } from "@/types/game";
 import { GAME_CONSTANTS } from "@/engine/constants";
 import { Button } from "@/components/ui/8bit/button";
 import { CardTitle } from "@/components/ui/8bit/card";

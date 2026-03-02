@@ -19,6 +19,7 @@ describe("GameController - autoFix", () => {
             power: baseRating,
             contact: baseRating,
             glove: baseRating,
+            speed: baseRating,
           }
         : {
             velocity: baseRating,
@@ -29,6 +30,7 @@ describe("GameController - autoFix", () => {
     return {
       id,
       name: `Player ${id}`,
+      surname: id,
       role,
       stats,
       salary: 1000,
@@ -42,6 +44,10 @@ describe("GameController - autoFix", () => {
         cleats: null,
         accessory: null,
       },
+      spirit: { current: 50, max: 50 },
+      abilities: [],
+      skillPoints: 0,
+      traits: [],
     };
   }
 
@@ -52,7 +58,6 @@ describe("GameController - autoFix", () => {
     return {
       roster: players,
       lineup: [],
-      bench: [],
       cash: 5000,
       fans: 1.0,
       wins: 0,

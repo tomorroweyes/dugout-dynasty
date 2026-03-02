@@ -1,4 +1,3 @@
-import { faker } from "@faker-js/faker";
 import {
   League,
   LeagueTier,
@@ -187,6 +186,7 @@ export function generateOpponentTeam(
           power: Math.floor(stats.power * strengthVariance),
           contact: Math.floor(stats.contact * strengthVariance),
           glove: Math.floor(stats.glove * strengthVariance),
+          speed: Math.floor(stats.speed * strengthVariance),
         },
       };
     } else if (isPitcher(player)) {

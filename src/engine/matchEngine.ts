@@ -602,7 +602,7 @@ function simulateInningWithStats(
       const isOutOrStrikeout = ["groundout", "flyout", "lineout", "popout", "strikeout"].includes(result);
       const hadRISP = basesBeforeHit[1] || basesBeforeHit[2];
       const isHighLeverageInning = inning >= 7;
-      const isCloseAtAB = Math.abs(narrativeGameState.scoreDiff) <= 2;
+      const isCloseAtAB = Math.abs(narrativeGameState.scoreDiff ?? 0) <= 2;
       const armRedemption = isOutOrStrikeout && hadRISP && isHighLeverageInning && isCloseAtAB;
 
       crossInningBatterHistory.set(batter.id, {

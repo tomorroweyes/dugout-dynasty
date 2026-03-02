@@ -18,8 +18,8 @@ interface PlayByPlayLogProps {
   lastRunsScored: number;
   inningComplete: boolean;
   inning: number;
-  isTop: boolean;
-  playLogRef: RefObject<HTMLDivElement>;
+  isTop: boolean; // kept for future use
+  playLogRef: RefObject<HTMLDivElement | null>;
 }
 
 export function PlayByPlayLog({
@@ -27,7 +27,7 @@ export function PlayByPlayLog({
   lastRunsScored,
   inningComplete,
   inning,
-  isTop,
+  isTop: _isTop,
   playLogRef,
 }: PlayByPlayLogProps) {
   const lastEvent = halfInningPlays[halfInningPlays.length - 1];

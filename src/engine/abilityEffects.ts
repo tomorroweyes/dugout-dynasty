@@ -223,7 +223,6 @@ export function resolveMultiOutcome(
       cumulative += entry.chance;
       if (roll <= cumulative) {
         if (entry.result === "out") return "groundout";
-        if (entry.result === "bunt_attempt") return "single";
         return entry.result as AtBatResultType;
       }
     }
@@ -239,6 +238,7 @@ export function resolveMultiOutcome(
       case "bunt_attempt": return "single";
       case "walk": return "walk";
       case "strikeout": return "strikeout";
+      case "out": return "groundout";
     }
   }
 

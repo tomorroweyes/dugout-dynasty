@@ -16,6 +16,7 @@ function createMockBatter(stats: Partial<BatterStats> = {}): Player {
   return {
     id: "batter-1",
     name: "Test Batter",
+    surname: "Batter",
     role: "Batter",
     stats: {
       power: 50,
@@ -35,6 +36,10 @@ function createMockBatter(stats: Partial<BatterStats> = {}): Player {
       cleats: null,
       accessory: null,
     },
+    spirit: { current: 50, max: 50 },
+    abilities: [],
+    skillPoints: 0,
+    traits: [],
   };
 }
 
@@ -42,6 +47,7 @@ function createMockPitcher(stats: Partial<PitcherStats> = {}): Player {
   return {
     id: "pitcher-1",
     name: "Test Pitcher",
+    surname: "Pitcher",
     role: "Starter",
     stats: {
       velocity: 50,
@@ -60,6 +66,10 @@ function createMockPitcher(stats: Partial<PitcherStats> = {}): Player {
       cleats: null,
       accessory: null,
     },
+    spirit: { current: 50, max: 50 },
+    abilities: [],
+    skillPoints: 0,
+    traits: [],
   };
 }
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { aiAutoRotate, calculateTeamStrength } from "../aiRotation";
 import { OpponentTeam, AIPersonality } from "@/types/league";
 import { Player } from "@/types/game";
-import { GAME_CONSTANTS } from "../constants";
+
 
 /**
  * Test utilities for creating mock players and teams
@@ -14,6 +14,7 @@ function createMockBatter(
   return {
     id,
     name: `Batter ${id}`,
+    surname: id,
     role: "Batter",
     stats: {
       power: rating,
@@ -32,6 +33,10 @@ function createMockBatter(
       cleats: null,
       accessory: null,
     },
+    spirit: { current: 50, max: 50 },
+    abilities: [],
+    skillPoints: 0,
+    traits: [],
   };
 }
 
@@ -43,6 +48,7 @@ function createMockPitcher(
   return {
     id,
     name: `Pitcher ${id}`,
+    surname: id,
     role,
     stats: {
       velocity: rating,
@@ -60,6 +66,10 @@ function createMockPitcher(
       cleats: null,
       accessory: null,
     },
+    spirit: { current: 50, max: 50 },
+    abilities: [],
+    skillPoints: 0,
+    traits: [],
   };
 }
 
@@ -77,7 +87,6 @@ function createMockTeam(
     colors: { primary: "#000", secondary: "#fff" },
     roster: players,
     lineup: [],
-    bench: [],
     cash: 5000,
     fans: 1.0,
     wins: 0,
