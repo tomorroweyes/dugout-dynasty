@@ -80,6 +80,10 @@ export interface Player {
   // Season and career stat tracking (optional for backwards compatibility)
   seasonStats?: BatterSeasonStats | PitcherSeasonStats;
   careerStats?: BatterCareerStats | PitcherCareerStats;
+  // Mental Skills System (Phase 1) — optional for backwards compatibility
+  age?: number;                                // Player age in years (default: 24)
+  physicalPotential?: import("./mentalSkills").PhysicalPotential; // Immutable ceilings for physical skills
+  mentalSkills?: import("./mentalSkills").MentalSkill[];          // Discovered/active mental skills
 }
 
 // Type guards
