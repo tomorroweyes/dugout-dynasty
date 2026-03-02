@@ -2,21 +2,16 @@ import { useState } from "react";
 import * as React from "react";
 import {
   InteractiveMatchState,
-  finalizeInteractiveMatch,
   simulateAtBat_Interactive,
 } from "@/engine/interactiveMatchEngine";
 import { decideBatterApproach, decidePitchStrategy } from "@/engine/approachAI";
 import { decideBatterAbility, decidePitcherAbility } from "@/engine/abilityAI";
 import { isHighLeverage } from "@/engine/leverageCalculator";
 import type { AtBatDecision } from "@/engine/interactiveMatchEngine";
-import type { MatchResult } from "@/types/game";
 import type { BatterApproach } from "@/types/approach";
 import type { SimMode } from "@/components/match/constants";
 
 interface AutoSimulationOptions {
-  matchRewards?: { win: number; loss: number };
-  fans?: number;
-  onComplete: (result: MatchResult) => void;
   setMatchState: React.Dispatch<React.SetStateAction<InteractiveMatchState>>;
   setShowingResult: (b: boolean) => void;
   setLastRunsScored: (n: number) => void;
@@ -24,9 +19,6 @@ interface AutoSimulationOptions {
 }
 
 export function useAutoSimulation({
-  matchRewards,
-  fans,
-  onComplete,
   setMatchState,
   setShowingResult,
   setLastRunsScored,
@@ -94,10 +86,7 @@ export function useAutoSimulation({
           }
           setAutoSimulating(false);
           setSimMode(null);
-          if (prev.isComplete) {
-            const result = finalizeInteractiveMatch(prev, matchRewards, fans);
-            setTimeout(() => onComplete(result), 500);
-          }
+          // Match complete — game summary screen handles onComplete via Continue button
           return prev;
         }
 
