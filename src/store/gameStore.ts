@@ -10,7 +10,7 @@ import { SAVE_CONFIG } from "@/config/saveConfig";
 import { validateSaveData, sanitizeSaveData } from "@/utils/saveValidation";
 import { migrateSaveData } from "@/utils/saveMigrations";
 import { useSettingsStore } from "./settingsStore";
-import { applyXpToPlayer, type LevelUpResult } from "@/engine/xpSystem";
+import { applyXpToPlayer, calculateMatchXp, type LevelUpResult } from "@/engine/xpSystem";
 import { EquipmentSlot } from "@/types/item";
 import { useInventoryStore } from "./inventoryStore";
 import { useShopStore } from "./shopStore";
