@@ -139,9 +139,6 @@ export function InteractiveMatchView({
 
   // Auto-simulation hook (declared before game-plan effects that reference handleAutoSim)
   const { autoSimulating, simMode, handleAutoSim } = useAutoSimulation({
-    matchRewards,
-    fans,
-    onComplete,
     setMatchState,
     setShowingResult,
     setLastRunsScored,
