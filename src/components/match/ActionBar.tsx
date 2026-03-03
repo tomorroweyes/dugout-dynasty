@@ -422,11 +422,13 @@ export function ActionBar({
   if (isMyBatter) {
     return (
       /* === MY TEAM BATTING === */
-      <div className="space-y-1.5">
-        <ForecastPanel snapshot={forecastSnapshot} modeLabel="Batting" />
+      <div className="h-full flex flex-col gap-1.5">
+        <div className="shrink-0">
+          <ForecastPanel snapshot={forecastSnapshot} modeLabel="Batting" />
+        </div>
 
         {/* Approach selector + inline ability chips */}
-        <div className="flex items-center gap-2 min-h-7">
+        <div className="flex items-center gap-2 min-h-7 shrink-0">
           <div className="flex gap-1 flex-1">
             {APPROACH_ORDER.map((id, i) => {
               const cfg = BATTER_APPROACHES[id];
@@ -513,6 +515,7 @@ export function ActionBar({
             mode="batting"
             zoneMap={zoneMap}
             pitchHint={pitchHint}
+            fillHeight
             onSelect={(cell) => {
               onSimulateAtBat(selectedApproach, undefined, cell);
             }}
@@ -521,7 +524,7 @@ export function ActionBar({
 
         {/* Selected ability description */}
         {selectedAbilityDef && (
-          <div className="text-xs px-1 text-muted-foreground leading-snug">
+          <div className="text-xs px-1 text-muted-foreground leading-snug shrink-0">
             {selectedAbilityDef.iconEmoji}{" "}
             <span className="font-medium">{selectedAbilityDef.name}</span> —{" "}
             {selectedAbilityDef.description}
@@ -533,11 +536,13 @@ export function ActionBar({
 
   return (
     /* === OPPONENT BATTING (my pitcher) === */
-    <div className="space-y-1.5">
-      <ForecastPanel snapshot={forecastSnapshot} modeLabel="Pitching" />
+    <div className="h-full flex flex-col gap-1.5">
+      <div className="shrink-0">
+        <ForecastPanel snapshot={forecastSnapshot} modeLabel="Pitching" />
+      </div>
 
       {/* Strategy selector + inline ability chips */}
-      <div className="flex items-center gap-2 min-h-7">
+      <div className="flex items-center gap-2 min-h-7 shrink-0">
         <div className="flex gap-1 flex-1">
           {STRATEGY_ORDER.map((id, i) => {
             const cfg = PITCH_STRATEGIES[id];
@@ -642,7 +647,7 @@ export function ActionBar({
 
       {/* Selected ability description */}
       {selectedAbilityDef && (
-        <div className="text-xs px-1 text-muted-foreground leading-snug">
+        <div className="text-xs px-1 text-muted-foreground leading-snug shrink-0">
           {selectedAbilityDef.iconEmoji}{" "}
           <span className="font-medium">{selectedAbilityDef.name}</span> —{" "}
           {selectedAbilityDef.description}
