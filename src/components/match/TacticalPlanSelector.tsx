@@ -369,11 +369,6 @@ export function TacticalPlanSelector({
           </button>
         ))}
       </div>
-
-      {/* Footer hint */}
-      <p className="text-[11px] text-muted-foreground leading-snug">
-        Sets the default approach for auto-sim at-bats. You'll be asked directly in clutch moments.
-      </p>
     </div>
   );
 }
