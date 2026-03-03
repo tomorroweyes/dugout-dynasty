@@ -184,22 +184,7 @@ export function ActionBar({
         </div>
 
         {/* Zone grid in result reveal mode */}
-        {zonePlay && (
-          <div className="flex-1 min-h-0 flex flex-col">
-            <ZoneGridDisplay
-              mode={zonePlay.isMyBatter ? "batting" : "pitching"}
-              zoneMap={zonePlay.zoneMap}
-              fillHeight
-              disabled
-              resultData={{
-                aimed: zonePlay.aimed,
-                batterSwing: zonePlay.batterSwing,
-                landingZone: zonePlay.result.landingZone,
-                isPerfect: zonePlay.result.isPerfect,
-              }}
-            />
-          </div>
-        )}
+        {/* TODO: Add zone visualization here when zone play data is stored in matchState */}
 
         {/* Narrative text */}
         {lastPlay?.narrativeText && (
