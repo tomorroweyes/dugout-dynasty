@@ -730,47 +730,61 @@ export function InteractiveMatchView({
 
           {/* Right: Role banner + Matchup card + Action bar */}
           <div className="flex flex-col gap-0 min-h-0">
-            {/* Role banner — always visible, no gap below */}
-            <div
-              className={`shrink-0 flex items-center gap-2 px-3 py-1.5 border-b-2 ${isMyBatter ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500" : "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500"}`}
-            >
-              <span className="text-sm font-bold uppercase tracking-widest">
-                {isMyBatter ? "⚾ At Bat" : "🔥 On the Mound"}
-              </span>
+            {/* Role banner — prominent, always visible */}
+            {(() => {
+              const fatigueLevel: PitcherFatigueLevel = isMyBatter
+                ? matchState.opponentPitcherFatigueLevel
+                : matchState.myPitcherFatigueLevel;
+              const isFresh = fatigueLevel === "fresh";
+              const isTired = fatigueLevel === "tired";
+              const isGassed = fatigueLevel === "gassed";
+              const statusColor = isGassed
+                ? "bg-red-500/20 border-red-500"
+                : isTired
+                  ? "bg-yellow-500/15 border-yellow-500"
+                  : "bg-green-500/15 border-green-500";
+              const statusText = isGassed
+                ? "text-red-600 dark:text-red-400"
+                : isTired
+                  ? "text-yellow-600 dark:text-yellow-400"
+                  : "text-green-600 dark:text-green-400";
+              const statusLabel = isGassed
+                ? "GASSED"
+                : isTired
+                  ? "TIRED"
+                  : "FRESH";
+              return (
+                <div
+                  className={`shrink-0 flex flex-col gap-2 px-4 py-3 border-b-2 ${isMyBatter ? "bg-blue-500/10 border-blue-500" : "bg-red-500/10 border-red-500"}`}
+                >
+                  {/* Role label + status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-base font-bold uppercase tracking-wider ${isMyBatter ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}`}>
+                      {isMyBatter ? "⚾ At Bat" : "🔥 On the Mound"}
+                    </span>
+                    <span className={`text-xs font-bold uppercase tracking-wide px-2 py-1 rounded border ${statusColor} ${statusText}`}>
+                      {statusLabel}
+                    </span>
+                  </div>
 
-              {/* Pitcher fatigue badge — shown when the active pitcher is tired or gassed */}
-              {(() => {
-                const fatigueLevel: PitcherFatigueLevel = isMyBatter
-                  ? matchState.opponentPitcherFatigueLevel
-                  : matchState.myPitcherFatigueLevel;
-                if (fatigueLevel === "gassed") {
-                  return (
-                    <span className="text-xs font-bold text-red-500 uppercase tracking-wide px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/30">
-                      🔴 Gassed — arm running out
-                    </span>
-                  );
-                }
-                if (fatigueLevel === "tired") {
-                  return (
-                    <span className="text-xs font-bold text-orange-400 uppercase tracking-wide px-1.5 py-0.5 rounded bg-orange-400/10 border border-orange-400/30">
-                      🟡 Tired — showing wear
-                    </span>
-                  );
-                }
-                return null;
-              })()}
-
-              {isClutch && (
-                <span className="text-xs font-bold text-amber-500 uppercase tracking-wide ml-auto">
-                  ⚡ Clutch
-                  {inningGamePlan && (
-                    <span className="font-normal text-muted-foreground normal-case tracking-normal ml-1">
-                      — override or stick with your plan
-                    </span>
-                  )}
-                </span>
-              )}
-            </div>
+                  {/* Clutch indicator + fatigue detail */}
+                  <div className="flex items-center gap-2 text-xs">
+                    {isClutch && (
+                      <span className="font-bold text-amber-500">⚡ CLUTCH MOMENT</span>
+                    )}
+                    {fatigueLevel !== "fresh" && (
+                      <span className={`${isGassed ? "text-red-500" : "text-orange-400"}`}>
+                        {isGassed ? "Arm running out" : "Showing wear"}
+                      </span>
+                    )}
+                    {inningGamePlan && isClutch && (
+                      <span className="text-muted-foreground">— override or stick?</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+            
 
             {/* Matchup card with margin below */}
             <div className="shrink-0 p-3">
