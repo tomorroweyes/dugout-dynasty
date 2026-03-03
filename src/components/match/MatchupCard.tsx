@@ -75,11 +75,11 @@ export function MatchupCard({
     : undefined;
 
   return (
-    <div className="shrink-0 border border-border rounded-lg bg-card px-3 py-2 space-y-2">
-      {/* Players row */}
-      <div className="flex items-center gap-2">
-        {/* Batter */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+    <div className="shrink-0 border border-border rounded-lg bg-card p-3 space-y-2">
+      {/* Top: Batter | VS | Pitcher with avatars + names + spirit */}
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
+        {/* BATTER COLUMN */}
+        <div className="flex items-center gap-2 min-w-0">
           <img
             src={generatePlayerAvatar(matchState.currentBatter.name, "pixelArt", {
               teamColor: isMyBatter ? myTeamColor : opponentTeamColor,
@@ -112,11 +112,18 @@ export function MatchupCard({
           </div>
         </div>
 
-        {/* VS */}
-        <div className="text-[10px] font-bold text-muted-foreground/50 shrink-0">VS</div>
+        {/* CENTER: VS divider */}
+        <div className="text-[9px] font-bold text-muted-foreground/40 shrink-0 text-center w-6">VS</div>
 
-        {/* Pitcher */}
-        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+        {/* PITCHER COLUMN */}
+        <div className="flex items-center gap-2 min-w-0 flex-row-reverse">
+          <img
+            src={generatePlayerAvatar(matchState.currentPitcher.name, "pixelArt", {
+              teamColor: isMyBatter ? opponentTeamColor : myTeamColor,
+            })}
+            alt={matchState.currentPitcher.name}
+            className="w-8 h-8 rounded border border-red-500/40 shrink-0"
+          />
           <div className="min-w-0 text-right">
             <div className="font-bold text-xs truncate leading-tight">
               {matchState.currentPitcher.name}
@@ -140,48 +147,52 @@ export function MatchupCard({
               )}
             </div>
           </div>
-          <img
-            src={generatePlayerAvatar(matchState.currentPitcher.name, "pixelArt", {
-              teamColor: isMyBatter ? opponentTeamColor : myTeamColor,
-            })}
-            alt={matchState.currentPitcher.name}
-            className="w-8 h-8 rounded border border-red-500/40 shrink-0"
-          />
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="flex items-center gap-1 text-[10px]">
-        {/* Batter stats */}
-        <div className="flex-1 flex gap-1.5 text-muted-foreground">
-          <span>
-            <span className="font-bold text-foreground">{hits}</span>-{atBats}
-          </span>
-          {hrs > 0 && <span><span className="font-bold text-foreground">{hrs}</span> HR</span>}
-          {rbi > 0 && <span><span className="font-bold text-foreground">{rbi}</span> RBI</span>}
-          {batterKs > 0 && <span><span className="font-bold text-foreground">{batterKs}</span> K</span>}
-          {avg && <span className="text-muted-foreground/50">{avg}</span>}
+      {/* Stats: Batter | divider | Pitcher */}
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-2 text-[10px] text-muted-foreground">
+        {/* BATTER STATS */}
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-2">
+            <span>
+              <span className="font-bold text-foreground">{hits}</span>-{atBats}
+            </span>
+            {hrs > 0 && <span><span className="font-bold text-foreground">{hrs}</span>HR</span>}
+            {rbi > 0 && <span><span className="font-bold text-foreground">{rbi}</span>RBI</span>}
+          </div>
+          <div className="flex gap-2">
+            {batterKs > 0 && <span><span className="font-bold text-foreground">{batterKs}</span>K</span>}
+            {avg && <span className="text-muted-foreground/50">{avg}</span>}
+          </div>
         </div>
 
-        {/* Pitcher fatigue + stats */}
-        <div className="flex-1 flex items-center justify-end gap-1.5 text-muted-foreground">
-          {era && <span className="text-muted-foreground/50">{era} ERA</span>}
-          <span><span className="font-bold text-foreground">{pitcherKs}</span> K</span>
-          <span><span className="font-bold text-foreground">{walks}</span> BB</span>
-          <span><span className="font-bold text-foreground">{hitsAllowed}</span> H</span>
+        {/* CENTER: vertical divider */}
+        <div className="w-px bg-border" />
+
+        {/* PITCHER STATS */}
+        <div className="flex flex-col gap-1 text-right">
+          <div className="flex gap-2 justify-end">
+            {era && <span className="text-muted-foreground/50">{era}E</span>}
+            <span><span className="font-bold text-foreground">{pitcherKs}</span>K</span>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <span><span className="font-bold text-foreground">{walks}</span>BB</span>
+            <span><span className="font-bold text-foreground">{hitsAllowed}</span>H</span>
+          </div>
         </div>
       </div>
 
-      {/* Pitcher arm bar */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-[9px] text-muted-foreground shrink-0">Arm</span>
-        <div className="relative flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+      {/* Pitcher arm bar — pitcher-specific, spans full width */}
+      <div className="flex items-center gap-2 pt-1">
+        <span className="text-[9px] text-muted-foreground shrink-0 font-bold">ARM</span>
+        <div className="relative flex-1 h-2 bg-muted rounded-full overflow-hidden">
           <div
             className={`absolute top-0 left-0 bottom-0 rounded-full ${fatigueColor} transition-all duration-500`}
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="text-[9px] text-muted-foreground shrink-0 w-7 text-right">{pct}%</span>
+        <span className="text-[9px] text-muted-foreground shrink-0 w-8 text-right font-bold">{pct}%</span>
       </div>
     </div>
   );
