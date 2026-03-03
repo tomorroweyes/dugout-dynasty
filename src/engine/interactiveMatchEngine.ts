@@ -122,6 +122,9 @@ export interface AtBatDecision {
   batterApproach?: BatterApproach;
   pitchStrategy?: PitchStrategy;
   zoneResult?: ZoneModifier;
+  // Zone grid selections for visualization
+  pitcherAimedZone?: ZoneCell; // Where pitcher aimed the pitch
+  batterAimedZone?: ZoneCell;  // Where batter was looking
 }
 
 /**
@@ -579,6 +582,10 @@ export function simulateAtBat_Interactive(
       pitcherAbilityUsed: !!decision.pitcherAbility,
       perfectContact: isPerfectZone && !isTop ? true : undefined,
       paintedCorner: isPerfectZone && isTop ? true : undefined,
+      // Zone visualization data
+      zoneAimed: decision.pitcherAimedZone,
+      zoneLanded: decision.pitcherAimedZone, // For now, aimed zone serves as landing (perfect execution)
+      zoneBatterAimed: decision.batterAimedZone,
     } as PlayByPlayEvent,
   ];
 

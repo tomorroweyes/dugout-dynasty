@@ -466,6 +466,17 @@ export function InteractiveMatchView({
         isMyBatter,
         batterSwing,
       });
+
+      // Store zone selections for visualization in result screen
+      if (isMyBatter) {
+        // Batting: pitcher aims, batter predicted aimedZone
+        decision.pitcherAimedZone = pitcherAim; // AI pitcher's aim
+        decision.batterAimedZone = aimedZone;   // Player's prediction
+      } else {
+        // Pitching: player aims the pitch, batter predicted
+        decision.pitcherAimedZone = aimedZone;    // Player's aim
+        decision.batterAimedZone = batterSwing;   // AI batter's swing zone
+      }
     }
 
     const newState = simulateAtBat_Interactive(matchState, decision);

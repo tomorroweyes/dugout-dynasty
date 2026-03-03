@@ -171,6 +171,10 @@ export interface PlayByPlayEvent {
   pitcherAbilityUsed?: boolean;
   perfectContact?: boolean; // batting natural 20 — zone read + hot zone alignment
   paintedCorner?: boolean;  // pitching natural 20 — cold corner perfectly located
+  // Zone visualization data
+  zoneAimed?: { row: 0 | 1 | 2; col: 0 | 1 | 2 }; // Where pitcher aimed
+  zoneLanded?: { row: 0 | 1 | 2; col: 0 | 1 | 2 }; // Where pitch actually landed
+  zoneBatterAimed?: { row: 0 | 1 | 2; col: 0 | 1 | 2 }; // Where batter was looking
 }
 
 export interface BoxScore {
