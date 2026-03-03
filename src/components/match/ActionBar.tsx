@@ -506,9 +506,13 @@ export function ActionBar({
 
   return (
     /* === OPPONENT BATTING (my pitcher) === */
-    <div className="h-full flex flex-col gap-1.5">
-      {/* Ability chips only — no strategy selector */}
-      <div className="flex gap-1.5 shrink-0 overflow-x-auto">
+    <div className="h-full flex flex-col gap-2">
+      {/* Ability chips — PRIMARY DECISION (after zone) */}
+      <div className="shrink-0">
+        <div className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
+          Special Abilities
+        </div>
+        <div className="flex gap-2 flex-wrap"
             {currentPitcherAbilities.map((ability, i) => {
               const { canActivate, reason } = canActivateAbility(
                 matchState.currentPitcher,
@@ -526,22 +530,22 @@ export function ActionBar({
                       ? reason
                       : `${ability.description}${shortcut ? ` [${shortcut.toUpperCase()}]` : ""}`
                   }
-                  className={`flex items-center gap-1 border rounded px-2 py-0.5 text-xs transition whitespace-nowrap ${
+                  className={`flex items-center gap-2 border rounded px-3 py-2 text-sm font-medium transition whitespace-nowrap ${
                     isSelected
-                      ? "border-blue-500 dark:border-blue-400 bg-blue-500/10 dark:bg-blue-500/20 ring-1 ring-blue-500/30 text-foreground"
+                      ? "border-blue-500 dark:border-blue-400 bg-blue-500/15 dark:bg-blue-500/25 ring-2 ring-blue-500/50 text-foreground shadow-lg"
                       : canActivate
-                        ? "border-border bg-card hover:bg-accent text-foreground"
-                        : "opacity-40 cursor-not-allowed border-border bg-card"
+                        ? "border-border bg-card hover:bg-accent hover:shadow-md text-foreground"
+                        : "opacity-50 cursor-not-allowed border-border bg-card"
                   }`}
                 >
-                  <span>{ability.iconEmoji}</span>
-                  <span className="font-medium">{ability.name}</span>
-                  <span className="text-muted-foreground flex items-center gap-0.5">
-                    <Sparkles className="w-2.5 h-2.5" />
+                  <span className="text-lg">{ability.iconEmoji}</span>
+                  <span>{ability.name}</span>
+                  <span className="text-muted-foreground flex items-center gap-0.5 text-xs">
+                    <Sparkles className="w-3 h-3" />
                     {ability.spiritCost}
                   </span>
                   {shortcut && (
-                    <kbd className="text-[9px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1 py-px">
+                    <kbd className="text-[10px] font-mono opacity-60 bg-black/20 dark:bg-white/20 rounded px-1.5 py-0.5 ml-auto">
                       {shortcut.toUpperCase()}
                     </kbd>
                   )}
@@ -549,6 +553,7 @@ export function ActionBar({
               );
             })}
           </div>
+      </div>
 
       {/* Zone grid — purely location aim, no row-strategy coupling */}
       {isGuaranteedAbility(selectedAbilityDef) ? (
