@@ -25,6 +25,8 @@ interface ZoneGridProps {
   pitchHint?: ZoneCell[]; // batting only — cells shown as hint
   onSelect: (cell: ZoneCell) => void;
   disabled?: boolean;
+  /** When true, grid rows grow to fill the parent's available height */
+  fillHeight?: boolean;
 }
 
 const ROW_LABELS = ["HI", "MID", "LO"];
@@ -82,7 +84,7 @@ function computePreviewLabel(
   return physics;
 }
 
-export function ZoneGrid({ mode, zoneMap, pitchHint, onSelect, disabled }: ZoneGridProps) {
+export function ZoneGrid({ mode, zoneMap, pitchHint, onSelect, disabled, fillHeight }: ZoneGridProps) {
   // Keyboard shortcuts
   useEffect(() => {
     if (disabled) return;
@@ -102,15 +104,17 @@ export function ZoneGrid({ mode, zoneMap, pitchHint, onSelect, disabled }: ZoneG
     return () => window.removeEventListener("keydown", onKey);
   }, [disabled, onSelect]);
 
+  const fh = fillHeight; // shorthand
+
   return (
-    <div className="select-none w-full">
+    <div className={fh ? "select-none w-full h-full flex flex-col" : "select-none w-full"}>
       {/* Mode label */}
-      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+      <div className={`text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5${fh ? " shrink-0" : ""}`}>
         {mode === "batting" ? "Pick your spot" : "Where to throw"}
       </div>
 
-      {/* Context legend — explains what hot/cold mean in this mode */}
-      <div className="flex gap-2 mb-1.5 text-[11px] text-muted-foreground leading-tight flex-wrap">
+      {/* Context legend */}
+      <div className={`flex gap-2 mb-1.5 text-[11px] text-muted-foreground leading-tight flex-wrap${fh ? " shrink-0" : ""}`}>
         {mode === "batting" ? (
           <>
             <span>🔥 your power zone</span>
@@ -125,13 +129,13 @@ export function ZoneGrid({ mode, zoneMap, pitchHint, onSelect, disabled }: ZoneG
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className={fh ? "flex gap-2 flex-1 min-h-0" : "flex gap-2"}>
         {/* Row labels */}
-        <div className="flex flex-col justify-around">
+        <div className={fh ? "flex flex-col" : "flex flex-col justify-around"}>
           {ROW_LABELS.map((label) => (
             <div
               key={label}
-              className="text-xs text-muted-foreground font-mono w-7 text-right leading-none h-14 flex items-center justify-end pr-1"
+              className={`text-xs text-muted-foreground font-mono w-7 text-right leading-none flex items-center justify-end pr-1${fh ? " flex-1" : " h-14"}`}
             >
               {label}
             </div>
@@ -139,14 +143,11 @@ export function ZoneGrid({ mode, zoneMap, pitchHint, onSelect, disabled }: ZoneG
         </div>
 
         {/* Grid */}
-        <div className="flex flex-col gap-1.5 flex-1">
+        <div className={fh ? "flex flex-col gap-1.5 flex-1 min-h-0" : "flex flex-col gap-1.5 flex-1"}>
           {/* Column labels */}
-          <div className="flex gap-1.5 mb-0.5">
+          <div className={`flex gap-1.5 mb-0.5${fh ? " shrink-0" : ""}`}>
             {COL_LABELS.map((label) => (
-              <div
-                key={label}
-                className="flex-1 text-center text-xs text-muted-foreground font-mono"
-              >
+              <div key={label} className="flex-1 text-center text-xs text-muted-foreground font-mono">
                 {label}
               </div>
             ))}
@@ -154,7 +155,7 @@ export function ZoneGrid({ mode, zoneMap, pitchHint, onSelect, disabled }: ZoneG
 
           {/* Zone cells */}
           {[0, 1, 2].map((row) => (
-            <div key={row} className="flex gap-1.5">
+            <div key={row} className={fh ? "flex gap-1.5 flex-1 min-h-0" : "flex gap-1.5"}>
               {[0, 1, 2].map((col) => {
                 const zoneType = zoneMap[row][col];
                 const hint = isHintCell(
@@ -172,6 +173,7 @@ export function ZoneGrid({ mode, zoneMap, pitchHint, onSelect, disabled }: ZoneG
                     shortcut={shortcut}
                     mode={mode}
                     disabled={disabled}
+                    fillHeight={fh}
                     previewLabel={previewLabel}
                     onClick={() =>
                       !disabled &&
@@ -197,10 +199,11 @@ interface ZoneCellProps {
   mode: "batting" | "pitching";
   disabled?: boolean;
   previewLabel: string;
+  fillHeight?: boolean;
   onClick: () => void;
 }
 
-function ZoneCell({ zoneType, isHint, shortcut, mode, disabled, previewLabel, onClick }: ZoneCellProps) {
+function ZoneCell({ zoneType, isHint, shortcut, mode, disabled, previewLabel, fillHeight, onClick }: ZoneCellProps) {
   // Background and border classes — hint cells get a yellow ring on top of zone coloring.
   // Neutral hint cells get a yellow fill since they'd otherwise be invisible.
   const bgClass = (() => {
@@ -237,8 +240,9 @@ function ZoneCell({ zoneType, isHint, shortcut, mode, disabled, previewLabel, on
       onClick={onClick}
       disabled={disabled}
       className={`
-        flex-1 h-14 rounded border flex flex-col items-center justify-center
+        flex-1 rounded border flex flex-col items-center justify-center
         gap-0.5 transition-all duration-100 relative group
+        ${fillHeight ? "min-h-10 self-stretch" : "h-14"}
         ${bgClass}
         ${disabled ? "opacity-50 cursor-not-allowed" : "hover:scale-105 hover:border-foreground/40 cursor-pointer active:scale-95"}
       `}

@@ -10,10 +10,12 @@ import type { Ability } from "@/types/ability";
 import { ForecastPanel } from "@/components/ForecastPanel";
 import { SIM_MODE_LABELS, type SimMode } from "./constants";
 import { ZoneGrid } from "./ZoneGrid";
+import { ZoneMiniGrid } from "./ZoneMiniGrid";
 import {
   getExecutionNote,
   type ZoneMap,
   type ZoneCell,
+  type ZoneModifier,
 } from "@/engine/zoneSystem";
 
 const ABILITY_SHORTCUT_KEYS = ["z", "x", "c"];
@@ -58,6 +60,13 @@ interface ActionBarProps {
   zoneMap: ZoneMap;
   pitchHint?: ZoneCell[];
   inningGamePlan?: BatterApproach | null;
+  zonePlay?: {
+    aimed: ZoneCell;
+    zoneMap: ZoneMap;
+    result: ZoneModifier;
+    isMyBatter: boolean;
+    batterSwing?: ZoneCell;
+  } | null;
 }
 
 export function ActionBar({
@@ -76,6 +85,7 @@ export function ActionBar({
   zoneMap,
   pitchHint,
   inningGamePlan,
+  zonePlay,
 }: ActionBarProps) {
   // Explicit approach selection — decoupled from zone row.
   // Defaults to the active game plan, then last used, then "contact".
@@ -182,6 +192,17 @@ export function ActionBar({
             </div>
           )}
         </div>
+
+        {/* Zone play result — shown when player used the zone grid */}
+        {zonePlay && (
+          <ZoneMiniGrid
+            aimed={zonePlay.aimed}
+            zoneMap={zonePlay.zoneMap}
+            result={zonePlay.result}
+            isMyBatter={zonePlay.isMyBatter}
+            batterSwing={zonePlay.batterSwing}
+          />
+        )}
 
         {/* Narrative text */}
         {lastPlay?.narrativeText && (
@@ -404,11 +425,11 @@ export function ActionBar({
   if (isMyBatter) {
     return (
       /* === MY TEAM BATTING === */
-      <div className="space-y-1.5">
+      <div className="h-full flex flex-col gap-1.5">
         <ForecastPanel snapshot={forecastSnapshot} modeLabel="Batting" />
 
         {/* Approach selector + inline ability chips */}
-        <div className="flex items-center gap-2 min-h-7">
+        <div className="flex items-center gap-2 min-h-7 shrink-0">
           <div className="flex gap-1 flex-1">
             {APPROACH_ORDER.map((id, i) => {
               const cfg = BATTER_APPROACHES[id];
@@ -480,46 +501,49 @@ export function ActionBar({
           )}
         </div>
 
-        {/* Zone grid — purely location prediction, no row-approach coupling */}
-        {isGuaranteedAbility(selectedAbilityDef) ? (
-          <Button
-            size="lg"
-            onClick={() => onSimulateAtBat()}
-            className="w-full h-auto py-3 flex items-center justify-center gap-2"
-          >
-            <span className="text-xl leading-none">{selectedAbilityDef!.iconEmoji}</span>
-            <span className="font-bold text-sm">{selectedAbilityDef!.name}</span>
-          </Button>
-        ) : (
-          <ZoneGrid
-            mode="batting"
-            zoneMap={zoneMap}
-            pitchHint={pitchHint}
-            onSelect={(cell) => {
-              onSimulateAtBat(selectedApproach, undefined, cell);
-            }}
-          />
-        )}
+        {/* Zone grid — fills remaining vertical space */}
+        <div className="flex-1 min-h-0 flex flex-col">
+          {isGuaranteedAbility(selectedAbilityDef) ? (
+            <Button
+              size="lg"
+              onClick={() => onSimulateAtBat()}
+              className="w-full h-auto py-3 flex items-center justify-center gap-2"
+            >
+              <span className="text-xl leading-none">{selectedAbilityDef!.iconEmoji}</span>
+              <span className="font-bold text-sm">{selectedAbilityDef!.name}</span>
+            </Button>
+          ) : (
+            <ZoneGrid
+              mode="batting"
+              zoneMap={zoneMap}
+              pitchHint={pitchHint}
+              fillHeight
+              onSelect={(cell) => {
+                onSimulateAtBat(selectedApproach, undefined, cell);
+              }}
+            />
+          )}
 
-        {/* Selected ability description */}
-        {selectedAbilityDef && (
-          <div className="text-xs px-1 text-muted-foreground leading-snug">
-            {selectedAbilityDef.iconEmoji}{" "}
-            <span className="font-medium">{selectedAbilityDef.name}</span> —{" "}
-            {selectedAbilityDef.description}
-          </div>
-        )}
+          {/* Selected ability description */}
+          {selectedAbilityDef && (
+            <div className="text-xs px-1 mt-1 text-muted-foreground leading-snug shrink-0">
+              {selectedAbilityDef.iconEmoji}{" "}
+              <span className="font-medium">{selectedAbilityDef.name}</span> —{" "}
+              {selectedAbilityDef.description}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
     /* === OPPONENT BATTING (my pitcher) === */
-    <div className="space-y-1.5">
+    <div className="h-full flex flex-col gap-1.5">
       <ForecastPanel snapshot={forecastSnapshot} modeLabel="Pitching" />
 
       {/* Strategy selector + inline ability chips */}
-      <div className="flex items-center gap-2 min-h-7">
+      <div className="flex items-center gap-2 min-h-7 shrink-0">
         <div className="flex gap-1 flex-1">
           {STRATEGY_ORDER.map((id, i) => {
             const cfg = PITCH_STRATEGIES[id];
@@ -591,44 +615,47 @@ export function ActionBar({
         )}
       </div>
 
-      {/* Zone grid — purely location aim, no row-strategy coupling */}
-      {isGuaranteedAbility(selectedAbilityDef) ? (
-        <Button
-          size="lg"
-          onClick={() => onSimulateAtBat()}
-          className="w-full h-auto py-3 flex items-center justify-center gap-2"
-        >
-          <span className="text-xl leading-none">{selectedAbilityDef!.iconEmoji}</span>
-          <span className="font-bold text-sm">{selectedAbilityDef!.name}</span>
-        </Button>
-      ) : (
-        <div className="space-y-1">
-          <ZoneGrid
-            mode="pitching"
-            zoneMap={zoneMap}
-            onSelect={(cell) => {
-              onSimulateAtBat(undefined, selectedStrategy, cell);
-            }}
-          />
-          {(() => {
-            const note = getExecutionNote(matchState.currentPitcher);
-            return note ? (
-              <div className="text-[9px] text-muted-foreground/60 leading-tight px-0.5">
-                {note}
-              </div>
-            ) : null;
-          })()}
-        </div>
-      )}
+      {/* Zone grid — fills remaining vertical space */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {isGuaranteedAbility(selectedAbilityDef) ? (
+          <Button
+            size="lg"
+            onClick={() => onSimulateAtBat()}
+            className="w-full h-auto py-3 flex items-center justify-center gap-2"
+          >
+            <span className="text-xl leading-none">{selectedAbilityDef!.iconEmoji}</span>
+            <span className="font-bold text-sm">{selectedAbilityDef!.name}</span>
+          </Button>
+        ) : (
+          <>
+            <ZoneGrid
+              mode="pitching"
+              zoneMap={zoneMap}
+              fillHeight
+              onSelect={(cell) => {
+                onSimulateAtBat(undefined, selectedStrategy, cell);
+              }}
+            />
+            {(() => {
+              const note = getExecutionNote(matchState.currentPitcher);
+              return note ? (
+                <div className="text-xs text-muted-foreground leading-tight px-0.5 mt-1 shrink-0">
+                  {note}
+                </div>
+              ) : null;
+            })()}
+          </>
+        )}
 
-      {/* Selected ability description */}
-      {selectedAbilityDef && (
-        <div className="text-xs px-1 text-muted-foreground leading-snug">
-          {selectedAbilityDef.iconEmoji}{" "}
-          <span className="font-medium">{selectedAbilityDef.name}</span> —{" "}
-          {selectedAbilityDef.description}
-        </div>
-      )}
+        {/* Selected ability description */}
+        {selectedAbilityDef && (
+          <div className="text-xs px-1 mt-1 text-muted-foreground leading-snug shrink-0">
+            {selectedAbilityDef.iconEmoji}{" "}
+            <span className="font-medium">{selectedAbilityDef.name}</span> —{" "}
+            {selectedAbilityDef.description}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

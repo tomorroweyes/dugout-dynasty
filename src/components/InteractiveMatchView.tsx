@@ -38,7 +38,7 @@ import {
   type ZoneMap,
   type ZoneModifier,
 } from "@/engine/zoneSystem";
-import { ZoneResultOverlay } from "./match/ZoneResultOverlay";
+// ZoneResultOverlay removed — zone result is embedded in ActionBar result card
 
 interface InteractiveMatchViewProps {
   initialState: InteractiveMatchState;
@@ -491,7 +491,9 @@ export function InteractiveMatchView({
     // Pause on high-leverage results: show the result and require explicit continue
     // before auto-sim resumes. This gives the player a moment to absorb what happened.
     const wasHighLeveragePlay = isHighLeverage(matchState);
-    if (newState.inningComplete || newState.isComplete || wasHighLeveragePlay) {
+    // Also pause when the player used the zone grid — result card replaces the old overlay
+    const usedZoneGrid = !!aimedZone;
+    if (newState.inningComplete || newState.isComplete || wasHighLeveragePlay || usedZoneGrid) {
       setShowingResult(true);
     }
 
@@ -572,8 +574,7 @@ export function InteractiveMatchView({
   const handleContinue = () => {
     setShowingResult(false);
     setLastRunsScored(0);
-    // Clear inning transition — both the clutch-result+inning-end case
-    // and the standalone inning-end case (user clicks "Start Next Half")
+    setLastZonePlay(null); // zone result is embedded in result card; clear on dismiss
     if (matchState.inningComplete) {
       setMatchState((prev) => ({ ...prev, inningComplete: false }));
     }
@@ -807,6 +808,7 @@ export function InteractiveMatchView({
                     zoneMap={currentZoneMap}
                     pitchHint={currentPitchHint}
                     inningGamePlan={inningGamePlan}
+                    zonePlay={lastZonePlay}
                   />
                 )}
               </div>
@@ -815,17 +817,7 @@ export function InteractiveMatchView({
         </div>
       </div>
 
-      {lastZonePlay && (
-        <ZoneResultOverlay
-          key={`${lastZonePlay.aimed.row}-${lastZonePlay.aimed.col}-${lastZonePlay.result.landingZone.row}-${lastZonePlay.result.landingZone.col}`}
-          aimed={lastZonePlay.aimed}
-          zoneMap={lastZonePlay.zoneMap}
-          result={lastZonePlay.result}
-          isMyBatter={lastZonePlay.isMyBatter}
-          batterSwing={lastZonePlay.batterSwing}
-          onDismiss={() => setLastZonePlay(null)}
-        />
-      )}
+      {/* Zone result is embedded in ActionBar's result card — no separate overlay needed */}
 
       {scoringFlash && (
         <ScoringFlash
