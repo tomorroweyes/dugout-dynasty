@@ -538,41 +538,8 @@ export function ActionBar({
         <ForecastPanel snapshot={forecastSnapshot} modeLabel="Pitching" />
       </div>
 
-      {/* Decision context label */}
-      <div className="shrink-0 text-xs text-muted-foreground font-medium">
-        Choose Strategy: <kbd className="text-[9px] font-mono opacity-50 ml-1">Q W E</kbd>
-      </div>
-
-      {/* Strategy selector + inline ability chips */}
-      <div className="flex items-center gap-2 min-h-7 shrink-0">
-        <div className="flex gap-1 flex-1">
-          {STRATEGY_ORDER.map((id, i) => {
-            const cfg = PITCH_STRATEGIES[id];
-            const isSelected = selectedStrategy === id;
-            return (
-              <button
-                key={id}
-                onClick={() => setSelectedStrategy(id)}
-                title={cfg.description}
-                className={`flex-1 py-1 px-1.5 rounded border text-xs font-medium transition-all flex items-center justify-center gap-1 ${
-                  isSelected
-                    ? "border-red-500 bg-red-500/15 text-foreground ring-1 ring-red-500/30"
-                    : "border-border bg-card hover:bg-accent text-muted-foreground"
-                }`}
-              >
-                <span className="text-sm leading-none">{cfg.icon}</span>
-                <span>{cfg.label}</span>
-                <kbd className="text-[9px] font-mono opacity-40 bg-black/10 dark:bg-white/10 rounded px-1 py-px">
-                  {STRATEGY_SHORTCUTS[i].toUpperCase()}
-                </kbd>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Ability chips */}
-        {currentPitcherAbilities.length > 0 && (
-          <div className="flex gap-1.5 overflow-x-auto shrink-0">
+      {/* Ability chips only — no strategy selector */}
+      <div className="flex gap-1.5 shrink-0 overflow-x-auto">
             {currentPitcherAbilities.map((ability, i) => {
               const { canActivate, reason } = canActivateAbility(
                 matchState.currentPitcher,
@@ -614,7 +581,6 @@ export function ActionBar({
             })}
           </div>
         )}
-      </div>
 
       {/* Zone grid — purely location aim, no row-strategy coupling */}
       {isGuaranteedAbility(selectedAbilityDef) ? (
@@ -633,7 +599,7 @@ export function ActionBar({
             zoneMap={zoneMap}
             fillHeight
             onSelect={(cell) => {
-              onSimulateAtBat(undefined, selectedStrategy, cell);
+              onSimulateAtBat(undefined, undefined, cell);
             }}
           />
           {(() => {
