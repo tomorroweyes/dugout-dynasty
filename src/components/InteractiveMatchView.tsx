@@ -728,61 +728,67 @@ export function InteractiveMatchView({
             />
           </div>
 
-          {/* Right: Matchup card + Action bar */}
-          <div className="flex flex-col gap-3 min-h-0">
-            <MatchupCard
-              matchState={matchState}
-              isMyBatter={isMyBatter}
-              myTeamColor={myTeamColor}
-              opponentTeamColor={opponentTeamColor}
-            />
+          {/* Right: Role banner + Matchup card + Action bar */}
+          <div className="flex flex-col gap-0 min-h-0">
+            {/* Role banner — always visible, no gap below */}
+            <div
+              className={`shrink-0 flex items-center gap-2 px-3 py-1.5 border-b-2 ${isMyBatter ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500" : "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500"}`}
+            >
+              <span className="text-sm font-bold uppercase tracking-widest">
+                {isMyBatter ? "⚾ At Bat" : "🔥 On the Mound"}
+              </span>
+
+              {/* Pitcher fatigue badge — shown when the active pitcher is tired or gassed */}
+              {(() => {
+                const fatigueLevel: PitcherFatigueLevel = isMyBatter
+                  ? matchState.opponentPitcherFatigueLevel
+                  : matchState.myPitcherFatigueLevel;
+                if (fatigueLevel === "gassed") {
+                  return (
+                    <span className="text-xs font-bold text-red-500 uppercase tracking-wide px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/30">
+                      🔴 Gassed — arm running out
+                    </span>
+                  );
+                }
+                if (fatigueLevel === "tired") {
+                  return (
+                    <span className="text-xs font-bold text-orange-400 uppercase tracking-wide px-1.5 py-0.5 rounded bg-orange-400/10 border border-orange-400/30">
+                      🟡 Tired — showing wear
+                    </span>
+                  );
+                }
+                return null;
+              })()}
+
+              {isClutch && (
+                <span className="text-xs font-bold text-amber-500 uppercase tracking-wide ml-auto">
+                  ⚡ Clutch
+                  {inningGamePlan && (
+                    <span className="font-normal text-muted-foreground normal-case tracking-normal ml-1">
+                      — override or stick with your plan
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
+
+            {/* Matchup card with margin below */}
+            <div className="shrink-0 p-3">
+              <MatchupCard
+                matchState={matchState}
+                isMyBatter={isMyBatter}
+                myTeamColor={myTeamColor}
+                opponentTeamColor={opponentTeamColor}
+              />
+            </div>
+
+            {/* Margin/spacing divider */}
+            <div className="h-2 shrink-0" />
 
             {/* Game plan selector or action bar */}
             <div
-              className={`flex-1 min-h-0 flex flex-col border-t-2 transition-opacity duration-300 ${autoSimulating || pendingAutoSim ? "opacity-40" : ""} ${isMyBatter ? "border-blue-500" : "border-red-500"}`}
+              className={`flex-1 min-h-0 flex flex-col transition-opacity duration-300 ${autoSimulating || pendingAutoSim ? "opacity-40" : ""}`}
             >
-              {/* Role banner — always visible */}
-              <div
-                className={`shrink-0 flex items-center gap-2 px-3 py-1.5 ${isMyBatter ? "bg-blue-500/15 text-blue-600 dark:text-blue-400" : "bg-red-500/15 text-red-600 dark:text-red-400"}`}
-              >
-                <span className="text-sm font-bold uppercase tracking-widest">
-                  {isMyBatter ? "⚾ At Bat" : "🔥 On the Mound"}
-                </span>
-
-                {/* Pitcher fatigue badge — shown when the active pitcher is tired or gassed */}
-                {(() => {
-                  const fatigueLevel: PitcherFatigueLevel = isMyBatter
-                    ? matchState.opponentPitcherFatigueLevel
-                    : matchState.myPitcherFatigueLevel;
-                  if (fatigueLevel === "gassed") {
-                    return (
-                      <span className="text-xs font-bold text-red-500 uppercase tracking-wide px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/30">
-                        🔴 Gassed — arm running out
-                      </span>
-                    );
-                  }
-                  if (fatigueLevel === "tired") {
-                    return (
-                      <span className="text-xs font-bold text-orange-400 uppercase tracking-wide px-1.5 py-0.5 rounded bg-orange-400/10 border border-orange-400/30">
-                        🟡 Tired — showing wear
-                      </span>
-                    );
-                  }
-                  return null;
-                })()}
-
-                {isClutch && (
-                  <span className="text-xs font-bold text-amber-500 uppercase tracking-wide ml-auto">
-                    ⚡ Clutch
-                    {inningGamePlan && (
-                      <span className="font-normal text-muted-foreground normal-case tracking-normal ml-1">
-                        — override or stick with your plan
-                      </span>
-                    )}
-                  </span>
-                )}
-              </div>
-
               <div className="flex-1 min-h-0 px-2 py-2 overflow-hidden">
                 {showGamePlanSelector ? (
                   <TacticalPlanSelector
