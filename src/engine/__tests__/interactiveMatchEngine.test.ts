@@ -74,18 +74,19 @@ describe("interactiveMatchEngine deterministic parity", () => {
 });
 
 describe("derivePitcherFatigueLevel", () => {
-  // fresh: innings < 4 AND fatigue < 0.5
+  // fresh: innings <= 4 AND fatigue < 0.8
   it("returns 'fresh' when well under both thresholds", () => {
     expect(derivePitcherFatigueLevel(0, 0.0)).toBe("fresh");
     expect(derivePitcherFatigueLevel(3, 0.4)).toBe("fresh");
+    expect(derivePitcherFatigueLevel(4, 0.5)).toBe("fresh");
   });
 
-  it("returns 'tired' when innings reach the fresh threshold", () => {
-    expect(derivePitcherFatigueLevel(4, 0.4)).toBe("tired");
+  it("returns 'tired' when innings exceed fresh threshold", () => {
+    expect(derivePitcherFatigueLevel(5, 0.4)).toBe("tired");
   });
 
   it("returns 'tired' when fatigue reaches the fresh threshold", () => {
-    expect(derivePitcherFatigueLevel(3, 0.5)).toBe("tired");
+    expect(derivePitcherFatigueLevel(3, 0.8)).toBe("tired");
   });
 
   it("returns 'tired' when both thresholds crossed but below gassed", () => {

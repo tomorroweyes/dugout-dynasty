@@ -35,16 +35,19 @@ export type PitcherFatigueLevel = "fresh" | "tired" | "gassed";
 /**
  * Derive a human-readable fatigue level from raw fatigue numbers.
  * Thresholds:
- *   fresh  → innings < 4 AND extraFatigue < 0.5
+ *   fresh  → innings <= 4 AND extraFatigue < 0.8 (reasonable through ~4-5 ABs of patient or 4 paint pitches)
  *   gassed → innings >= 6 OR extraFatigue >= 1.5
  *   tired  → everything in between
+ *
+ * A pitcher should be fresh for their first 4-5 innings unless getting shelled
+ * (high extraFatigue from lots of patient ABs or paint pitches).
  */
 export function derivePitcherFatigueLevel(
   innings: number,
   extraFatigue: number
 ): PitcherFatigueLevel {
   if (innings >= 6 || extraFatigue >= 1.5) return "gassed";
-  if (innings < 4 && extraFatigue < 0.5) return "fresh";
+  if (innings <= 4 && extraFatigue < 0.8) return "fresh";
   return "tired";
 }
 
