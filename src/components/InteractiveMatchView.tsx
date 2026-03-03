@@ -739,10 +739,10 @@ export function InteractiveMatchView({
               const isTired = fatigueLevel === "tired";
               const isGassed = fatigueLevel === "gassed";
               const statusColor = isGassed
-                ? "bg-red-500/20 border-red-500"
+                ? "bg-red-500/20 dark:bg-red-500/10 border-red-500 dark:border-red-400"
                 : isTired
-                  ? "bg-yellow-500/15 border-yellow-500"
-                  : "bg-green-500/15 border-green-500";
+                  ? "bg-yellow-500/15 dark:bg-yellow-500/10 border-yellow-500 dark:border-yellow-400"
+                  : "bg-green-500/15 dark:bg-green-500/10 border-green-500 dark:border-green-400";
               const statusText = isGassed
                 ? "text-red-600 dark:text-red-400"
                 : isTired
@@ -770,10 +770,10 @@ export function InteractiveMatchView({
                   {/* Clutch indicator + fatigue detail */}
                   <div className="flex items-center gap-2 text-xs">
                     {isClutch && (
-                      <span className="font-bold text-amber-500">⚡ CLUTCH MOMENT</span>
+                      <span className="font-bold text-amber-500 dark:text-amber-400">⚡ CLUTCH MOMENT</span>
                     )}
                     {fatigueLevel !== "fresh" && (
-                      <span className={`${isGassed ? "text-red-500" : "text-orange-400"}`}>
+                      <span className={`${isGassed ? "text-red-500 dark:text-red-400" : "text-orange-400 dark:text-orange-300"}`}>
                         {isGassed ? "Arm running out" : "Showing wear"}
                       </span>
                     )}
