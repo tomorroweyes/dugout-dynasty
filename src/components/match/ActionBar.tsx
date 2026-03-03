@@ -580,7 +580,6 @@ export function ActionBar({
               );
             })}
           </div>
-        )}
 
       {/* Zone grid — purely location aim, no row-strategy coupling */}
       {isGuaranteedAbility(selectedAbilityDef) ? (
