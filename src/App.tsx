@@ -13,6 +13,8 @@ import { EquipmentManager } from "@/components/EquipmentManager";
 import { Shop } from "@/components/Shop";
 import { InteractiveMatchView } from "@/components/InteractiveMatchView";
 import { PreGameCard } from "@/components/PreGameCard";
+import { PostGameHookScreen } from "@/components/PostGameHookScreen";
+import { generatePostGameHooks } from "@/engine/postGameHooks";
 import { initializeInteractiveMatch } from "@/engine/interactiveMatchEngine";
 import { generatePreGameContext } from "@/engine/preGameNarrative";
 import type { MatchResult } from "@/types/game";
@@ -48,6 +50,12 @@ function App() {
   // Opponent ID set when player clicks "Play Match" in interactive mode.
   // Drives the /pregame route — cleared once the match is actually started.
   const [pendingOpponentId, setPendingOpponentId] = useState<string | null>(null);
+
+  // Post-game context — set after match completes, cleared when player leaves post-game screen.
+  const [postGameContext, setPostGameContext] = useState<{
+    result: MatchResult;
+    opponentName: string;
+  } | null>(null);
 
   // Apply retro theme class to document root
   useEffect(() => {
@@ -177,7 +185,10 @@ function App() {
     // Apply the result using the new action
     applyInteractiveMatchResult(result, currentTeam, opponentTeam, tierConfig.matchRewards);
     setActiveInteractiveMatch(null);
-    navigate("/league", { replace: true });
+
+    // Show post-game hook screen before returning to league
+    setPostGameContext({ result, opponentName: opponentTeam.name });
+    navigate("/post-game", { replace: true });
   };
 
   return (
@@ -231,6 +242,32 @@ function App() {
             <Navigate to="/league" replace />
           )
         }
+      />
+      <Route
+        path="/post-game"
+        element={(() => {
+          if (!postGameContext || !league) {
+            return <Navigate to="/league" replace />;
+          }
+          const hooks = generatePostGameHooks(
+            league,
+            league.humanTeamId,
+            postGameContext.result.isWin
+          );
+          return (
+            <PostGameHookScreen
+              isWin={postGameContext.result.isWin}
+              myScore={postGameContext.result.myRuns}
+              opponentScore={postGameContext.result.opponentRuns}
+              opponentName={postGameContext.opponentName}
+              hooks={hooks}
+              onContinue={() => {
+                setPostGameContext(null);
+                navigate("/league", { replace: true });
+              }}
+            />
+          );
+        })()}
       />
       <Route
         path="/draft"
