@@ -749,10 +749,10 @@ export function InteractiveMatchView({
                   ? "text-yellow-600 dark:text-yellow-400"
                   : "text-green-600 dark:text-green-400";
               const statusLabel = isGassed
-                ? "GASSED"
+                ? isMyBatter ? "PITCHER GASSED" : "GASSED"
                 : isTired
-                  ? "TIRED"
-                  : "FRESH";
+                  ? isMyBatter ? "PITCHER TIRED" : "TIRED"
+                  : isMyBatter ? "PITCHER FRESH" : "FRESH";
               return (
                 <div
                   className={`shrink-0 flex flex-col gap-2 px-4 py-3 border-b-2 ${isMyBatter ? "bg-blue-500/10 border-blue-500" : "bg-red-500/10 border-red-500"}`}
