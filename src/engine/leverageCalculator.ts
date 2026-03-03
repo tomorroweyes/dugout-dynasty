@@ -25,9 +25,9 @@ import { computeLeverageIndex } from "./winExpectancy";
  * Tighter thresholds (lower values) in late innings mean more interactive moments.
  */
 export function getDynamicLeverageThreshold(inning: number): number {
-  if (inning <= 5) return 2.0;    // Innings 1-5: rare, let the game flow
-  if (inning <= 7) return 1.7;    // Innings 6-7: moderate buildup
-  return 1.3;                     // Innings 8+: more moments, late-game drama
+  if (inning <= 5) return 1.6;    // Innings 1-5: more moments early
+  if (inning <= 7) return 1.3;    // Innings 6-7: moderate buildup
+  return 1.0;                     // Innings 8+: most moments, late-game drama
 }
 
 /**

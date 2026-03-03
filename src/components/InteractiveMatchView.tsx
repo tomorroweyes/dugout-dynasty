@@ -376,6 +376,7 @@ export function InteractiveMatchView({
 
       let landing: ZoneCell;
       let batterSwing: ZoneCell | undefined;
+      let pitcherAim: ZoneCell | undefined;
       if (isMyBatter) {
         // Batting: pitcher AI picks a target zone, then execution variance is applied
         // to *that aim*, producing where the pitch actually ends up.
@@ -393,7 +394,6 @@ export function InteractiveMatchView({
         // Within tendency: prefer cold zones, fall back to full tendency set
         const onPatternPool = coldTendencyZones.length > 0 ? coldTendencyZones : tendencyZones;
 
-        let pitcherAim: ZoneCell;
         if (matchState.rng.random() < 0.8) {
           // On-pattern: archetype style with cold-zone preference
           pitcherAim = onPatternPool[Math.floor(matchState.rng.random() * onPatternPool.length)];
