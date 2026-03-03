@@ -23,7 +23,7 @@ import { DiamondField } from "./match/DiamondField";
 import { PlayByPlayLog } from "./match/PlayByPlayLog";
 import { MatchupCard } from "./match/MatchupCard";
 import { ActionBar } from "./match/ActionBar";
-import { InningGamePlanSelector } from "./match/InningGamePlanSelector";
+import { TacticalPlanSelector } from "./match/TacticalPlanSelector";
 import { PostMatchInsightCards } from "./PostMatchInsightCards";
 import { BigMomentOverlay, type BigMoment } from "./match/BigMomentOverlay";
 import { ScoringFlash, type ScoringFlashData } from "./match/ScoringFlash";
@@ -784,10 +784,11 @@ export function InteractiveMatchView({
 
               <div className="flex-1 min-h-0 px-2 py-2 overflow-hidden">
                 {showGamePlanSelector ? (
-                  <InningGamePlanSelector
+                  <TacticalPlanSelector
                     inning={matchState.inning}
                     myRuns={matchState.myRuns}
                     opponentRuns={matchState.opponentRuns}
+                    pitcherFatigue={matchState.opponentPitcherFatigueLevel}
                     onSelectPlan={handleSelectGamePlan}
                   />
                 ) : (

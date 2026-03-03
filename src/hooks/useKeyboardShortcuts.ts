@@ -55,7 +55,7 @@ export function useKeyboardShortcuts({
 
       // Space/Enter to continue through transitions and final score
       if (key === " " || key === "enter") {
-        if (showingResult) {
+        if (showingResult || matchState.inningComplete) {
           e.preventDefault();
           onContinue();
           return;
