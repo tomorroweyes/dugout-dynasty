@@ -740,6 +740,37 @@ export function simulateAtBat_Interactive(
     // Move to next half-inning or next inning
     if (isTop) {
       // Was top of inning, move to bottom
+      // Check for game over: if inning >= 9 and opponent has lead after their at-bat, game is over
+      // (They won't bat again this inning, so if they're winning, we can't catch them)
+      const isGameOverAfterTop = state.inning >= 9 && newOpponentRuns > newMyRuns;
+      
+      if (isGameOverAfterTop) {
+        // Opponent won—game ends immediately after top half
+        return {
+          ...state,
+          myTeam: updatedMyTeam,
+          opponentTeam: updatedOpponentTeam,
+          myRuns: newMyRuns,
+          opponentRuns: newOpponentRuns,
+          myHits: newMyHits,
+          opponentHits: newOpponentHits,
+          playByPlay: newPlayByPlay,
+          lootDrops: newLootDrops,
+          isComplete: true,
+          inningComplete: true,
+          myPitcherExtraFatigue: newMyPitcherExtraFatigue,
+          opponentPitcherExtraFatigue: newOpponentPitcherExtraFatigue,
+          myPitcherFatigueLevel: derivePitcherFatigueLevel(state.myPitcherInnings + 1, newMyPitcherExtraFatigue),
+          opponentPitcherFatigueLevel: derivePitcherFatigueLevel(state.opponentPitcherInnings, newOpponentPitcherExtraFatigue),
+          lastBatterApproach: null,
+          consecutiveBatterApproach: 0,
+          lastPitchStrategy: null,
+          consecutivePitchStrategy: 0,
+          lastSpiritDelta,
+        };
+      }
+
+      // Was top of inning, move to bottom
       // Batting order: continue my team's lineup where it left off
       const myBatters = updatedMyTeam.filter(isBatter);
       const myStartIdx = state.myBatterIndex % (myBatters.length || 1);
