@@ -167,9 +167,28 @@ export function ActionBar({
         ? "Next Inning"
         : "Next Batter";
 
+    // Zone result data for visualization
+    const resultData = lastPlay ? {
+      aimed: lastPlay.zoneAimed ?? { row: 1 as const, col: 1 as const },
+      landingZone: lastPlay.zoneLanded ?? { row: 1 as const, col: 1 as const },
+      isPerfect: lastPlay.perfectContact || lastPlay.paintedCorner,
+    } : null;
+
     return (
       <div className="h-full flex flex-col gap-2 py-1">
-        {/* Outcome headline */}
+        {/* Zone grid in result reveal mode — shows where pitch was, where batter looked */}
+        {lastPlay && (
+          <div className="flex-1 min-h-0 flex flex-col gap-1.5 shrink-0 mb-1">
+            <ZoneGridDisplay
+              mode={isMyBatter ? "batting" : "pitching"}
+              disabled={true}
+              fillHeight={true}
+              resultData={resultData}
+            />
+          </div>
+        )}
+
+        {/* Outcome headline overlay */}
         <div className={`text-center py-2 px-3 rounded-lg shrink-0 ${meta.bg}`}>
           <div className="text-xl mb-0.5 leading-none">{meta.icon}</div>
           <div className={`text-xs font-bold uppercase tracking-wide ${meta.color}`}>
@@ -182,9 +201,6 @@ export function ActionBar({
             </div>
           )}
         </div>
-
-        {/* Zone grid in result reveal mode */}
-        {/* TODO: Add zone visualization here when zone play data is stored in matchState */}
 
         {/* Narrative text */}
         {lastPlay?.narrativeText && (

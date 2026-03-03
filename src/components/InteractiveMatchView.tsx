@@ -466,6 +466,17 @@ export function InteractiveMatchView({
         isMyBatter,
         batterSwing,
       });
+
+      // Store zone selections for visualization in result screen
+      if (isMyBatter) {
+        // Batting: pitcher aims, batter predicted aimedZone
+        decision.pitcherAimedZone = pitcherAim; // AI pitcher's aim
+        decision.batterAimedZone = aimedZone;   // Player's prediction
+      } else {
+        // Pitching: player aims the pitch, batter predicted
+        decision.pitcherAimedZone = aimedZone;    // Player's aim
+        decision.batterAimedZone = batterSwing;   // AI batter's swing zone
+      }
     }
 
     const newState = simulateAtBat_Interactive(matchState, decision);
@@ -739,20 +750,20 @@ export function InteractiveMatchView({
               const isTired = fatigueLevel === "tired";
               const isGassed = fatigueLevel === "gassed";
               const statusColor = isGassed
-                ? "bg-red-500/20 border-red-500"
+                ? "bg-red-500/20 dark:bg-red-500/10 border-red-500 dark:border-red-400"
                 : isTired
-                  ? "bg-yellow-500/15 border-yellow-500"
-                  : "bg-green-500/15 border-green-500";
+                  ? "bg-yellow-500/15 dark:bg-yellow-500/10 border-yellow-500 dark:border-yellow-400"
+                  : "bg-green-500/15 dark:bg-green-500/10 border-green-500 dark:border-green-400";
               const statusText = isGassed
                 ? "text-red-600 dark:text-red-400"
                 : isTired
                   ? "text-yellow-600 dark:text-yellow-400"
                   : "text-green-600 dark:text-green-400";
               const statusLabel = isGassed
-                ? "GASSED"
+                ? isMyBatter ? "PITCHER GASSED" : "GASSED"
                 : isTired
-                  ? "TIRED"
-                  : "FRESH";
+                  ? isMyBatter ? "PITCHER TIRED" : "TIRED"
+                  : isMyBatter ? "PITCHER FRESH" : "FRESH";
               return (
                 <div
                   className={`shrink-0 flex flex-col gap-2 px-4 py-3 border-b-2 ${isMyBatter ? "bg-blue-500/10 border-blue-500" : "bg-red-500/10 border-red-500"}`}
@@ -770,10 +781,10 @@ export function InteractiveMatchView({
                   {/* Clutch indicator + fatigue detail */}
                   <div className="flex items-center gap-2 text-xs">
                     {isClutch && (
-                      <span className="font-bold text-amber-500">⚡ CLUTCH MOMENT</span>
+                      <span className="font-bold text-amber-500 dark:text-amber-400">⚡ CLUTCH MOMENT</span>
                     )}
                     {fatigueLevel !== "fresh" && (
-                      <span className={`${isGassed ? "text-red-500" : "text-orange-400"}`}>
+                      <span className={`${isGassed ? "text-red-500 dark:text-red-400" : "text-orange-400 dark:text-orange-300"}`}>
                         {isGassed ? "Arm running out" : "Showing wear"}
                       </span>
                     )}
