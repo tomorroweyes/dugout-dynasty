@@ -412,6 +412,11 @@ export function ActionBar({
           <ForecastPanel snapshot={forecastSnapshot} modeLabel="Batting" />
         </div>
 
+        {/* Decision context label */}
+        <div className="shrink-0 text-xs text-muted-foreground font-medium">
+          Choose Approach: <kbd className="text-[9px] font-mono opacity-50 ml-1">Q W E</kbd>
+        </div>
+
         {/* Approach selector + inline ability chips */}
         <div className="flex items-center gap-2 min-h-7 shrink-0">
           <div className="flex gap-1 flex-1">
@@ -524,6 +529,11 @@ export function ActionBar({
     <div className="h-full flex flex-col gap-1.5">
       <div className="shrink-0">
         <ForecastPanel snapshot={forecastSnapshot} modeLabel="Pitching" />
+      </div>
+
+      {/* Decision context label */}
+      <div className="shrink-0 text-xs text-muted-foreground font-medium">
+        Choose Strategy: <kbd className="text-[9px] font-mono opacity-50 ml-1">Q W E</kbd>
       </div>
 
       {/* Strategy selector + inline ability chips */}
