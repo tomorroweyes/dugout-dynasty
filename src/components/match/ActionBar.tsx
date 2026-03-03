@@ -176,19 +176,7 @@ export function ActionBar({
 
     return (
       <div className="h-full flex flex-col gap-2 py-1">
-        {/* Zone grid in result reveal mode — shows where pitch was, where batter looked */}
-        {lastPlay && (
-          <div className="flex-1 min-h-0 flex flex-col gap-1.5 shrink-0 mb-1">
-            <ZoneGridDisplay
-              mode={isMyBatter ? "batting" : "pitching"}
-              disabled={true}
-              fillHeight={true}
-              resultData={resultData}
-            />
-          </div>
-        )}
-
-        {/* Outcome headline overlay */}
+        {/* Outcome headline */}
         <div className={`text-center py-2 px-3 rounded-lg shrink-0 ${meta.bg}`}>
           <div className="text-xl mb-0.5 leading-none">{meta.icon}</div>
           <div className={`text-xs font-bold uppercase tracking-wide ${meta.color}`}>
@@ -201,6 +189,9 @@ export function ActionBar({
             </div>
           )}
         </div>
+
+        {/* Zone grid in result reveal mode — TODO: wire zoneMap through state for full visualization */}
+        {/* Currently showing grid requires deriveZoneMap() which needs current batter stats */}
 
         {/* Narrative text */}
         {lastPlay?.narrativeText && (
