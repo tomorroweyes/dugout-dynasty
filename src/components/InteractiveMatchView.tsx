@@ -26,6 +26,7 @@ import { ActionBar } from "./match/ActionBar";
 import { InningGamePlanSelector } from "./match/InningGamePlanSelector";
 import { PostMatchInsightCards } from "./PostMatchInsightCards";
 import { BigMomentOverlay, type BigMoment } from "./match/BigMomentOverlay";
+import { ScoringFlash, type ScoringFlashData } from "./match/ScoringFlash";
 import { FIELD_POSITIONS, TEXT_MARKERS, type SimMode } from "./match/constants";
 import { isHighLeverage } from "@/engine/leverageCalculator";
 import {
@@ -64,6 +65,7 @@ export function InteractiveMatchView({
     y: number;
     type: string;
   } | null>(null);
+  const [scoringFlash, setScoringFlash] = useState<ScoringFlashData | null>(null);
   const [lastZonePlay, setLastZonePlay] = useState<{
     aimed: ZoneCell;
     zoneMap: ZoneMap;
@@ -134,6 +136,20 @@ export function InteractiveMatchView({
     if (playLogRef.current) {
       playLogRef.current.scrollTop = playLogRef.current.scrollHeight;
     }
+  }, [matchState.playByPlay.length]);
+
+  // Scoring flash — fires whenever any run scores (auto-sim or player-driven)
+  useEffect(() => {
+    if (matchState.isComplete) return;
+    const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
+    if (!lastPlay || (lastPlay.rbi ?? 0) <= 0) return;
+    setScoringFlash({
+      playerName: lastPlay.batter,
+      outcome:    lastPlay.outcome,
+      rbi:        lastPlay.rbi ?? 1,
+      isMyTeam:   !matchState.isTop, // isTop=false → my team batting
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchState.playByPlay.length]);
 
   // Auto-simulation hook (declared before game-plan effects that reference handleAutoSim)
@@ -808,6 +824,13 @@ export function InteractiveMatchView({
           isMyBatter={lastZonePlay.isMyBatter}
           batterSwing={lastZonePlay.batterSwing}
           onDismiss={() => setLastZonePlay(null)}
+        />
+      )}
+
+      {scoringFlash && (
+        <ScoringFlash
+          flash={scoringFlash}
+          onDismiss={() => setScoringFlash(null)}
         />
       )}
 
