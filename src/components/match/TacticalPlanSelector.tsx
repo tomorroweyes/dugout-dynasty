@@ -1,127 +1,304 @@
 /**
- * TacticalPlanSelector — replaces InningGamePlanSelector.
+ * TacticalPlanSelector — situational between-inning strategy selector.
  *
- * Instead of three generic "Contact / Power / Patient" buttons that feel
- * disconnected from the game, this generates 2–3 situational "calls" that
- * are named and described based on the current game state:
- *   – score differential
- *   – inning number (early / mid / late / extra)
- *   – opponent pitcher's fatigue level
+ * Generates 2–3 context-aware "calls" instead of generic Contact/Power/Patient.
+ * The call names and descriptions change based on actual game state so decisions
+ * feel grounded in the moment.
  *
- * Each call maps to one of the three underlying BatterApproach values so the
- * mechanics are unchanged — only the framing is situation-aware.
+ * ─── HOW TO ADD NEW CALLS ────────────────────────────────────────────────────
+ * Just append an entry to TACTICAL_POOL below. No logic changes needed.
+ * Each entry has:
+ *   - approach: maps to the underlying BatterApproach (power/contact/patient)
+ *   - callName, icon, situation: display text
+ *   - weight: how often this surfaces (higher = picks first when multiple eligible)
+ *   - when: optional filter conditions (all must pass for the call to be eligible)
+ *       minScoreDiff / maxScoreDiff  — scoreDiff = myRuns - opponentRuns
+ *       minInning / maxInning        — inning number
+ *       pitcherFatigueIs             — only when pitcher is one of these levels
+ *       pitcherFatigueNot            — exclude when pitcher is one of these levels
+ *
+ * Selection picks the highest-weight eligible call per approach (power/contact/patient),
+ * then returns the top 2 by weight. A pitcher-fatigue call gets added as a third slot
+ * when the pitcher is tired/gassed and the base set doesn't already include patient.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import { useEffect } from "react";
 import type { BatterApproach } from "@/types/approach";
 import type { PitcherFatigueLevel } from "@/engine/interactiveMatchEngine";
 
-interface TacticalChoice {
-  approach: BatterApproach;
-  callName: string;
-  icon: string;
+// ─── Pool entry type ──────────────────────────────────────────────────────────
+
+interface TacticalChoiceRule {
+  approach:  BatterApproach;
+  callName:  string;
+  icon:      string;
+  /** One-line description of why this call fits — should feel situationally relevant */
   situation: string;
-  key: string;
+  /**
+   * Higher weight = picked first when multiple rules are eligible for the same approach.
+   * Default: 1. Use 2+ for "most fitting" calls, 0.5 for fallbacks.
+   */
+  weight?: number;
+  when?: {
+    minScoreDiff?:      number;                // scoreDiff >= this
+    maxScoreDiff?:      number;                // scoreDiff <= this
+    minInning?:         number;                // inning >= this
+    maxInning?:         number;                // inning <= this
+    pitcherFatigueIs?:  PitcherFatigueLevel[];  // pitcher must be one of these
+    pitcherFatigueNot?: PitcherFatigueLevel[];  // pitcher must NOT be one of these
+  };
 }
 
-// ─── Situational choice generation ────────────────────────────────────────────
+// ─── Tactical call pool ───────────────────────────────────────────────────────
+// Add new calls here. Conditions are AND-ed. No other changes required.
+
+const TACTICAL_POOL: TacticalChoiceRule[] = [
+
+  // ── BIG DEFICIT (down 3+) ──────────────────────────────────────────────────
+  {
+    approach: "power", callName: "We Need a Big Inning", icon: "💥", weight: 3,
+    situation: "Need multiple runs. Go hunting for extra bases — no playing it safe.",
+    when: { maxScoreDiff: -3 },
+  },
+  {
+    approach: "contact", callName: "Start a Rally", icon: "🏃", weight: 3,
+    situation: "Get on base any way you can. Keep the line moving and let the run support come.",
+    when: { maxScoreDiff: -3 },
+  },
+  {
+    approach: "patient", callName: "Make Him Pay", icon: "⏳", weight: 2,
+    situation: "He's up big and feeling it — make him throw strikes and wait for a mistake.",
+    when: { maxScoreDiff: -3, pitcherFatigueNot: ["fresh"] },
+  },
+
+  // ── SMALL DEFICIT, LATE (down 1-2, inning 7+) ─────────────────────────────
+  {
+    approach: "power", callName: "One Big Swing", icon: "💪", weight: 3,
+    situation: "A homer ties it or takes the lead. Stay patient, then punish your pitch.",
+    when: { minScoreDiff: -2, maxScoreDiff: -1, minInning: 7 },
+  },
+  {
+    approach: "contact", callName: "Manufacture It", icon: "⚙️", weight: 3,
+    situation: "Smart baseball. Get on base, move runners, find a way to scratch across a run.",
+    when: { minScoreDiff: -2, maxScoreDiff: -1, minInning: 7 },
+  },
+  {
+    approach: "patient", callName: "Make Him Work", icon: "🔭", weight: 2,
+    situation: "Run up his pitch count. A walk is as good as a hit right now.",
+    when: { minScoreDiff: -2, maxScoreDiff: -1, minInning: 7 },
+  },
+
+  // ── SMALL DEFICIT, EARLY (down 1-2, inning 1-6) ───────────────────────────
+  {
+    approach: "power", callName: "Answer Back", icon: "⚡", weight: 2,
+    situation: "Don't let the deficit sit. Attack early in the count and take control.",
+    when: { minScoreDiff: -2, maxScoreDiff: -1, maxInning: 6 },
+  },
+  {
+    approach: "contact", callName: "Get on Base", icon: "👟", weight: 2,
+    situation: "Start building — put the ball in play and see what develops.",
+    when: { minScoreDiff: -2, maxScoreDiff: -1, maxInning: 6 },
+  },
+  {
+    approach: "patient", callName: "Long Game", icon: "📖", weight: 1,
+    situation: "Plenty of time. Make him work counts and scout his tendencies for later.",
+    when: { minScoreDiff: -2, maxScoreDiff: -1, maxInning: 6 },
+  },
+
+  // ── TIED ──────────────────────────────────────────────────────────────────
+  {
+    approach: "power", callName: "Take the Lead", icon: "🎯", weight: 2,
+    situation: "First to score in a tie game wins the momentum. Be aggressive with your pitch.",
+    when: { minScoreDiff: 0, maxScoreDiff: 0 },
+  },
+  {
+    approach: "contact", callName: "Play Your Game", icon: "🧠", weight: 2,
+    situation: "Stay disciplined and make solid contact. Trust your lineup to come through.",
+    when: { minScoreDiff: 0, maxScoreDiff: 0 },
+  },
+  {
+    approach: "patient", callName: "Force His Hand", icon: "🃏", weight: 1,
+    situation: "Work counts, get runners on, and let your lineup do the damage.",
+    when: { minScoreDiff: 0, maxScoreDiff: 0 },
+  },
+  {
+    approach: "power", callName: "Whoever Scores First Wins", icon: "⚔️", weight: 3,
+    situation: "It's anyone's game. One big swing decides it — be ready.",
+    when: { minScoreDiff: 0, maxScoreDiff: 0, minInning: 7 },
+  },
+
+  // ── SMALL LEAD, LATE (up 1-2, inning 7+) ─────────────────────────────────
+  {
+    approach: "contact", callName: "Protect the Lead", icon: "🛡️", weight: 3,
+    situation: "Don't give away outs. Make him earn every single one.",
+    when: { minScoreDiff: 1, maxScoreDiff: 2, minInning: 7 },
+  },
+  {
+    approach: "power", callName: "Put It Away", icon: "🔒", weight: 3,
+    situation: "Extend the lead and take the game completely out of their hands.",
+    when: { minScoreDiff: 1, maxScoreDiff: 2, minInning: 7 },
+  },
+  {
+    approach: "patient", callName: "Run the Clock", icon: "⏱️", weight: 2,
+    situation: "Grind at-bats, tire out their bullpen. Every pitch they throw counts.",
+    when: { minScoreDiff: 1, maxScoreDiff: 2, minInning: 7 },
+  },
+
+  // ── SMALL LEAD, EARLY (up 1-2, inning 1-6) ───────────────────────────────
+  {
+    approach: "power", callName: "Keep Scoring", icon: "🔥", weight: 2,
+    situation: "Press the advantage while you have it. Don't let him settle in.",
+    when: { minScoreDiff: 1, maxScoreDiff: 2, maxInning: 6 },
+  },
+  {
+    approach: "contact", callName: "Stay Disciplined", icon: "🎯", weight: 2,
+    situation: "Good at-bats protect the lead. Don't chase garbage — make him come to you.",
+    when: { minScoreDiff: 1, maxScoreDiff: 2, maxInning: 6 },
+  },
+
+  // ── BIG LEAD (up 3+), LATE ────────────────────────────────────────────────
+  {
+    approach: "contact", callName: "Stay Focused", icon: "🧘", weight: 3,
+    situation: "You've got this. Don't give them cheap outs or reasons to believe.",
+    when: { minScoreDiff: 3, minInning: 7 },
+  },
+  {
+    approach: "power", callName: "Bury It", icon: "⚰️", weight: 2,
+    situation: "More runs = more comfortable. Be opportunistic when they hang one.",
+    when: { minScoreDiff: 3, minInning: 7 },
+  },
+
+  // ── BIG LEAD (up 3+), EARLY ───────────────────────────────────────────────
+  {
+    approach: "power", callName: "Keep the Foot Down", icon: "👣", weight: 3,
+    situation: "Don't coast. Keep putting runs on the board — leads disappear fast.",
+    when: { minScoreDiff: 3, maxInning: 6 },
+  },
+  {
+    approach: "contact", callName: "Play It Smart", icon: "🧢", weight: 2,
+    situation: "Controlled aggression. Keep making good contact and let the runs come.",
+    when: { minScoreDiff: 3, maxInning: 6 },
+  },
+
+  // ── PITCHER FATIGUE — added as third slot when eligible ───────────────────
+  {
+    approach: "patient", callName: "He's Done", icon: "💀", weight: 5,
+    situation: "Running on empty — make him throw every pitch he has left. Bullpen's coming.",
+    when: { pitcherFatigueIs: ["gassed"] },
+  },
+  {
+    approach: "patient", callName: "He's Fading", icon: "😮‍💨", weight: 5,
+    situation: "He's laboring through his pitch count. Make him work harder every at-bat.",
+    when: { pitcherFatigueIs: ["tired"] },
+  },
+
+  // ── EXTRA INNINGS ─────────────────────────────────────────────────────────
+  {
+    approach: "contact", callName: "Just Score", icon: "🏁", weight: 4,
+    situation: "Runner on second, one run wins it. Put the ball in play — no heroes needed.",
+    when: { minScoreDiff: 0, maxScoreDiff: 0, minInning: 10 },
+  },
+  {
+    approach: "power", callName: "End It Now", icon: "🎆", weight: 4,
+    situation: "Walk-off is right there. One good swing and you're going home.",
+    when: { minScoreDiff: 0, maxScoreDiff: 0, minInning: 10 },
+  },
+
+  // ── UNIVERSAL FALLBACKS (no conditions — always eligible) ─────────────────
+  {
+    approach: "power",   callName: "Be Aggressive",   icon: "⚡", weight: 0.5,
+    situation: "Attack early in the count. Make something happen.",
+  },
+  {
+    approach: "contact", callName: "Make Contact",    icon: "🏏", weight: 0.5,
+    situation: "Put the ball in play. Swing at strikes, lay off the rest.",
+  },
+  {
+    approach: "patient", callName: "Work the Count",  icon: "📊", weight: 0.5,
+    situation: "Take pitches, draw walks, tire him out.",
+  },
+];
+
+// ─── Selector logic ───────────────────────────────────────────────────────────
+
+interface TacticalChoice {
+  approach:  BatterApproach;
+  callName:  string;
+  icon:      string;
+  situation: string;
+  key:       string;
+}
+
+function filterEligible(
+  rules: TacticalChoiceRule[],
+  inning: number,
+  scoreDiff: number,
+  pitcherFatigue: PitcherFatigueLevel,
+): TacticalChoiceRule[] {
+  return rules.filter((r) => {
+    const w = r.when ?? {};
+    if (w.minScoreDiff      !== undefined && scoreDiff      < w.minScoreDiff)      return false;
+    if (w.maxScoreDiff      !== undefined && scoreDiff      > w.maxScoreDiff)      return false;
+    if (w.minInning         !== undefined && inning         < w.minInning)         return false;
+    if (w.maxInning         !== undefined && inning         > w.maxInning)         return false;
+    if (w.pitcherFatigueIs  && !w.pitcherFatigueIs.includes(pitcherFatigue))      return false;
+    if (w.pitcherFatigueNot &&  w.pitcherFatigueNot.includes(pitcherFatigue))     return false;
+    return true;
+  });
+}
 
 function generateTacticalChoices(
   inning: number,
-  scoreDiff: number,          // myRuns - opponentRuns
+  scoreDiff: number,
   pitcherFatigue: PitcherFatigueLevel,
 ): TacticalChoice[] {
-  const isLate  = inning >= 7;
-  const isEarly = inning <= 3;
+  const eligible = filterEligible(TACTICAL_POOL, inning, scoreDiff, pitcherFatigue);
 
-  // Pitcher opportunity — patient option referencing fatigue when relevant
-  const pitcherOption: Omit<TacticalChoice, "key"> | null =
-    pitcherFatigue === "gassed"
-      ? { approach: "patient", callName: "He's Done",   icon: "💀", situation: "Running on empty — make him throw every pitch he's got left. Bullpen's coming." }
-      : pitcherFatigue === "tired"
-      ? { approach: "patient", callName: "He's Fading", icon: "😮‍💨", situation: "He's laboring. Run up his pitch count and tire him out faster." }
+  // Separate pitcher-fatigue-specific rules from regular rules
+  const fatigueRules  = eligible.filter((r) => r.when?.pitcherFatigueIs !== undefined);
+  const regularRules  = eligible.filter((r) => r.when?.pitcherFatigueIs === undefined);
+
+  // Pick best rule per approach from regular pool (highest weight wins)
+  const byApproach: Partial<Record<BatterApproach, TacticalChoiceRule>> = {};
+  for (const rule of regularRules) {
+    const existing = byApproach[rule.approach];
+    if (!existing || (rule.weight ?? 1) > (existing.weight ?? 1)) {
+      byApproach[rule.approach] = rule;
+    }
+  }
+
+  // Sort by weight and pick top 2 for the base set
+  const ranked = (Object.values(byApproach) as TacticalChoiceRule[])
+    .sort((a, b) => (b.weight ?? 1) - (a.weight ?? 1));
+  const base = ranked.slice(0, 2);
+
+  // Add pitcher fatigue option as third slot if relevant and not already patient
+  const hasPatient = base.some((r) => r.approach === "patient");
+  const fatigueOption =
+    !hasPatient && pitcherFatigue !== "fresh" && fatigueRules.length > 0
+      ? fatigueRules.sort((a, b) => (b.weight ?? 1) - (a.weight ?? 1))[0]
       : null;
 
-  // Base two choices from game situation
-  type ChoiceBase = Omit<TacticalChoice, "key">;
-  let base: [ChoiceBase, ChoiceBase];
+  const selected = fatigueOption ? [...base, fatigueOption] : base;
 
-  if (scoreDiff <= -3) {
-    // Down big — need a crooked number
-    base = [
-      { approach: "power",   callName: "We Need a Big Inning", icon: "💥", situation: "Need multiple runs. Go hunting for extra bases — no playing it safe." },
-      { approach: "contact", callName: "Start a Rally",        icon: "🏃", situation: "Get on base any way you can. Keep the line moving and let the run support come." },
-    ];
-  } else if (scoreDiff === -1 || scoreDiff === -2) {
-    if (isLate) {
-      // Down 1-2, late — specific, high-stakes framing
-      base = [
-        { approach: "power",   callName: "One Big Swing",    icon: "💪", situation: "A homer ties it or takes the lead. Stay patient, then punish your pitch." },
-        { approach: "contact", callName: "Manufacture It",   icon: "⚙️", situation: "Smart baseball. Get on base, move runners, find a way to scratch across a run." },
-      ];
-    } else {
-      // Down 1-2, early — less urgent, build-oriented
-      base = [
-        { approach: "power",   callName: "Answer Back",   icon: "⚡", situation: "Don't let the deficit sit. Attack early in the count and take control." },
-        { approach: "contact", callName: "Get on Base",   icon: "👟", situation: "Start building — put the ball in play and see what develops." },
-      ];
-    }
-  } else if (scoreDiff === 0) {
-    // Tied
-    base = [
-      { approach: "power",   callName: "Take the Lead",   icon: "🎯", situation: "First to score in a tie game wins the momentum. Be aggressive with your pitch." },
-      { approach: "contact", callName: "Play Your Game",  icon: "🧠", situation: "Stay disciplined and make solid contact. Trust your lineup to come through." },
-    ];
-  } else if (scoreDiff <= 2) {
-    if (isLate) {
-      // Up 1-2, late — protect it
-      base = [
-        { approach: "contact", callName: "Protect the Lead", icon: "🛡️", situation: "Don't give away outs. Make him earn every single one." },
-        { approach: "power",   callName: "Put It Away",      icon: "🔒", situation: "Extend the lead and take the game out of their hands." },
-      ];
-    } else {
-      // Up 1-2, early — keep pressing
-      base = [
-        { approach: "power",   callName: "Keep Scoring",      icon: "🔥", situation: "Press the advantage while you have it. Don't let him settle in." },
-        { approach: "contact", callName: "Stay Disciplined",  icon: "🎯", situation: "Good at-bats protect the lead. Don't swing at garbage." },
-      ];
-    }
-  } else if (isEarly) {
-    // Up big, early game — don't rest
-    base = [
-      { approach: "power",   callName: "Keep the Foot Down", icon: "👣", situation: "Don't coast. Keep putting runs on the board — leads disappear fast." },
-      { approach: "contact", callName: "Play It Smart",      icon: "🧢", situation: "Controlled aggression. Keep making good contact and let the runs come." },
-    ];
-  } else {
-    // Up big, mid/late — comfortable but focused
-    base = [
-      { approach: "contact", callName: "Stay Focused",      icon: "🧘", situation: "You've got this. Don't give them cheap outs or reasons to believe." },
-      { approach: "power",   callName: "Bury It",           icon: "⚰️", situation: "More runs = more comfortable. Be opportunistic when they hang one." },
-    ];
-  }
-
-  // Assign shortcut keys for base choices
-  const choices: TacticalChoice[] = base.map((b, i) => ({ ...b, key: String(i + 1) }));
-
-  // Add pitcher fatigue option as third choice when relevant and not already patient
-  if (pitcherOption && pitcherFatigue !== "fresh") {
-    const alreadyHasPatient = choices.some((c) => c.approach === "patient");
-    if (!alreadyHasPatient) {
-      choices.push({ ...pitcherOption, key: "3" });
-    }
-  }
-
-  return choices;
+  return selected.map((rule, i) => ({
+    approach:  rule.approach,
+    callName:  rule.callName,
+    icon:      rule.icon,
+    situation: rule.situation,
+    key:       String(i + 1),
+  }));
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface TacticalPlanSelectorProps {
-  inning: number;
-  myRuns: number;
-  opponentRuns: number;
+  inning:         number;
+  myRuns:         number;
+  opponentRuns:   number;
   pitcherFatigue: PitcherFatigueLevel;
-  onSelectPlan: (plan: BatterApproach) => void;
+  onSelectPlan:   (plan: BatterApproach) => void;
 }
 
 export function TacticalPlanSelector({
@@ -135,8 +312,8 @@ export function TacticalPlanSelector({
   const choices   = generateTacticalChoices(inning, scoreDiff, pitcherFatigue);
 
   const scoreLabel =
-    scoreDiff === 0   ? "Tied"
-    : scoreDiff > 0   ? `Up ${Math.abs(scoreDiff)}`
+    scoreDiff === 0 ? "Tied"
+    : scoreDiff > 0 ? `Up ${Math.abs(scoreDiff)}`
     : `Down ${Math.abs(scoreDiff)}`;
 
   // Keyboard shortcuts: 1 / 2 / 3
@@ -160,12 +337,12 @@ export function TacticalPlanSelector({
           Your call
         </span>
         <span className="text-xs text-muted-foreground tabular-nums">
-          Top {inning} · {scoreLabel} {myRuns}–{opponentRuns}
+          {inning >= 10 ? `Extra ${inning}` : `Inning ${inning}`} · {scoreLabel} {myRuns}–{opponentRuns}
         </span>
       </div>
 
       {/* Choices */}
-      <div className={`grid gap-2 ${choices.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+      <div className={`grid gap-2 ${choices.length >= 3 ? "grid-cols-3" : "grid-cols-2"}`}>
         {choices.map((choice) => (
           <button
             key={choice.key}
