@@ -365,10 +365,12 @@ export const ERROR_TEXTS = [
 ];
 
 export const CRITICAL_HIT_PREFIXES = [
-  "⚡ CRITICAL HIT! ⚡",
-  "💥 MASSIVE DAMAGE! 💥",
-  "🔥 SUPER EFFECTIVE! 🔥",
-  "✨ LEGENDARY STRIKE! ✨",
+  "⭐ Perfect contact!",
+  "💥 Got every bit of it!",
+  "🔥 Absolutely crushed!",
+  "✨ Barrel. Gone.",
+  "💎 That's a dream swing!",
+  "🎯 Right on the sweet spot!",
 ];
 
 // ============================================

@@ -186,17 +186,14 @@ export function generateNarrativeText(
     if (batterAbility) {
       const ability = getAbilityById(batterAbility.abilityId);
       if (ability) {
-        abilityPrefix += `${batter.name} uses ${ability.name.toUpperCase()}! `;
+        // Icon + natural-case name — player name already appears in outcome text
+        abilityPrefix += `${ability.iconEmoji ?? "⚡"} ${ability.name}! `;
       }
     }
     if (pitcherAbility) {
       const ability = getAbilityById(pitcherAbility.abilityId);
       if (ability) {
-        if (abilityPrefix) {
-          abilityPrefix += `\n${pitcher.name} counters with ${ability.name.toUpperCase()}! `;
-        } else {
-          abilityPrefix += `${pitcher.name} uses ${ability.name.toUpperCase()}! `;
-        }
+        abilityPrefix += `${ability.iconEmoji ?? "⚡"} ${ability.name}! `;
       }
     }
   }
@@ -257,14 +254,17 @@ export function generateNarrativeText(
     }
 
     // Append run-scoring info (only for stat-tier fallback;
-    // situational rules include run context in their text)
+    // situational rules include run context in their text).
+    // Written as sentence continuations, not separate exclamation fragments.
     if (runsScored > 0) {
       if (result === "homerun") {
         if (runsScored >= 4) outcomeText += " GRAND SLAM!";
-        else if (runsScored === 3) outcomeText += " 3 runs score!";
-        else if (runsScored === 2) outcomeText += " 2 runs score!";
+        else if (runsScored === 3) outcomeText += " Three runs score!";
+        else if (runsScored === 2) outcomeText += " Two runs score!";
+        // solo HR needs no append — it's implied
       } else {
-        if (runsScored === 1) outcomeText += " A run scores!";
+        if (runsScored === 1) outcomeText += " A run comes in.";
+        else if (runsScored === 2) outcomeText += " Two runs score!";
         else outcomeText += ` ${runsScored} runs score!`;
       }
     }
@@ -333,7 +333,9 @@ function generateTripleText(
   isCritical: boolean,
   rng: RandomProvider
 ): string {
-  const tier = getVerbTier(batterStats.power);
+  // Triples are explosive plays — floor at "high" tier; low/mid verbs make no physical sense
+  const rawTier = getVerbTier(batterStats.power);
+  const tier = rawTier === "low" || rawTier === "mid" ? "high" : rawTier;
   const verb = randomChoice(POWER_VERBS[tier], rng);
   const adjective = randomChoice(HIT_ADJECTIVES.triple, rng);
 
@@ -356,7 +358,10 @@ function generateDoubleText(
   isCritical: boolean,
   rng: RandomProvider
 ): string {
-  const tier = getVerbTier(batterStats.power);
+  // Doubles require solid contact — don't use low-power verbs ("pokes", "nudges", etc.)
+  // that contradict the high-energy double adjectives ("thunderous", "scorching").
+  const rawTier = getVerbTier(batterStats.power);
+  const tier = rawTier === "low" ? "mid" : rawTier;
   const verb = randomChoice(POWER_VERBS[tier], rng);
   const adjective = randomChoice(HIT_ADJECTIVES.double, rng);
 
