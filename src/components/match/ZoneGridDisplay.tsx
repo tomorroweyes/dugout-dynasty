@@ -115,7 +115,7 @@ export function ZoneGridDisplay({
           {ROW_LABELS.map((label) => (
             <div
               key={label}
-              className={`text-xs text-muted-foreground font-mono w-7 text-right leading-none flex items-center justify-end pr-1${fh ? " flex-1" : " h-14"}`}
+              className={`text-xs text-muted-foreground font-bold w-8 text-right leading-none flex items-center justify-end pr-1${fh ? " flex-1" : " h-14"}`}
             >
               {label}
             </div>
@@ -125,9 +125,9 @@ export function ZoneGridDisplay({
         {/* Grid */}
         <div className={fh ? "flex flex-col gap-1.5 flex-1 min-h-0" : "flex flex-col gap-1.5 flex-1"}>
           {/* Column labels */}
-          <div className={`flex gap-1.5 mb-0.5${fh ? " shrink-0" : ""}`}>
+          <div className={`flex gap-1.5 mb-0.5 px-0.5${fh ? " shrink-0" : ""}`}>
             {COL_LABELS.map((label) => (
-              <div key={label} className="flex-1 text-center text-xs text-muted-foreground font-mono">
+              <div key={label} className="flex-1 text-center text-xs text-muted-foreground font-bold">
                 {label}
               </div>
             ))}
