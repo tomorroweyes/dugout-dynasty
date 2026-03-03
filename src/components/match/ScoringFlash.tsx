@@ -111,7 +111,7 @@ export function ScoringFlash({ flash, onDismiss }: ScoringFlashProps) {
           <span className="text-sm font-bold text-white leading-tight truncate">
             {flash.playerName}
           </span>
-          <span className="text-[11px] text-white/60 uppercase tracking-widest leading-tight mt-px">
+          <span className="text-xs text-white/75 uppercase tracking-widest leading-tight mt-px">
             {label}
           </span>
         </div>
