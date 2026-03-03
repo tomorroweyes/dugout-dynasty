@@ -23,7 +23,7 @@ interface ZoneGridProps {
   mode: "batting" | "pitching";
   zoneMap: ZoneMap;
   pitchHint?: ZoneCell[]; // batting only — cells shown as hint
-  onSelect: (cell: ZoneCell) => void;
+  onSelect?: (cell: ZoneCell) => void;
   disabled?: boolean;
   /** When true, grid rows grow to fill the parent's available height */
   fillHeight?: boolean;
