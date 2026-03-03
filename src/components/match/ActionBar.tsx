@@ -215,64 +215,184 @@ export function ActionBar({
   }
 
   if (matchState.inningComplete) {
-    // Summarise the half-inning that just ended
     const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
     const halfInningPlays = lastPlay
       ? matchState.playByPlay.filter(
           (p) => p.inning === lastPlay.inning && p.isTop === lastPlay.isTop,
         )
       : [];
+
     const runsThisHalf = halfInningPlays.reduce((sum, p) => sum + (p.rbi ?? 0), 0);
-    const hitsThisHalf = halfInningPlays.filter((p) =>
-      ["single", "double", "triple", "homerun"].includes(p.outcome),
-    ).length;
-    const halfLabel = matchState.isTop ? "Top" : "Bottom";
+
+    // My team just batted when isTop=false (isMyBatter=true)
+    const myTeamBatted = !matchState.isTop;
+
+    // Detect lead change: reconstruct score before this half-inning
+    const myRunsBefore    = myTeamBatted ? matchState.myRuns - runsThisHalf : matchState.myRuns;
+    const theirRunsBefore = myTeamBatted ? matchState.opponentRuns : matchState.opponentRuns - runsThisHalf;
+    const wasTied    = myRunsBefore === theirRunsBefore;
+    const weWereAhead   = myRunsBefore > theirRunsBefore;
+    const theyWereAhead = theirRunsBefore > myRunsBefore;
+    const nowTied    = matchState.myRuns === matchState.opponentRuns;
+    const weLeadNow  = matchState.myRuns > matchState.opponentRuns;
+
+    const leadChanged =
+      (myTeamBatted  && (theyWereAhead || (wasTied && runsThisHalf > 0)) && weLeadNow) ||
+      (!myTeamBatted && (weWereAhead   || (wasTied && runsThisHalf > 0)) && !weLeadNow && !nowTied);
+    const leadTied =
+      !wasTied && nowTied && runsThisHalf > 0;
+
+    // Inning labels
+    const halfLabel    = matchState.isTop ? "Top" : "Bottom";
     const halfEndLabel = matchState.isTop ? "Middle" : "End";
-    const pitcher = matchState.isTop ? matchState.myPitcher : matchState.opponentPitcher;
-    const pitcherInnings = matchState.isTop
-      ? matchState.myPitcherInnings
-      : matchState.opponentPitcherInnings;
+    const pitcher      = matchState.isTop ? matchState.myPitcher : matchState.opponentPitcher;
+    const pitcherIP    = matchState.isTop ? matchState.myPitcherInnings : matchState.opponentPitcherInnings;
     const nextHalfLabel = matchState.isTop ? "Bottom" : `Top ${matchState.inning + 1}`;
     const scoreLine = `${matchState.myRuns} – ${matchState.opponentRuns}`;
 
+    // Per-play display config
+    const PLAY_ICONS: Record<string, string> = {
+      homerun: "🏠", triple: "🔺", double: "⬆️",
+      single: "➡️", walk: "🟡", strikeout: "🔴",
+      groundout: "⚫", flyout: "⚫", lineout: "⚫", popout: "⚫",
+    };
+    const isHit    = (o: string) => ["homerun","triple","double","single"].includes(o);
+    const isScoring = (rbi?: number) => (rbi ?? 0) > 0;
+    const isOut     = (o: string) => ["groundout","flyout","lineout","popout","strikeout"].includes(o);
+
+    // Header color: amber if my team scored, red if opponent scored, grey if scoreless
+    const headerClass = runsThisHalf > 0
+      ? myTeamBatted
+        ? "bg-amber-500/15 border-amber-500/40"
+        : "bg-red-500/15 border-red-500/40"
+      : "bg-muted/40 border-border";
+    const headerTextClass = runsThisHalf > 0
+      ? myTeamBatted ? "text-amber-400" : "text-red-400"
+      : "text-muted-foreground";
+
     return (
-      <div className="h-full flex flex-col gap-2.5 py-1">
-        {/* Inning end header */}
-        <div className="text-center py-3 px-3 rounded-lg bg-muted/50 border border-border">
-          <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
-            {halfEndLabel} of {halfLabel} {matchState.inning}
-          </div>
-          <div className="font-mono font-bold text-xl tabular-nums">{scoreLine}</div>
-        </div>
+      <div className="h-full flex flex-col gap-2 py-1">
 
-        {/* Half-inning summary */}
-        <div className="space-y-1.5 px-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Runs scored</span>
-            <span className={`font-semibold ${runsThisHalf > 0 ? "text-foreground" : "text-muted-foreground"}`}>
-              {runsThisHalf > 0 ? `+${runsThisHalf}` : "None"}
+        {/* ── Header ── */}
+        <div className={`shrink-0 rounded-lg border px-3 py-2.5 ${headerClass}`}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {halfEndLabel} · {halfLabel} {matchState.inning}
             </span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Hits</span>
-            <span className="font-semibold">{hitsThisHalf}</span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Pitcher</span>
-            <span className="font-semibold">
-              {pitcher.name}
-              <span className="ml-1 font-normal text-muted-foreground">
-                ({pitcherInnings} IP)
+            {/* Lead change / tied badge */}
+            {leadChanged && (
+              <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${myTeamBatted ? "bg-amber-500/20 text-amber-400 border border-amber-500/40" : "bg-red-500/20 text-red-400 border border-red-500/40"}`}>
+                {myTeamBatted ? "↑ LEAD TAKEN" : "↓ LEAD LOST"}
               </span>
-            </span>
+            )}
+            {leadTied && !leadChanged && (
+              <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/40">
+                TIED
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-end gap-2">
+            <span className="font-mono font-bold text-xl tabular-nums">{scoreLine}</span>
+            {runsThisHalf > 0 ? (
+              <span className={`text-sm font-bold mb-0.5 ${headerTextClass}`}>
+                +{runsThisHalf} {runsThisHalf === 1 ? "run" : "runs"}
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground mb-0.5">3 up, 3 down</span>
+            )}
           </div>
         </div>
 
-        {/* Continue */}
+        {/* ── Batter-by-batter recap ── */}
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-0.5">
+          {halfInningPlays.map((play, i) => {
+            const icon    = PLAY_ICONS[play.outcome] ?? "⚪";
+            const scoring = isScoring(play.rbi);
+            const hit     = isHit(play.outcome);
+            const out     = isOut(play.outcome);
+
+            if (scoring) {
+              // Full-size scoring row
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded ${
+                    myTeamBatted
+                      ? "bg-amber-500/10 border border-amber-500/20"
+                      : "bg-red-500/10 border border-red-500/20"
+                  }`}
+                >
+                  <span className="text-base leading-none shrink-0">{icon}</span>
+                  <span className={`text-sm font-semibold flex-1 truncate ${myTeamBatted ? "text-amber-300" : "text-red-300"}`}>
+                    {play.batter}
+                  </span>
+                  <span className={`text-xs font-bold shrink-0 ${myTeamBatted ? "text-amber-400" : "text-red-400"}`}>
+                    +{play.rbi} {(play.rbi ?? 0) === 1 ? "run" : "runs"}
+                  </span>
+                </div>
+              );
+            }
+
+            if (hit) {
+              // Non-scoring hit — visible but not highlighted
+              return (
+                <div key={i} className="flex items-center gap-2 px-2 py-1 rounded">
+                  <span className="text-sm leading-none shrink-0 opacity-70">{icon}</span>
+                  <span className="text-xs text-muted-foreground flex-1 truncate">{play.batter}</span>
+                  <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wide shrink-0">
+                    {play.outcome}
+                  </span>
+                </div>
+              );
+            }
+
+            if (out) {
+              // Outs — tiny, dimmed
+              return (
+                <div key={i} className="flex items-center gap-1.5 px-2 py-0.5">
+                  <span className="text-[10px] leading-none shrink-0 opacity-30">{icon}</span>
+                  <span className="text-[10px] text-muted-foreground/30 flex-1 truncate">
+                    {play.batter}
+                  </span>
+                  <span className="text-[9px] text-muted-foreground/20 uppercase tracking-wide shrink-0">
+                    {play.outcome === "strikeout" ? "K" : "out"}
+                  </span>
+                </div>
+              );
+            }
+
+            // Walk, HBP, or any other non-scoring non-hit
+            return (
+              <div key={i} className="flex items-center gap-2 px-2 py-1">
+                <span className="text-sm leading-none shrink-0 opacity-50">{icon}</span>
+                <span className="text-xs text-muted-foreground/60 flex-1 truncate">{play.batter}</span>
+                <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wide shrink-0">
+                  {play.outcome}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Pitcher line ── */}
+        <div className="shrink-0 flex items-center justify-between px-1 pt-1 border-t border-border/40">
+          <span className="text-xs text-muted-foreground truncate">
+            {pitcher.name}
+            <span className="ml-1 text-muted-foreground/60">{pitcherIP} IP</span>
+          </span>
+          {runsThisHalf > 0 && (
+            <span className="text-xs text-muted-foreground/60 shrink-0 ml-2">
+              {runsThisHalf} ER
+            </span>
+          )}
+        </div>
+
+        {/* ── Continue ── */}
         <Button
           size="lg"
           onClick={onContinue}
-          className="w-full mt-auto py-5 text-sm"
+          className="shrink-0 w-full py-5 text-sm"
         >
           {matchState.isComplete ? "See Final Score" : `Start ${nextHalfLabel} ›`}
           <kbd className="ml-2 text-[10px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1.5 py-0.5">
