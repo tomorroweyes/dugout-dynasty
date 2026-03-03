@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/8bit/button";
 import { Sparkles } from "lucide-react";
 import { canActivateAbility } from "@/engine/abilitySystem";
-import { buildForecastSnapshot } from "@/engine/forecastPanel";
 import { BATTER_APPROACHES, PITCH_STRATEGIES } from "@/engine/approachConfig";
 import type { InteractiveMatchState } from "@/engine/interactiveMatchEngine";
 import type { BatterApproach, PitchStrategy } from "@/types/approach";
 import type { Ability } from "@/types/ability";
-import { ForecastPanel } from "@/components/ForecastPanel";
 import { SIM_MODE_LABELS, type SimMode } from "./constants";
 import { ZoneGridDisplay } from "./ZoneGridDisplay";
 import {
@@ -120,27 +118,6 @@ export function ActionBar({
     opponentRuns: matchState.opponentRuns,
     bases: matchState.bases,
   };
-
-  const forecastSnapshot = (() => {
-    if (isMyBatter) {
-      return buildForecastSnapshot({
-        mode: "batting",
-        approach: selectedApproach,
-        lastApproach: matchState.lastBatterApproach,
-        consecutiveApproach: selectedApproach === matchState.lastBatterApproach
-          ? matchState.consecutiveBatterApproach
-          : 0,
-      }, leverageContext);
-    }
-    return buildForecastSnapshot({
-      mode: "pitching",
-      strategy: selectedStrategy,
-      lastStrategy: matchState.lastPitchStrategy,
-      consecutiveStrategy: selectedStrategy === matchState.lastPitchStrategy
-        ? matchState.consecutivePitchStrategy
-        : 0,
-    }, leverageContext);
-  })();
 
   if (autoSimulating) {
     return (
@@ -415,10 +392,6 @@ export function ActionBar({
     return (
       /* === MY TEAM BATTING === */
       <div className="h-full flex flex-col gap-1.5">
-        <div className="shrink-0">
-          <ForecastPanel snapshot={forecastSnapshot} modeLabel="Batting" />
-        </div>
-
         {/* Decision context label */}
         <div className="shrink-0 text-xs text-muted-foreground font-medium">
           Choose Approach: <kbd className="text-[9px] font-mono opacity-50 ml-1">Q W E</kbd>
@@ -534,10 +507,6 @@ export function ActionBar({
   return (
     /* === OPPONENT BATTING (my pitcher) === */
     <div className="h-full flex flex-col gap-1.5">
-      <div className="shrink-0">
-        <ForecastPanel snapshot={forecastSnapshot} modeLabel="Pitching" />
-      </div>
-
       {/* Ability chips only — no strategy selector */}
       <div className="flex gap-1.5 shrink-0 overflow-x-auto">
             {currentPitcherAbilities.map((ability, i) => {
