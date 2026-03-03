@@ -790,15 +790,7 @@ export function InteractiveMatchView({
               className={`flex-1 min-h-0 flex flex-col transition-opacity duration-300 ${autoSimulating || pendingAutoSim ? "opacity-40" : ""}`}
             >
               <div className="flex-1 min-h-0 px-2 py-2 overflow-hidden">
-                {showGamePlanSelector ? (
-                  <TacticalPlanSelector
-                    inning={matchState.inning}
-                    myRuns={matchState.myRuns}
-                    opponentRuns={matchState.opponentRuns}
-                    pitcherFatigue={matchState.opponentPitcherFatigueLevel}
-                    onSelectPlan={handleSelectGamePlan}
-                  />
-                ) : (
+                {!showGamePlanSelector && (
                   <ActionBar
                     matchState={matchState}
                     isMyBatter={isMyBatter}
@@ -823,6 +815,21 @@ export function InteractiveMatchView({
           </div>
         </div>
       </div>
+
+      {/* Tactical plan selector — fixed bottom position, not overlaying */}
+      {showGamePlanSelector && (
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-50">
+          <div className="w-full max-w-350 mx-auto">
+            <TacticalPlanSelector
+              inning={matchState.inning}
+              myRuns={matchState.myRuns}
+              opponentRuns={matchState.opponentRuns}
+              pitcherFatigue={matchState.opponentPitcherFatigueLevel}
+              onSelectPlan={handleSelectGamePlan}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Zone result is embedded in ActionBar's result card — no separate overlay needed */}
 
