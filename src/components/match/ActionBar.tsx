@@ -512,7 +512,7 @@ export function ActionBar({
         <div className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
           Special Abilities
         </div>
-        <div className="flex gap-2 flex-wrap"
+        <div className="flex gap-2 flex-wrap">
             {currentPitcherAbilities.map((ability, i) => {
               const { canActivate, reason } = canActivateAbility(
                 matchState.currentPitcher,
