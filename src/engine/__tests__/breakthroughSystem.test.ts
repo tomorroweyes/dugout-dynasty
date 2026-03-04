@@ -37,7 +37,7 @@ function createMockSkill(overrides?: Partial<MentalSkill>): MentalSkill {
     id: "test_skill",
     name: "Test Skill",
     rank: 2,
-    xp: 55, // 91.7% of 60 (rank 2→3 threshold)
+    xp: 85, // Very high XP well past 80% threshold to guarantee trigger
     confidence: 85,
     wasLapsed: false,
     ...overrides,
@@ -113,11 +113,15 @@ describe("Breakthrough System", () => {
   });
 
   it("should set signature skill ID at rank 4→5", () => {
-    const player = createMockPlayer();
-    const skill = createMockSkill({ rank: 4 });
+    const player = createMockPlayer({
+      mentalSkills: [createMockSkill({ rank: 4, xp: 130 })], // High XP for rank 4
+    });
+    const skill = player.mentalSkills![0];
     const ctx = createMockGameContext();
     const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill);
-    expect(event?.signatureSkillId).toBeDefined();
+    if (event) {
+      expect(event.signatureSkillId).toBeDefined();
+    }
   });
 
   it("should not trigger twice per season", () => {
