@@ -84,6 +84,9 @@ export interface Player {
   age?: number;                                // Player age in years (default: 24)
   physicalPotential?: import("./mentalSkills").PhysicalPotential; // Immutable ceilings for physical skills
   mentalSkills?: import("./mentalSkills").MentalSkill[];          // Discovered/active mental skills
+  // Breakthrough Moments System (Phase 2) — optional for backwards compatibility
+  breakthroughEvents?: import("./breakthroughs").BreakthroughEvent[]; // Historical breakthrough moments
+  signatureSkills?: Map<string, import("./breakthroughs").SignatureSkill>; // Active signature skills (max 1)
 }
 
 // Type guards
