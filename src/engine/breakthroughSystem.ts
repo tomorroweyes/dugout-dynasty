@@ -39,7 +39,7 @@ export function checkBreakthroughTrigger(
   skill: MentalSkill
 ): BreakthroughEvent | null {
   // Validate trigger conditions
-  if (!canBreakthroughTrigger(player, gameContext, skill)) {
+  if (!canBreakthroughTrigger(player, gameContext, skill, skillId)) {
     return null;
   }
 
@@ -90,7 +90,8 @@ export function checkBreakthroughTrigger(
 function canBreakthroughTrigger(
   player: Player,
   gameContext: BreakthroughContext,
-  skill: MentalSkill
+  skill: MentalSkill,
+  skillId: string
 ): boolean {
   // Must be 80%+ toward next rank
   const xpToNextRank = getXpToNextRank(skill.rank);
@@ -105,7 +106,7 @@ function canBreakthroughTrigger(
   }
 
   // Max 1 breakthrough per season
-  if (hasBreakthroughThisSeason(player, skill.id)) {
+  if (hasBreakthroughThisSeason(player, skillId)) {
     return false;
   }
 
@@ -187,25 +188,27 @@ function generateBreakthroughNarrative(
     game_reading: "Game Reading",
   };
 
+  const skillName = skillNames[skillId] || skillId;
+
   const narratives: Record<string, string[]> = {
     contrast_moment: [
-      `${player.name} did something unexpected. And it worked.`,
+      `${player.name} did something unexpected. ${skillName} clicked. And it worked.`,
       `For the first time this season, ${player.name} broke their own pattern. The result was perfect.`,
-      `${player.name} understood something new today.`,
+      `${player.name} understood something new about ${skillName} today.`,
     ],
     streak_moment: [
-      `${player.name}'s approach finally paid dividends.`,
+      `${player.name}'s ${skillName} finally paid dividends.`,
       `Repetition became mastery. ${player.name} was ready.`,
       `${player.name} had done this a thousand times. The thousand-and-first was different.`,
     ],
     comeback_moment: [
       `${player.name} refused to quit. The game rewarded that refusal.`,
       `Back against the wall, ${player.name} found something extra.`,
-      `Redemption. ${player.name} understood it now.`,
+      `Redemption. ${player.name} understood ${skillName} now.`,
     ],
     specialization_moment: [
       `${player.name} cracked the code.`,
-      `Years of repetition against this opponent paid off.`,
+      `Years of repetition paid off. ${player.name}'s ${skillName} was complete.`,
       `${player.name} saw something no one else could.`,
     ],
   };
@@ -251,7 +254,7 @@ function hasBreakthroughThisSeason(player: Player, skillId: string): boolean {
 /**
  * Check if player has active bad habit
  */
-function hasActiveBadHabit(player: Player): boolean {
+function hasActiveBadHabit(_player: Player): boolean {
   // Placeholder: in real system, check player.badHabits array
   return false;
 }
@@ -296,13 +299,13 @@ export function activateBreakthrough(
     player.mentalSkills = [];
   }
 
-  const skill = player.mentalSkills.find((s) => s.id === breakthrough.skillId);
+  const skill = player.mentalSkills.find((s) => s.skillId === breakthrough.skillId);
   if (!skill) {
     return;
   }
 
   // Advance rank
-  skill.rank = breakthrough.skillRank;
+  skill.rank = breakthrough.skillRank as import("@/types/mentalSkills").MentalSkillRank;
   skill.xp = 0; // Reset XP for new rank
   skill.confidence = Math.min(100, skill.confidence + 20); // Confidence boost
 
