@@ -17,7 +17,7 @@ import { RandomProvider, getDefaultRandomProvider, SeededRandomProvider } from "
 import type { ActiveAbilityContext } from "@/types/ability";
 import type { BatterApproach, PitchStrategy } from "@/types/approach";
 import { BATTER_APPROACHES, PITCH_STRATEGIES } from "./approachConfig";
-import type { ZoneModifier } from "./zoneSystem";
+import type { ZoneModifier, ZoneCell } from "./zoneSystem";
 import { GAME_CONSTANTS } from "./constants";
 import { processAbilityActivation } from "./abilityAI";
 import { GameTraceCollector, setActiveTrace } from "./traceContext";
