@@ -8,7 +8,6 @@ import type { BatterApproach, PitchStrategy } from "@/types/approach";
 import type { Ability } from "@/types/ability";
 import { SIM_MODE_LABELS, type SimMode } from "./constants";
 import { ZoneGridDisplay } from "./ZoneGridDisplay";
-import { PitcherFeedbackGrid } from "./PitcherFeedbackGrid";
 import {
   getExecutionNote,
   type ZoneMap,
@@ -120,6 +119,92 @@ export function ActionBar({
         </div>
       </div>
     );
+  }
+
+  // Pitcher feedback phase - show result resolution with grid visible
+  // Check BEFORE showingResult so we can intercept pitcher results
+  if (shouldShowPitcherFeedback && !isMyBatter) {
+    const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
+    if (lastPlay && pitcherSelection) {
+      const outcomeLabel = OUTCOME_META[lastPlay.outcome]?.label || lastPlay.outcome;
+      const isMoment = lastPlay.paintedCorner || lastPlay.perfectContact;
+
+      return (
+        <div className="h-full flex flex-col gap-2">
+          {/* Ability section (read-only) */}
+          <div className="shrink-0">
+            <div className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">
+              Special Abilities
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {currentPitcherAbilities.map((ability) => {
+                const { canActivate } = canActivateAbility(
+                  matchState.currentPitcher,
+                  ability.id,
+                );
+                return (
+                  <div
+                    key={ability.id}
+                    className={`flex items-center gap-2 border rounded px-3 py-2 text-sm font-medium whitespace-nowrap ${
+                      canActivate
+                        ? "border-border bg-card text-foreground"
+                        : "opacity-50 border-border bg-card"
+                    }`}
+                  >
+                    <span className="text-lg">{ability.iconEmoji}</span>
+                    <span>{ability.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Zone grid with feedback overlays */}
+          <div className="flex-1 min-h-0 flex flex-col relative">
+            {/* Grid stays visible, disabled */}
+            <ZoneGridDisplay
+              mode="pitching"
+              zoneMap={zoneMap}
+              fillHeight
+              disabled
+              onSelect={() => {}} // No-op
+            />
+
+            {/* Overlay fade-in with cell indicators */}
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/20 backdrop-blur-sm rounded"
+              onClick={() => {
+                setPitcherSelection(null);
+                onContinue();
+              }}
+            >
+              {/* Outcome card */}
+              <div className="flex flex-col items-center gap-2 rounded-lg bg-card/90 border border-border px-4 py-3 text-center">
+                <div className="text-2xl">{OUTCOME_META[lastPlay.outcome]?.icon}</div>
+                <div className="text-sm font-bold uppercase">
+                  {outcomeLabel}
+                  {isMoment && <span className="ml-1 text-amber-400">✨</span>}
+                </div>
+                {isMoment && (
+                  <div className="text-xs text-amber-400 font-semibold">
+                    Perfect execution
+                  </div>
+                )}
+              </div>
+
+              {/* Instructions */}
+              <div className="text-xs text-muted-foreground">
+                Click or press{" "}
+                <kbd className="bg-white/10 border border-white/20 rounded px-1.5 py-0.5 font-mono">
+                  Space
+                </kbd>{" "}
+                to continue
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
   }
 
   if (showingResult) {
@@ -495,28 +580,6 @@ export function ActionBar({
         )}
       </div>
     );
-  }
-
-  // Pitcher feedback phase - show result resolution with grid visible
-  if (shouldShowPitcherFeedback) {
-    const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
-    if (lastPlay) {
-      const outcomeLabel = OUTCOME_META[lastPlay.outcome]?.label || lastPlay.outcome;
-      return (
-        <PitcherFeedbackGrid
-          zoneMap={zoneMap}
-          pitcherChoice={pitcherSelection!}
-          batterExpected={lastPlay.zoneBatterAimed ?? { row: 1 as const, col: 1 as const }}
-          pitchLanded={lastPlay.zoneLanded ?? pitcherSelection!}
-          outcome={outcomeLabel}
-          isPerfect={lastPlay.paintedCorner || lastPlay.perfectContact}
-          onDismiss={() => {
-            setPitcherSelection(null);
-            onContinue();
-          }}
-        />
-      );
-    }
   }
 
   return (
