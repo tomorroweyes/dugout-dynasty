@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/8bit/button";
 import { Sparkles } from "lucide-react";
 import { canActivateAbility } from "@/engine/abilitySystem";
@@ -76,7 +76,7 @@ export function ActionBar({
   pitchHint,
   inningGamePlan,
 }: ActionBarProps) {
-  // Local selection state — persists within at-bat
+  // Local selection state — auto-resets via component key on batter/pitcher change
   const [selectedApproach, setSelectedApproach] = useState<BatterApproach>(
     inningGamePlan ?? matchState.lastBatterApproach ?? "contact"
   );
@@ -87,16 +87,6 @@ export function ActionBar({
 
   // Derived state: should show pitcher feedback
   const shouldShowPitcherFeedback = showingResult && !isMyBatter && pitcherSelection;
-
-  // On new batter, reset selections to defaults
-  useEffect(() => {
-    setSelectedApproach(inningGamePlan ?? matchState.lastBatterApproach ?? "contact");
-    setPitcherSelection(null);
-  }, [matchState.currentBatter.id, inningGamePlan, matchState.lastBatterApproach]);
-
-  useEffect(() => {
-    setSelectedStrategy(matchState.lastPitchStrategy ?? "finesse");
-  }, [matchState.currentPitcher.id, matchState.lastPitchStrategy]);
 
   // q/w/e shortcuts for approach (batting) or strategy (pitching)
   useEffect(() => {
