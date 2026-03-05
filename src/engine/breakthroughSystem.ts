@@ -10,6 +10,13 @@ import type {
 import type { Player } from "@/types/game";
 import type { MentalSkill } from "@/types/mentalSkills";
 import type { RandomProvider } from "./randomProvider";
+import {
+  BREAKTHROUGH_CONTRAST_TEXTS,
+  BREAKTHROUGH_STREAK_TEXTS,
+  BREAKTHROUGH_COMEBACK_TEXTS,
+  BREAKTHROUGH_SPECIALIZATION_TEXTS,
+} from "./narrative/situationalPools";
+import { randomChoice } from "./textPools";
 
 /**
  * Game context needed for breakthrough detection and narrative generation
@@ -173,7 +180,7 @@ function determineBreakthroughArchetype(
 }
 
 /**
- * Generate breakthrough narrative
+ * Generate breakthrough narrative using text pool by archetype
  */
 function generateBreakthroughNarrative(
   player: Player,
@@ -190,31 +197,21 @@ function generateBreakthroughNarrative(
 
   const skillName = skillNames[skillId] || skillId;
 
-  const narratives: Record<string, string[]> = {
-    contrast_moment: [
-      `${player.name} did something unexpected. ${skillName} clicked. And it worked.`,
-      `For the first time this season, ${player.name} broke their own pattern. The result was perfect.`,
-      `${player.name} understood something new about ${skillName} today.`,
-    ],
-    streak_moment: [
-      `${player.name}'s ${skillName} finally paid dividends.`,
-      `Repetition became mastery. ${player.name} was ready.`,
-      `${player.name} had done this a thousand times. The thousand-and-first was different.`,
-    ],
-    comeback_moment: [
-      `${player.name} refused to quit. The game rewarded that refusal.`,
-      `Back against the wall, ${player.name} found something extra.`,
-      `Redemption. ${player.name} understood ${skillName} now.`,
-    ],
-    specialization_moment: [
-      `${player.name} cracked the code.`,
-      `Years of repetition paid off. ${player.name}'s ${skillName} was complete.`,
-      `${player.name} saw something no one else could.`,
-    ],
+  // Map archetype to text pool
+  const pools: Record<string, string[]> = {
+    contrast_moment: BREAKTHROUGH_CONTRAST_TEXTS,
+    streak_moment: BREAKTHROUGH_STREAK_TEXTS,
+    comeback_moment: BREAKTHROUGH_COMEBACK_TEXTS,
+    specialization_moment: BREAKTHROUGH_SPECIALIZATION_TEXTS,
   };
 
-  const pool = narratives[archetype] || narratives["specialization_moment"];
-  return pool[Math.floor(Math.random() * pool.length)];
+  const pool = pools[archetype] || BREAKTHROUGH_SPECIALIZATION_TEXTS;
+  
+  // Pick random text and substitute tokens
+  const template = randomChoice(pool);
+  return template
+    .replace(/{playerName}/g, player.name)
+    .replace(/{skillName}/g, skillName);
 }
 
 /**
