@@ -114,6 +114,7 @@ export function CharacterSheet({ player }: CharacterSheetProps) {
 
         <TabsContent value="skills" className="flex-1 overflow-y-auto m-0">
           <SkillTreePanel
+            key={player.id}
             player={player}
             onUnlockAbility={unlockAbility}
             onUpgradeAbility={upgradeAbility}

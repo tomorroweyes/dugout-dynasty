@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useGameStore } from "@/store/gameStore";
 import type { LevelUpResult } from "@/engine/xpSystem";
 
@@ -56,11 +56,20 @@ function LevelUpToastItem({ levelUp, onDismiss }: LevelUpToastProps) {
 export function LevelUpToastContainer() {
   const pendingLevelUps = useGameStore((state) => state.pendingLevelUps);
   const clearPendingLevelUps = useGameStore((state) => state.clearPendingLevelUps);
+  const shownKeysRef = useRef<Set<string>>(new Set());
   const [displayedLevelUps, setDisplayedLevelUps] = useState<LevelUpResult[]>([]);
 
+  // Show new level-ups as they arrive, clear them when all are dismissed
   useEffect(() => {
-    if (pendingLevelUps.length > 0) {
-      setDisplayedLevelUps(pendingLevelUps);
+    const newLevelUps = pendingLevelUps.filter(lu => {
+      const key = `${lu.playerId}-${lu.newLevel}`;
+      if (shownKeysRef.current.has(key)) return false;
+      shownKeysRef.current.add(key);
+      return true;
+    });
+
+    if (newLevelUps.length > 0) {
+      setDisplayedLevelUps(prev => [...prev, ...newLevelUps]);
       clearPendingLevelUps();
     }
   }, [pendingLevelUps, clearPendingLevelUps]);
