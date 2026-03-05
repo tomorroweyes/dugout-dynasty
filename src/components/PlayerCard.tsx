@@ -9,7 +9,8 @@ import {
   Trophy,
   Shield,
   Activity,
-  BookOpen
+  BookOpen,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/8bit/button";
 import { Badge } from "@/components/ui/8bit/badge";
@@ -326,6 +327,21 @@ function PlayerCard({ player, isInLineup, teamColor, onRequestClassSelection }: 
                         />
                       </>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Breakthrough History */}
+              {player.breakthroughEvents && player.breakthroughEvents.length > 0 && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                    <Zap className="w-3 h-3 text-amber-400" />
+                    <span>
+                      Breakthroughs ({player.breakthroughEvents.length})
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground/80 truncate">
+                    {player.breakthroughEvents[player.breakthroughEvents.length - 1].memoryLabel}
                   </div>
                 </div>
               )}

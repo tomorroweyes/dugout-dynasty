@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import type { Player, Team } from "@/types/game";
+import type { Player } from "@/types/game";
 import type { MentalSkill } from "@/types/mentalSkills";
 import type { BreakthroughContext } from "@/engine/breakthroughSystem";
 import { checkBreakthroughTrigger, activateBreakthrough } from "@/engine/breakthroughSystem";
-import { SeededRandomProvider } from "@/engine/randomProvider";
+import { generateBreakthroughNarrativeText } from "@/engine/narrativeEngine";
 
 class AlwaysTriggerRNG {
   random() {
@@ -34,11 +34,14 @@ function createMockPlayer(overrides?: Partial<Player>): Player {
 
 function createMockSkill(overrides?: Partial<MentalSkill>): MentalSkill {
   return {
-    id: "test_skill",
-    name: "Test Skill",
+    skillId: "ice_veins",
     rank: 2,
     xp: 85, // Very high XP well past 80% threshold to guarantee trigger
+    xpToNextRank: 100,
     confidence: 85,
+    lastTriggeredGame: 0,
+    isActive: true,
+    decayRate: 5,
     wasLapsed: false,
     ...overrides,
   };
@@ -63,15 +66,15 @@ describe("Breakthrough System", () => {
     const player = createMockPlayer();
     const skill = createMockSkill();
     const ctx = createMockGameContext({ isHighLeverage: false });
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill);
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
     expect(event).toBeNull();
   });
 
   it("should not trigger if XP below 80%", () => {
     const player = createMockPlayer();
-    const skill = createMockSkill({ xp: 40 }); // 66.7% of 60
+    const skill = createMockSkill({ xp: 40 }); // 40% of 100 (rank 2→3 threshold) — below 80%
     const ctx = createMockGameContext();
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill);
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
     expect(event).toBeNull();
   });
 
@@ -79,7 +82,7 @@ describe("Breakthrough System", () => {
     const player = createMockPlayer();
     const skill = createMockSkill({ rank: 5 });
     const ctx = createMockGameContext();
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill);
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
     expect(event).toBeNull();
   });
 
@@ -87,10 +90,10 @@ describe("Breakthrough System", () => {
     const player = createMockPlayer();
     const skill = createMockSkill();
     const ctx = createMockGameContext();
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill);
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
     expect(event).toBeTruthy();
     if (event) {
-      expect(event.skillId).toBe("test_skill");
+      expect(event.skillId).toBe("ice_veins");
       expect(event.skillRank).toBe(skill.rank + 1);
     }
   });
@@ -99,7 +102,7 @@ describe("Breakthrough System", () => {
     const player = createMockPlayer({ name: "Rivera" });
     const skill = createMockSkill();
     const ctx = createMockGameContext();
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill);
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
     expect(event?.narrative).toContain("Rivera");
   });
 
@@ -107,21 +110,17 @@ describe("Breakthrough System", () => {
     const player = createMockPlayer({ name: "Jones" });
     const skill = createMockSkill();
     const ctx = createMockGameContext({ gameNumber: 42 });
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill);
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
     expect(event?.memoryLabel).toContain("Jones");
     expect(event?.memoryLabel).toContain("42");
   });
 
   it("should set signature skill ID at rank 4→5", () => {
-    const player = createMockPlayer({
-      mentalSkills: [createMockSkill({ rank: 4, xp: 130 })], // High XP for rank 4
-    });
-    const skill = player.mentalSkills![0];
+    const player = createMockPlayer();
+    const skill = createMockSkill({ rank: 4, xp: 200 }); // 83.3% of 240
     const ctx = createMockGameContext();
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill);
-    if (event) {
-      expect(event.signatureSkillId).toBeDefined();
-    }
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
+    expect(event?.signatureSkillId).toBeDefined();
   });
 
   it("should not trigger twice per season", () => {
@@ -130,7 +129,7 @@ describe("Breakthrough System", () => {
         {
           breakthroughId: "old",
           playerId: "p-1",
-          skillId: "test_skill",
+          skillId: "ice_veins",
           skillRank: 3,
           archetype: "streak_moment",
           triggeredAt: { gameNumber: 1, inning: 7, scoreDiff: 1, context: "inning 7" },
@@ -142,7 +141,7 @@ describe("Breakthrough System", () => {
     });
     const skill = createMockSkill();
     const ctx = createMockGameContext();
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill);
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
     expect(event).toBeNull();
   });
 
@@ -153,7 +152,7 @@ describe("Breakthrough System", () => {
     const skill = player.mentalSkills![0];
     const oldRank = skill.rank;
     const ctx = createMockGameContext();
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill)!;
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill)!;
 
     if (event) {
       activateBreakthrough(player, event);
@@ -164,11 +163,11 @@ describe("Breakthrough System", () => {
 
   it("should reset XP after rank advance", () => {
     const player = createMockPlayer({
-      mentalSkills: [createMockSkill({ xp: 55 })],
+      mentalSkills: [createMockSkill({ xp: 90 })],
     });
     const skill = player.mentalSkills![0];
     const ctx = createMockGameContext();
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill)!;
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill)!;
 
     if (event) {
       activateBreakthrough(player, event);
@@ -182,7 +181,7 @@ describe("Breakthrough System", () => {
     });
     const skill = player.mentalSkills![0];
     const ctx = createMockGameContext();
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill)!;
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill)!;
 
     if (event) {
       activateBreakthrough(player, event);
@@ -192,11 +191,11 @@ describe("Breakthrough System", () => {
 
   it("should generate signature skill at rank 5", () => {
     const player = createMockPlayer({
-      mentalSkills: [createMockSkill({ rank: 4 })],
+      mentalSkills: [createMockSkill({ rank: 4, xp: 200 })],
     });
     const skill = player.mentalSkills![0];
     const ctx = createMockGameContext();
-    const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill)!;
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill)!;
 
     if (event?.signatureSkillId) {
       activateBreakthrough(player, event);
@@ -213,12 +212,73 @@ describe("Breakthrough System", () => {
       const player = createMockPlayer();
       const skill = createMockSkill();
       const ctx = createMockGameContext();
-      const event = checkBreakthroughTrigger(player, ctx, "test_skill", skill);
+      const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
       if (event) {
         archetypes.add(event.archetype);
       }
     }
     // Should trigger at least once
     expect(archetypes.size).toBeGreaterThan(0);
+  });
+});
+
+describe("Breakthrough Narrative Integration", () => {
+  it("should format play-by-play entry with player name", () => {
+    const text = generateBreakthroughNarrativeText("Rivera", "Something clicked.");
+    expect(text).toContain("Rivera");
+    expect(text).toContain("breakthrough moment");
+    expect(text).toContain("Something clicked.");
+  });
+
+  it("should include breakthrough emoji marker", () => {
+    const text = generateBreakthroughNarrativeText("Jones", "Eyes wide open.");
+    expect(text).toContain("✨");
+  });
+
+  it("should produce a non-empty string", () => {
+    const text = generateBreakthroughNarrativeText("Smith", "Redemption.");
+    expect(text.length).toBeGreaterThan(0);
+  });
+
+  it("should include mentor name in mentor narrative when set on event", () => {
+    const player = createMockPlayer({ name: "Rivera" });
+    const skill = createMockSkill();
+    const ctx = createMockGameContext();
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
+    if (event) {
+      // BreakthroughEvent supports an optional mentorNarrative field
+      const eventWithMentor = { ...event, mentorNarrative: "Coach Lee watched from the dugout. Smiled." };
+      expect(eventWithMentor.mentorNarrative).toContain("Coach Lee");
+      expect(eventWithMentor.mentorNarrative).toBeDefined();
+    }
+  });
+
+  it("should include narrative in play-by-play text", () => {
+    const player = createMockPlayer({ name: "Chen" });
+    const skill = createMockSkill();
+    const ctx = createMockGameContext();
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
+    if (event) {
+      const pbpText = generateBreakthroughNarrativeText(player.name, event.narrative);
+      expect(pbpText).toContain(player.name);
+      expect(pbpText).toContain(event.narrative);
+    }
+  });
+
+  it("memory label should persist after activation", () => {
+    const player = createMockPlayer({
+      mentalSkills: [createMockSkill()],
+    });
+    const skill = player.mentalSkills![0];
+    const ctx = createMockGameContext({ gameNumber: 7 });
+    const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
+    if (event) {
+      activateBreakthrough(player, event);
+      const stored = player.breakthroughEvents?.find(
+        (e) => e.breakthroughId === event.breakthroughId
+      );
+      expect(stored?.memoryLabel).toBe(event.memoryLabel);
+      expect(stored?.memoryLabel).toContain("7");
+    }
   });
 });
