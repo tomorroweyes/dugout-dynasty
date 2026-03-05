@@ -339,7 +339,7 @@ export function ActionBar({
     );
   }
 
-  // Pitcher feedback phase (grid + outcome card side-by-side)
+  // Pitcher feedback phase (grid with outcome card stacked above/below)
   if (shouldShowPitcherFeedback) {
     const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
     if (lastPlay && pitcherSelection) {
@@ -348,56 +348,55 @@ export function ActionBar({
       const meta = OUTCOME_META[lastPlay.outcome] ?? OUTCOME_META.out;
 
       return (
-        <div className="h-full flex gap-4 p-3">
-          {/* Left: Grid with zone indicators */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1 min-h-0">
-              <ZoneGridDisplay
-                mode="pitching"
-                zoneMap={zoneMap}
-                fillHeight
-                disabled
-                onSelect={() => {}} // No-op during feedback
-              />
-            </div>
-          </div>
-
-          {/* Right: Outcome card + continue */}
-          <div className="w-56 flex flex-col gap-3">
-            {/* Outcome card */}
-            <div className={`rounded-lg border px-4 py-6 text-center ${meta.bg}`}>
-              <div className="text-4xl mb-2 leading-none">{meta.icon}</div>
-              <div className={`text-sm font-bold uppercase tracking-wide ${meta.color} mb-2`}>
-                {outcomeLabel}
-                {isMoment && <span className="ml-1 text-amber-400">✨</span>}
+        <div className="h-full flex flex-col gap-3 p-3">
+          {/* Top: Outcome card */}
+          <div className={`rounded-lg border px-4 py-4 text-center shrink-0 ${meta.bg}`}>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="text-3xl mb-2 leading-none">{meta.icon}</div>
+                <div className={`text-sm font-bold uppercase tracking-wide ${meta.color}`}>
+                  {outcomeLabel}
+                  {isMoment && <span className="ml-1 text-amber-400">✨</span>}
+                </div>
+                {isMoment && (
+                  <div className="text-xs text-amber-400 font-semibold mt-1">Perfect execution</div>
+                )}
               </div>
-              {isMoment && (
-                <div className="text-xs text-amber-400 font-semibold">Perfect execution</div>
+
+              {/* Narrative on the right */}
+              {lastPlay?.narrativeText && (
+                <p className="text-xs text-muted-foreground italic leading-snug line-clamp-3 flex-1">
+                  "{lastPlay.narrativeText}"
+                </p>
               )}
             </div>
-
-            {/* Narrative */}
-            {lastPlay?.narrativeText && (
-              <p className="text-xs text-muted-foreground italic leading-snug line-clamp-4">
-                "{lastPlay.narrativeText}"
-              </p>
-            )}
-
-            {/* Continue button */}
-            <Button
-              size="lg"
-              onClick={() => {
-                setPitcherSelection(null);
-                onContinue();
-              }}
-              className="w-full mt-auto py-6"
-            >
-              Continue
-              <kbd className="ml-2 text-[10px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1.5 py-0.5">
-                Space
-              </kbd>
-            </Button>
           </div>
+
+          {/* Bottom: Grid */}
+          <div className="flex-1 min-h-0">
+            <ZoneGridDisplay
+              mode="pitching"
+              zoneMap={zoneMap}
+              fillHeight
+              disabled
+              onSelect={() => {}} // No-op during feedback
+            />
+          </div>
+
+          {/* Continue button */}
+          <Button
+            size="lg"
+            onClick={() => {
+              setPitcherSelection(null);
+              onContinue();
+            }}
+            className="w-full py-5 shrink-0"
+          >
+            Continue
+            <kbd className="ml-2 text-[10px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1.5 py-0.5">
+              Space
+            </kbd>
+          </Button>
         </div>
       );
     }
