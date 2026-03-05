@@ -35,9 +35,9 @@ function createMockPlayer(overrides?: Partial<Player>): Player {
 function createMockSkill(overrides?: Partial<MentalSkill>): MentalSkill {
   return {
     skillId: "ice_veins",
-    rank: 1,
-    xp: 55, // 91.7% of 60 (rank 1→2 threshold)
-    xpToNextRank: 60,
+    rank: 2,
+    xp: 85, // 85% of 100 (rank 2→3 threshold) — well past the 80% gate
+    xpToNextRank: 100,
     confidence: 85,
     lastTriggeredGame: 0,
     isActive: true,
@@ -72,7 +72,7 @@ describe("Breakthrough System", () => {
 
   it("should not trigger if XP below 80%", () => {
     const player = createMockPlayer();
-    const skill = createMockSkill({ xp: 40 }); // 66.7% of 60
+    const skill = createMockSkill({ xp: 40 }); // 40% of 100 (rank 2→3 threshold) — below 80%
     const ctx = createMockGameContext();
     const event = checkBreakthroughTrigger(player, ctx, "ice_veins", skill);
     expect(event).toBeNull();
@@ -130,7 +130,7 @@ describe("Breakthrough System", () => {
           breakthroughId: "old",
           playerId: "p-1",
           skillId: "ice_veins",
-          skillRank: 2,
+          skillRank: 3,
           archetype: "streak_moment",
           triggeredAt: { gameNumber: 1, inning: 7, scoreDiff: 1, context: "inning 7" },
           narrative: "old",
@@ -163,7 +163,7 @@ describe("Breakthrough System", () => {
 
   it("should reset XP after rank advance", () => {
     const player = createMockPlayer({
-      mentalSkills: [createMockSkill({ xp: 55 })],
+      mentalSkills: [createMockSkill({ xp: 90 })],
     });
     const skill = player.mentalSkills![0];
     const ctx = createMockGameContext();
