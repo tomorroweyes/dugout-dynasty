@@ -587,9 +587,7 @@ export function ActionBar({
             zoneMap={zoneMap}
             fillHeight
             onSelect={(cell) => {
-              // Show feedback phase instead of continuing immediately
               setPitcherSelection(cell);
-              setShowPitcherFeedback(false); // Will be set to true after result is ready
               onSimulateAtBat(undefined, undefined, cell);
             }}
           />
