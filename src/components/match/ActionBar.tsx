@@ -76,42 +76,27 @@ export function ActionBar({
   pitchHint,
   inningGamePlan,
 }: ActionBarProps) {
-  // Explicit approach selection — decoupled from zone row.
-  // Defaults to the active game plan, then last used, then "contact".
+  // Local selection state — persists within at-bat
   const [selectedApproach, setSelectedApproach] = useState<BatterApproach>(
     inningGamePlan ?? matchState.lastBatterApproach ?? "contact"
   );
   const [selectedStrategy, setSelectedStrategy] = useState<PitchStrategy>(
     matchState.lastPitchStrategy ?? "finesse"
   );
-
-  // Pitcher feedback phase: show resolution of pitch after pitcher selects zone
-  const [showPitcherFeedback, setShowPitcherFeedback] = useState(false);
   const [pitcherSelection, setPitcherSelection] = useState<ZoneCell | null>(null);
 
-  // Re-sync when the batter/pitcher changes (new at-bat)
+  // Derived state: should show pitcher feedback
+  const shouldShowPitcherFeedback = showingResult && !isMyBatter && pitcherSelection;
+
+  // On new batter, reset selections to defaults
   useEffect(() => {
     setSelectedApproach(inningGamePlan ?? matchState.lastBatterApproach ?? "contact");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchState.currentBatter.id]);
+    setPitcherSelection(null);
+  }, [matchState.currentBatter.id, inningGamePlan, matchState.lastBatterApproach]);
 
   useEffect(() => {
     setSelectedStrategy(matchState.lastPitchStrategy ?? "finesse");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchState.currentPitcher.id]);
-
-  // When result comes back and we just threw a pitch, show feedback
-  useEffect(() => {
-    if (showingResult && !isMyBatter && pitcherSelection) {
-      setShowPitcherFeedback(true);
-    }
-  }, [showingResult, isMyBatter, pitcherSelection]);
-
-  // When moving to next batter, clear pitcher feedback state
-  useEffect(() => {
-    setShowPitcherFeedback(false);
-    setPitcherSelection(null);
-  }, [matchState.currentBatter.id]);
+  }, [matchState.currentPitcher.id, matchState.lastPitchStrategy]);
 
   // q/w/e shortcuts for approach (batting) or strategy (pitching)
   useEffect(() => {
@@ -523,20 +508,19 @@ export function ActionBar({
   }
 
   // Pitcher feedback phase - show result resolution with grid visible
-  if (showPitcherFeedback && pitcherSelection && !isMyBatter) {
+  if (shouldShowPitcherFeedback) {
     const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
     if (lastPlay) {
       const outcomeLabel = OUTCOME_META[lastPlay.outcome]?.label || lastPlay.outcome;
       return (
         <PitcherFeedbackGrid
           zoneMap={zoneMap}
-          pitcherChoice={pitcherSelection}
+          pitcherChoice={pitcherSelection!}
           batterExpected={lastPlay.zoneBatterAimed ?? { row: 1 as const, col: 1 as const }}
-          pitchLanded={lastPlay.zoneLanded ?? pitcherSelection}
+          pitchLanded={lastPlay.zoneLanded ?? pitcherSelection!}
           outcome={outcomeLabel}
           isPerfect={lastPlay.paintedCorner || lastPlay.perfectContact}
           onDismiss={() => {
-            setShowPitcherFeedback(false);
             setPitcherSelection(null);
             onContinue();
           }}
