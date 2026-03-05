@@ -339,39 +339,35 @@ export function ActionBar({
     );
   }
 
-  // Pitcher feedback phase (grid + outcome overlay)
+  // Pitcher feedback phase (grid + outcome card side-by-side)
   if (shouldShowPitcherFeedback) {
     const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
     if (lastPlay && pitcherSelection) {
       const outcomeLabel = OUTCOME_META[lastPlay.outcome]?.label || lastPlay.outcome;
       const isMoment = lastPlay.paintedCorner || lastPlay.perfectContact;
+      const meta = OUTCOME_META[lastPlay.outcome] ?? OUTCOME_META.out;
 
       return (
-        <div className="h-full flex flex-col gap-2 relative">
-          <DecisionSection
-            mode="pitching"
-            selection={selectedStrategy}
-            setSelection={setSelectedStrategy}
-            selectedAbility={selectedAbility}
-            setSelectedAbility={setSelectedAbility}
-            abilities={currentPitcherAbilities}
-            currentPlayer={matchState.currentPitcher}
-            selectedAbilityDef={selectedAbilityDef}
-            zoneMap={zoneMap}
-            onZoneSelect={() => {}} // No-op during feedback
-          />
+        <div className="h-full flex gap-4 p-3">
+          {/* Left: Grid with zone indicators */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 min-h-0">
+              <ZoneGridDisplay
+                mode="pitching"
+                zoneMap={zoneMap}
+                fillHeight
+                disabled
+                onSelect={() => {}} // No-op during feedback
+              />
+            </div>
+          </div>
 
-          {/* Overlay: outcome card */}
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/20 backdrop-blur-sm rounded cursor-pointer"
-            onClick={() => {
-              setPitcherSelection(null);
-              onContinue();
-            }}
-          >
-            <div className="flex flex-col items-center gap-2 rounded-lg bg-card/90 border border-border px-4 py-3 text-center">
-              <div className="text-2xl">{OUTCOME_META[lastPlay.outcome]?.icon}</div>
-              <div className="text-sm font-bold uppercase">
+          {/* Right: Outcome card + continue */}
+          <div className="w-56 flex flex-col gap-3">
+            {/* Outcome card */}
+            <div className={`rounded-lg border px-4 py-6 text-center ${meta.bg}`}>
+              <div className="text-4xl mb-2 leading-none">{meta.icon}</div>
+              <div className={`text-sm font-bold uppercase tracking-wide ${meta.color} mb-2`}>
                 {outcomeLabel}
                 {isMoment && <span className="ml-1 text-amber-400">✨</span>}
               </div>
@@ -380,13 +376,27 @@ export function ActionBar({
               )}
             </div>
 
-            <div className="text-xs text-muted-foreground">
-              Click or press{" "}
-              <kbd className="bg-white/10 border border-white/20 rounded px-1.5 py-0.5 font-mono">
+            {/* Narrative */}
+            {lastPlay?.narrativeText && (
+              <p className="text-xs text-muted-foreground italic leading-snug line-clamp-4">
+                "{lastPlay.narrativeText}"
+              </p>
+            )}
+
+            {/* Continue button */}
+            <Button
+              size="lg"
+              onClick={() => {
+                setPitcherSelection(null);
+                onContinue();
+              }}
+              className="w-full mt-auto py-6"
+            >
+              Continue
+              <kbd className="ml-2 text-[10px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1.5 py-0.5">
                 Space
-              </kbd>{" "}
-              to continue
-            </div>
+              </kbd>
+            </Button>
           </div>
         </div>
       );
