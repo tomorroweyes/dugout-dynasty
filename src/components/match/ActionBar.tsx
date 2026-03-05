@@ -25,7 +25,7 @@ import {
 
 const ABILITY_SHORTCUT_KEYS = ["z", "x", "c"];
 const APPROACH_SHORTCUTS = ["q", "w", "e"];
-const APPROACH_ORDER: BatterApproach[] = ["aggressive", "contact", "patient"];
+const APPROACH_ORDER: BatterApproach[] = ["power", "contact", "patient"];
 const STRATEGY_ORDER: PitchStrategy[] = ["power", "mixed", "finesse"];
 
 const OUTCOME_META: Record<string, { icon: string; label: string; color: string; bg: string }> = {
