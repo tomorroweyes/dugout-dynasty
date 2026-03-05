@@ -8,6 +8,7 @@ import type { BatterApproach, PitchStrategy } from "@/types/approach";
 import type { Ability } from "@/types/ability";
 import { SIM_MODE_LABELS, type SimMode } from "./constants";
 import { ZoneGridDisplay } from "./ZoneGridDisplay";
+import { PitcherFeedbackGrid } from "./PitcherFeedbackGrid";
 import {
   getExecutionNote,
   type ZoneMap,
@@ -84,6 +85,10 @@ export function ActionBar({
     matchState.lastPitchStrategy ?? "finesse"
   );
 
+  // Pitcher feedback phase: show resolution of pitch after pitcher selects zone
+  const [showPitcherFeedback, setShowPitcherFeedback] = useState(false);
+  const [pitcherSelection, setPitcherSelection] = useState<ZoneCell | null>(null);
+
   // Re-sync when the batter/pitcher changes (new at-bat)
   useEffect(() => {
     setSelectedApproach(inningGamePlan ?? matchState.lastBatterApproach ?? "contact");
@@ -94,6 +99,19 @@ export function ActionBar({
     setSelectedStrategy(matchState.lastPitchStrategy ?? "finesse");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchState.currentPitcher.id]);
+
+  // When result comes back and we just threw a pitch, show feedback
+  useEffect(() => {
+    if (showingResult && !isMyBatter && pitcherSelection) {
+      setShowPitcherFeedback(true);
+    }
+  }, [showingResult, isMyBatter, pitcherSelection]);
+
+  // When moving to next batter, clear pitcher feedback state
+  useEffect(() => {
+    setShowPitcherFeedback(false);
+    setPitcherSelection(null);
+  }, [matchState.currentBatter.id]);
 
   // q/w/e shortcuts for approach (batting) or strategy (pitching)
   useEffect(() => {
@@ -504,6 +522,29 @@ export function ActionBar({
     );
   }
 
+  // Pitcher feedback phase - show result resolution with grid visible
+  if (showPitcherFeedback && pitcherSelection && !isMyBatter) {
+    const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
+    if (lastPlay) {
+      const outcomeLabel = OUTCOME_META[lastPlay.outcome]?.label || lastPlay.outcome;
+      return (
+        <PitcherFeedbackGrid
+          zoneMap={zoneMap}
+          pitcherChoice={pitcherSelection}
+          batterExpected={lastPlay.zoneBatterAimed ?? { row: 1 as const, col: 1 as const }}
+          pitchLanded={lastPlay.zoneLanded ?? pitcherSelection}
+          outcome={outcomeLabel}
+          isPerfect={lastPlay.paintedCorner || lastPlay.perfectContact}
+          onDismiss={() => {
+            setShowPitcherFeedback(false);
+            setPitcherSelection(null);
+            onContinue();
+          }}
+        />
+      );
+    }
+  }
+
   return (
     /* === OPPONENT BATTING (my pitcher) === */
     <div className="h-full flex flex-col gap-2">
@@ -572,6 +613,9 @@ export function ActionBar({
             zoneMap={zoneMap}
             fillHeight
             onSelect={(cell) => {
+              // Show feedback phase instead of continuing immediately
+              setPitcherSelection(cell);
+              setShowPitcherFeedback(false); // Will be set to true after result is ready
               onSimulateAtBat(undefined, undefined, cell);
             }}
           />
