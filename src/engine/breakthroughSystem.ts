@@ -10,6 +10,13 @@ import type {
 import type { Player } from "@/types/game";
 import type { MentalSkill } from "@/types/mentalSkills";
 import type { RandomProvider } from "./randomProvider";
+import {
+  BREAKTHROUGH_CONTRAST_TEXTS,
+  BREAKTHROUGH_STREAK_TEXTS,
+  BREAKTHROUGH_COMEBACK_TEXTS,
+  BREAKTHROUGH_SPECIALIZATION_TEXTS,
+} from "./narrative/situationalPools";
+import { randomChoice } from "./textPools";
 
 /**
  * Game context needed for breakthrough detection and narrative generation
@@ -39,7 +46,7 @@ export function checkBreakthroughTrigger(
   skill: MentalSkill
 ): BreakthroughEvent | null {
   // Validate trigger conditions
-  if (!canBreakthroughTrigger(player, gameContext, skill)) {
+  if (!canBreakthroughTrigger(player, gameContext, skill, skillId)) {
     return null;
   }
 
@@ -90,7 +97,8 @@ export function checkBreakthroughTrigger(
 function canBreakthroughTrigger(
   player: Player,
   gameContext: BreakthroughContext,
-  skill: MentalSkill
+  skill: MentalSkill,
+  skillId: string
 ): boolean {
   // Must be 80%+ toward next rank
   const xpToNextRank = getXpToNextRank(skill.rank);
@@ -105,7 +113,7 @@ function canBreakthroughTrigger(
   }
 
   // Max 1 breakthrough per season
-  if (hasBreakthroughThisSeason(player, skill.id)) {
+  if (hasBreakthroughThisSeason(player, skillId)) {
     return false;
   }
 
@@ -172,7 +180,7 @@ function determineBreakthroughArchetype(
 }
 
 /**
- * Generate breakthrough narrative
+ * Generate breakthrough narrative using text pool by archetype
  */
 function generateBreakthroughNarrative(
   player: Player,
@@ -187,31 +195,23 @@ function generateBreakthroughNarrative(
     game_reading: "Game Reading",
   };
 
-  const narratives: Record<string, string[]> = {
-    contrast_moment: [
-      `${player.name} did something unexpected. And it worked.`,
-      `For the first time this season, ${player.name} broke their own pattern. The result was perfect.`,
-      `${player.name} understood something new today.`,
-    ],
-    streak_moment: [
-      `${player.name}'s approach finally paid dividends.`,
-      `Repetition became mastery. ${player.name} was ready.`,
-      `${player.name} had done this a thousand times. The thousand-and-first was different.`,
-    ],
-    comeback_moment: [
-      `${player.name} refused to quit. The game rewarded that refusal.`,
-      `Back against the wall, ${player.name} found something extra.`,
-      `Redemption. ${player.name} understood it now.`,
-    ],
-    specialization_moment: [
-      `${player.name} cracked the code.`,
-      `Years of repetition against this opponent paid off.`,
-      `${player.name} saw something no one else could.`,
-    ],
+  const skillName = skillNames[skillId] || skillId;
+
+  // Map archetype to text pool
+  const pools: Record<string, string[]> = {
+    contrast_moment: BREAKTHROUGH_CONTRAST_TEXTS,
+    streak_moment: BREAKTHROUGH_STREAK_TEXTS,
+    comeback_moment: BREAKTHROUGH_COMEBACK_TEXTS,
+    specialization_moment: BREAKTHROUGH_SPECIALIZATION_TEXTS,
   };
 
-  const pool = narratives[archetype] || narratives["specialization_moment"];
-  return pool[Math.floor(Math.random() * pool.length)];
+  const pool = pools[archetype] || BREAKTHROUGH_SPECIALIZATION_TEXTS;
+  
+  // Pick random text and substitute tokens
+  const template = randomChoice(pool);
+  return template
+    .replace(/{playerName}/g, player.name)
+    .replace(/{skillName}/g, skillName);
 }
 
 /**
@@ -251,7 +251,7 @@ function hasBreakthroughThisSeason(player: Player, skillId: string): boolean {
 /**
  * Check if player has active bad habit
  */
-function hasActiveBadHabit(player: Player): boolean {
+function hasActiveBadHabit(_player: Player): boolean {
   // Placeholder: in real system, check player.badHabits array
   return false;
 }
@@ -296,13 +296,13 @@ export function activateBreakthrough(
     player.mentalSkills = [];
   }
 
-  const skill = player.mentalSkills.find((s) => s.id === breakthrough.skillId);
+  const skill = player.mentalSkills.find((s) => s.skillId === breakthrough.skillId);
   if (!skill) {
     return;
   }
 
   // Advance rank
-  skill.rank = breakthrough.skillRank;
+  skill.rank = breakthrough.skillRank as import("@/types/mentalSkills").MentalSkillRank;
   skill.xp = 0; // Reset XP for new rank
   skill.confidence = Math.min(100, skill.confidence + 20); // Confidence boost
 

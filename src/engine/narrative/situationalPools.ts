@@ -185,3 +185,59 @@ export const CLUTCH_OUT_TEXTS = [
   "{batter} hits it hard — but right at them. That's the inning.",
   "Agonizing. {batter} couldn't get it done. Runners stranded.",
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BREAKTHROUGH MOMENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Contrast Moment — Player does opposite of their identity, succeeds
+ * Used when breakthrough archetype is 'contrast_moment'
+ * Tokens: {playerName}, {skillName}
+ */
+export const BREAKTHROUGH_CONTRAST_TEXTS = [
+  "{playerName} did something unexpected. {skillName} clicked. And it worked.",
+  "For the first time this season, {playerName} broke their own pattern. The result was perfect.",
+  "{playerName} understood something new about {skillName} today.",
+  "Nobody expected that. {playerName} least of all. But {skillName} showed up anyway.",
+  "{playerName}'s instinct was all wrong — and exactly right when it mattered.",
+];
+
+/**
+ * Streak Moment — Consistent behavior finally pays off at the right time
+ * Used when breakthrough archetype is 'streak_moment'
+ * Tokens: {playerName}, {skillName}
+ */
+export const BREAKTHROUGH_STREAK_TEXTS = [
+  "{playerName}'s {skillName} finally paid dividends.",
+  "Repetition became mastery. {playerName} was ready.",
+  "{playerName} had done this a thousand times. The thousand-and-first was different.",
+  "All those reps. All that practice. {playerName} made it count.",
+  "{playerName}'s {skillName} has always been there. Today, the game was ready for it.",
+];
+
+/**
+ * Comeback Moment — Redemption after slump or deficit
+ * Used when breakthrough archetype is 'comeback_moment'
+ * Tokens: {playerName}, {skillName}
+ */
+export const BREAKTHROUGH_COMEBACK_TEXTS = [
+  "{playerName} refused to quit. The game rewarded that refusal.",
+  "Back against the wall, {playerName} found something extra.",
+  "Redemption. {playerName} understood {skillName} now.",
+  "{playerName} had nothing left to lose. That's when {skillName} emerged.",
+  "From the brink. {playerName}'s {skillName} carved out a path forward.",
+];
+
+/**
+ * Specialization Moment — Player cracks the code on a specific opponent or situation
+ * Used when breakthrough archetype is 'specialization_moment'
+ * Tokens: {playerName}, {skillName}
+ */
+export const BREAKTHROUGH_SPECIALIZATION_TEXTS = [
+  "{playerName} cracked the code.",
+  "Years of repetition paid off. {playerName}'s {skillName} was complete.",
+  "{playerName} saw something no one else could.",
+  "The answer was always there. {playerName} finally found it in {skillName}.",
+  "{playerName} understood. This was their moment. This was their skill.",
+];

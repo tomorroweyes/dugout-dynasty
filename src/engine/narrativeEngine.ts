@@ -452,6 +452,18 @@ function generateOutText(
 }
 
 /**
+ * Generate play-by-play text for a breakthrough moment.
+ * Format: "[NAME] had a breakthrough moment: [NARRATIVE]"
+ * Used to add the breakthrough to the play-by-play log and post-game summary.
+ */
+export function generateBreakthroughNarrativeText(
+  playerName: string,
+  narrative: string
+): string {
+  return `✨ ${playerName} had a breakthrough moment: ${narrative}`;
+}
+
+/**
  * Generate flavor text for special situations
  */
 export function generateSituationalFlavor(
