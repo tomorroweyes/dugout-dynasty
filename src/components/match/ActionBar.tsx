@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/8bit/button";
 import { Sparkles } from "lucide-react";
 import { canActivateAbility } from "@/engine/abilitySystem";
@@ -8,6 +8,7 @@ import type { BatterApproach, PitchStrategy } from "@/types/approach";
 import type { Ability } from "@/types/ability";
 import { SIM_MODE_LABELS, type SimMode } from "./constants";
 import { ZoneGridDisplay } from "./ZoneGridDisplay";
+import { PitcherFeedbackGrid } from "./PitcherFeedbackGrid";
 import {
   getExecutionNote,
   type ZoneMap,
@@ -75,25 +76,17 @@ export function ActionBar({
   pitchHint,
   inningGamePlan,
 }: ActionBarProps) {
-  // Explicit approach selection — decoupled from zone row.
-  // Defaults to the active game plan, then last used, then "contact".
+  // Local selection state — auto-resets via component key on batter/pitcher change
   const [selectedApproach, setSelectedApproach] = useState<BatterApproach>(
     inningGamePlan ?? matchState.lastBatterApproach ?? "contact"
   );
   const [selectedStrategy, setSelectedStrategy] = useState<PitchStrategy>(
     matchState.lastPitchStrategy ?? "finesse"
   );
+  const [pitcherSelection, setPitcherSelection] = useState<ZoneCell | null>(null);
 
-  // Re-sync when the batter/pitcher changes (new at-bat)
-  useEffect(() => {
-    setSelectedApproach(inningGamePlan ?? matchState.lastBatterApproach ?? "contact");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchState.currentBatter.id]);
-
-  useEffect(() => {
-    setSelectedStrategy(matchState.lastPitchStrategy ?? "finesse");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchState.currentPitcher.id]);
+  // Derived state: should show pitcher feedback
+  const shouldShowPitcherFeedback = showingResult && !isMyBatter && pitcherSelection;
 
   // q/w/e shortcuts for approach (batting) or strategy (pitching)
   useEffect(() => {
@@ -504,6 +497,28 @@ export function ActionBar({
     );
   }
 
+  // Pitcher feedback phase - show result resolution with grid visible
+  if (shouldShowPitcherFeedback) {
+    const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
+    if (lastPlay) {
+      const outcomeLabel = OUTCOME_META[lastPlay.outcome]?.label || lastPlay.outcome;
+      return (
+        <PitcherFeedbackGrid
+          zoneMap={zoneMap}
+          pitcherChoice={pitcherSelection!}
+          batterExpected={lastPlay.zoneBatterAimed ?? { row: 1 as const, col: 1 as const }}
+          pitchLanded={lastPlay.zoneLanded ?? pitcherSelection!}
+          outcome={outcomeLabel}
+          isPerfect={lastPlay.paintedCorner || lastPlay.perfectContact}
+          onDismiss={() => {
+            setPitcherSelection(null);
+            onContinue();
+          }}
+        />
+      );
+    }
+  }
+
   return (
     /* === OPPONENT BATTING (my pitcher) === */
     <div className="h-full flex flex-col gap-2">
@@ -572,6 +587,9 @@ export function ActionBar({
             zoneMap={zoneMap}
             fillHeight
             onSelect={(cell) => {
+              // Show feedback phase instead of continuing immediately
+              setPitcherSelection(cell);
+              setShowPitcherFeedback(false); // Will be set to true after result is ready
               onSimulateAtBat(undefined, undefined, cell);
             }}
           />

@@ -32,19 +32,16 @@ export function SkillTreePanel({
   const [lines, setLines] = useState<
     { x1: number; y1: number; x2: number; y2: number; unlocked: boolean }[]
   >([]);
-  const [selectedId, setSelectedId] = useState<string>("");
 
   const skillTree = player.class
     ? getSkillTreeForClass(player.class)
     : undefined;
   const hasTree = !!(skillTree && skillTree.nodes.length > 0);
-
-  // Auto-select first node when tree becomes available
-  useEffect(() => {
-    if (hasTree && skillTree && !selectedId) {
-      setSelectedId(skillTree.nodes[0].abilityId);
-    }
-  }, [hasTree, skillTree, selectedId]);
+  
+  // Lazy init: selectedId defaults to first node if available
+  const [selectedId, setSelectedId] = useState<string>(() =>
+    skillTree?.nodes.length ? skillTree.nodes[0].abilityId : ""
+  );
 
   // Calculate connection lines from node DOM positions
   const updateLines = useCallback(() => {

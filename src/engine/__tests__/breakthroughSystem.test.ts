@@ -36,7 +36,7 @@ function createMockSkill(overrides?: Partial<MentalSkill>): MentalSkill {
   return {
     skillId: "ice_veins",
     rank: 2,
-    xp: 85, // 85% of 100 (rank 2→3 threshold) — well past the 80% gate
+    xp: 85, // Very high XP well past 80% threshold to guarantee trigger
     xpToNextRank: 100,
     confidence: 85,
     lastTriggeredGame: 0,
