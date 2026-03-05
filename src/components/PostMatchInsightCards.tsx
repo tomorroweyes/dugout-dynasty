@@ -19,9 +19,10 @@ export function PostMatchInsightCards({
 }: PostMatchInsightCardsProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
+  // Notify parent that insights are viewed (on mount)
   useEffect(() => {
     onViewed?.();
-  }, [onViewed]);
+  }, []);
 
   const handleToggle = () => {
     const next = !expanded;
