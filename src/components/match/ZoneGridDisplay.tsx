@@ -87,9 +87,19 @@ export function ZoneGridDisplay({
   return (
     <div className={fh ? "select-none w-full h-full flex flex-col" : "select-none w-full"}>
       {/* Mode label / result mode header */}
-      <div className={`text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5${fh ? " shrink-0" : ""}`}>
-        {isResultMode ? "What happened" : mode === "batting" ? "Pick your spot" : "Where to throw"}
-      </div>
+      {isResultMode ? (
+        <div className={`mb-1.5 shrink-0`}>
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span>⚾ pitch location</span>
+            {resultData?.batterSwing && <span>👀 batter expected</span>}
+            {resultData?.isPerfect && <span className="text-amber-400">✨ perfect execution</span>}
+          </div>
+        </div>
+      ) : (
+        <div className={`text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5${fh ? " shrink-0" : ""}`}>
+          {mode === "batting" ? "Pick your spot" : "Where to throw"}
+        </div>
+      )}
 
       {/* Context legend (selection mode only) */}
       {!isResultMode && (
@@ -152,6 +162,10 @@ export function ZoneGridDisplay({
                   isResultMode &&
                   resultData?.aimed.row === row &&
                   resultData?.aimed.col === col;
+                const isBatterSwing =
+                  isResultMode &&
+                  resultData?.batterSwing?.row === row &&
+                  resultData?.batterSwing?.col === col;
 
                 return (
                   <ResultCell
@@ -169,6 +183,7 @@ export function ZoneGridDisplay({
                     isResultMode={isResultMode}
                     isLanding={isLanding}
                     isAimed={isAimed}
+                    isBatterSwing={isBatterSwing}
                     isPerfect={isLanding && resultData?.isPerfect}
                   />
                 );
@@ -196,6 +211,7 @@ interface ResultCellProps {
   isResultMode: boolean;
   isLanding?: boolean;
   isAimed?: boolean;
+  isBatterSwing?: boolean;
   isPerfect?: boolean;
 }
 
@@ -212,10 +228,14 @@ function ResultCell({
   isResultMode,
   isLanding,
   isAimed,
+  isBatterSwing,
   isPerfect,
 }: ResultCellProps) {
-  // Background coloring
+  // Background coloring — batter expectation zone gets a warm tint
   const bgClass = (() => {
+    if (isResultMode && isBatterSwing && !isLanding) {
+      return "bg-amber-500/20 border-amber-400/50"; // Where batter was looking
+    }
     if (zoneType === "hot") {
       const base = mode === "pitching"
         ? "bg-red-500/50 border-red-500/80"
@@ -253,21 +273,21 @@ function ResultCell({
         ${disabled ? "opacity-50 cursor-not-allowed" : "hover:scale-105 hover:border-foreground/40 cursor-pointer active:scale-95"}
       `}
     >
-      {/* Result mode: show pitch + swing icons */}
+      {/* Result mode: pitch location + batter expectation */}
       {isResultMode ? (
-        <div className="flex flex-col items-center justify-center gap-1 w-full h-full">
+        <div className="flex flex-col items-center justify-center gap-0.5 w-full h-full">
           {isLanding && (
             <div className={`text-lg leading-none animate-in fade-in-0 zoom-in-75 duration-300${isPerfect ? " drop-shadow-lg" : ""}`}>
               ⚾
             </div>
           )}
-          {isAimed && !isLanding && (
-            <div className="text-sm leading-none opacity-60 animate-in fade-in-0 zoom-in-50 duration-300">
-              🎯
+          {isBatterSwing && (
+            <div className="text-xs leading-none opacity-70 animate-in fade-in-0 duration-500">
+              👀
             </div>
           )}
-          {!isLanding && !isAimed && typeIcon && (
-            <div className="text-xs leading-none opacity-30">{typeIcon}</div>
+          {!isLanding && !isBatterSwing && typeIcon && (
+            <div className="text-xs leading-none opacity-20">{typeIcon}</div>
           )}
         </div>
       ) : (

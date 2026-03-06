@@ -347,39 +347,64 @@ export function ActionBar({
       const isMoment = lastPlay.paintedCorner || lastPlay.perfectContact;
       const meta = OUTCOME_META[lastPlay.outcome] ?? OUTCOME_META.out;
 
+      // Pitch chess result — did we fool him?
+      const batterExpected = lastPlay.zoneBatterAimed;
+      const pitcherAimed = lastPlay.zoneAimed ?? pitcherSelection;
+      const fooled = batterExpected &&
+        (pitcherAimed.row !== batterExpected.row || pitcherAimed.col !== batterExpected.col);
+      const isHit = ["homerun", "triple", "double", "single"].includes(lastPlay.outcome);
+
+      const chessResult = !batterExpected
+        ? null
+        : fooled
+          ? { label: "Fooled him", detail: "Threw where he wasn't looking", color: "text-green-400" }
+          : isHit
+            ? { label: "He read it right", detail: "Was sitting on that zone — capitalized", color: "text-red-400" }
+            : { label: "He guessed right — missed anyway", detail: "Good location held up", color: "text-amber-400" };
+
       return (
         <div className="h-full flex flex-col gap-3 p-3">
-          {/* Top: Outcome card */}
-          <div className={`rounded-lg border px-4 py-4 text-center shrink-0 ${meta.bg}`}>
+          {/* Top: Outcome + chess result */}
+          <div className={`rounded-lg border px-4 py-3 shrink-0 ${meta.bg}`}>
             <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <div className="text-3xl mb-2 leading-none">{meta.icon}</div>
+              {/* Outcome */}
+              <div className="flex-1 text-center">
+                <div className="text-3xl mb-1.5 leading-none">{meta.icon}</div>
                 <div className={`text-sm font-bold uppercase tracking-wide ${meta.color}`}>
                   {outcomeLabel}
                   {isMoment && <span className="ml-1 text-amber-400">✨</span>}
                 </div>
-                {isMoment && (
-                  <div className="text-xs text-amber-400 font-semibold mt-1">Perfect execution</div>
-                )}
               </div>
 
-              {/* Narrative on the right */}
-              {lastPlay?.narrativeText && (
-                <p className="text-xs text-muted-foreground italic leading-snug line-clamp-3 flex-1">
-                  "{lastPlay.narrativeText}"
-                </p>
-              )}
+              {/* Chess result + narrative */}
+              <div className="flex-1 flex flex-col gap-1">
+                {chessResult && (
+                  <div>
+                    <span className={`text-sm font-bold ${chessResult.color}`}>{chessResult.label}</span>
+                    <p className="text-xs text-muted-foreground leading-tight">{chessResult.detail}</p>
+                  </div>
+                )}
+                {lastPlay?.narrativeText && (
+                  <p className="text-xs text-muted-foreground italic leading-snug line-clamp-2 mt-1">
+                    "{lastPlay.narrativeText}"
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Bottom: Grid */}
+          {/* Grid: shows ⚾ where pitch landed + 👀 where batter was looking */}
           <div className="flex-1 min-h-0">
             <ZoneGridDisplay
               mode="pitching"
               zoneMap={zoneMap}
               fillHeight
-              disabled
-              onSelect={() => {}} // No-op during feedback
+              resultData={{
+                aimed: pitcherAimed,
+                landingZone: lastPlay.zoneLanded ?? pitcherAimed,
+                batterSwing: lastPlay.zoneBatterAimed,
+                isPerfect: isMoment ?? false,
+              }}
             />
           </div>
 
