@@ -10,6 +10,7 @@ import type {
 import type { Player } from "@/types/game";
 import type { MentalSkill } from "@/types/mentalSkills";
 import type { RandomProvider } from "./randomProvider";
+import { hasActiveBadHabit } from "./badHabitSystem";
 import {
   BREAKTHROUGH_CONTRAST_TEXTS,
   BREAKTHROUGH_STREAK_TEXTS,
@@ -248,13 +249,7 @@ function hasBreakthroughThisSeason(player: Player, skillId: string): boolean {
   return player.breakthroughEvents.some((e) => e.skillId === skillId);
 }
 
-/**
- * Check if player has active bad habit
- */
-function hasActiveBadHabit(_player: Player): boolean {
-  // Placeholder: in real system, check player.badHabits array
-  return false;
-}
+// hasActiveBadHabit imported from badHabitSystem.ts
 
 /**
  * Build contextual description for game state
