@@ -158,10 +158,6 @@ export function ZoneGridDisplay({
                   isResultMode &&
                   resultData?.landingZone.row === row &&
                   resultData?.landingZone.col === col;
-                const isAimed =
-                  isResultMode &&
-                  resultData?.aimed.row === row &&
-                  resultData?.aimed.col === col;
                 const isBatterSwing =
                   isResultMode &&
                   resultData?.batterSwing?.row === row &&
@@ -182,7 +178,6 @@ export function ZoneGridDisplay({
                     // Result mode props
                     isResultMode={isResultMode}
                     isLanding={isLanding}
-                    isAimed={isAimed}
                     isBatterSwing={isBatterSwing}
                     isPerfect={isLanding && resultData?.isPerfect}
                   />
@@ -210,7 +205,6 @@ interface ResultCellProps {
   onClick: () => void;
   isResultMode: boolean;
   isLanding?: boolean;
-  isAimed?: boolean;
   isBatterSwing?: boolean;
   isPerfect?: boolean;
 }
@@ -227,7 +221,6 @@ function ResultCell({
   onClick,
   isResultMode,
   isLanding,
-  isAimed,
   isBatterSwing,
   isPerfect,
 }: ResultCellProps) {

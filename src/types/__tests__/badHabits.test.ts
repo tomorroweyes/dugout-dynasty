@@ -90,7 +90,7 @@ describe("Bad Habits System - Type Definitions & Design", () => {
       expect(effect.contactPenalty).toBeGreaterThan(0);
       expect(effect.fatigueRate).toBeGreaterThan(1);
       expect(effect.contactPenalty).toBe(8 * 0.9); // 7.2%
-      expect(effect.fatigueRate).toBeCloseTo(1.08, 1); // 1.2 * 0.9
+      expect(effect.fatigueRate).toBeCloseTo(1.18, 2); // 1 + (0.2 * 0.9)
     });
   });
 

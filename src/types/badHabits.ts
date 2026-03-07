@@ -79,7 +79,7 @@ export interface PlayerHabitData {
   badHabits: BadHabit[];
   habitHistory: {
     broken: BadHabit[];                // Habits that were broken
-    knownByOpponents: Set<string>;     // Opponent IDs who know about habits
+    knownByOpponents: string[];        // Opponent IDs who know about habits (array, not Set — JSON-safe)
   };
 }
 
@@ -130,7 +130,7 @@ export function getHabitEffect(
       contactPenalty: 8 * scale,
       opponentContactBonus: 0,
       decisionAccuracyPenalty: 0,
-      fatigueRate: 1.2 * scale,
+      fatigueRate: 1 + (0.2 * scale), // Multiplier: 1.0 (no effect) → 1.2 (full strength)
       shiftProbability: 0,
       firstPitchBatterAdaptation: 0,
     },
