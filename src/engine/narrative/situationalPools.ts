@@ -241,3 +241,32 @@ export const BREAKTHROUGH_SPECIALIZATION_TEXTS = [
   "The answer was always there. {playerName} finally found it in {skillName}.",
   "{playerName} understood. This was their moment. This was their skill.",
 ];
+
+// --- Bad Habit Narrative Pools ---
+
+/** When a habit costs the player — shown in game log (silent formation, this triggers on effect) */
+export const BAD_HABIT_COSTS_TEXTS: string[] = [
+  "The defense knew it was coming.",
+  "They'd seen this move before.",
+  "The scouting report was right. {playerName} was predictable.",
+  "No mystery left. The opponent had the book.",
+  "Same approach. Same result. The defense didn't even flinch.",
+];
+
+/** When a player breaks a bad habit */
+export const BAD_HABIT_BREAK_TEXTS: string[] = [
+  "{playerName} changed it up. They didn't see it coming.",
+  "Different look this time. {playerName} had evolved.",
+  "The book was wrong. {playerName} rewrote it.",
+  "{playerName} caught them off guard — finally.",
+  "No pattern to exploit now. {playerName} had broken the mold.",
+];
+
+/** When an opponent identifies and adapts to a habit (knowledge escalation) */
+export const BAD_HABIT_SCOUTED_TEXTS: string[] = [
+  "The coaching staff had seen enough film.",
+  "They'd done their homework on {playerName}.",
+  "Word travels fast in this league. The tendency was known.",
+  "Three games of footage. The pattern was obvious.",
+  "Scouts don't miss tendencies like this.",
+];

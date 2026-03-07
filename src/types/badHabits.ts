@@ -67,9 +67,24 @@ export interface HabitEffect {
   contactPenalty: number;              // −X% to hit rate vs shift (pull_happy)
   opponentContactBonus: number;        // +X% opponent contact recognition
   decisionAccuracyPenalty: number;    // −X% mental skill accuracy
-  fatigueRate: number;                 // Extra fatigue accumulation rate
+  fatigueRate: number;                 // Fatigue multiplier (1.0 = baseline, 1.2 = 20% more)
   shiftProbability: number;            // Likelihood infield shift applied
   firstPitchBatterAdaptation: number; // Batter adjusts to first-pitch throws
+}
+
+/**
+ * Per-player AB usage log — tracks streaks for habit detection
+ * Stored on Player, reset at start of each season
+ */
+export interface HabitUsageLog {
+  // Per-skill consecutive use tracking (skillId → count)
+  skillStreaks: Record<string, number>;
+  // Per-approach consecutive use tracking (approach → count)
+  approachStreaks: Record<string, number>;
+  // Last N approaches for context (max 10, rolling)
+  recentApproaches: string[];
+  // Last N skills used (max 10, rolling)
+  recentSkills: string[];
 }
 
 /**
@@ -79,7 +94,7 @@ export interface PlayerHabitData {
   badHabits: BadHabit[];
   habitHistory: {
     broken: BadHabit[];                // Habits that were broken
-    knownByOpponents: string[];        // Opponent IDs who know about habits (array, not Set — JSON-safe)
+    knownByOpponents: string[];        // Opponent IDs who know about habits (JSON-safe)
   };
 }
 
@@ -98,7 +113,7 @@ export function getHabitEffect(
       contactPenalty: 15 * scale,
       opponentContactBonus: 0,
       decisionAccuracyPenalty: 0,
-      fatigueRate: 0,
+      fatigueRate: 1,
       shiftProbability: 0.75 * scale,
       firstPitchBatterAdaptation: 0,
     },
@@ -106,7 +121,7 @@ export function getHabitEffect(
       contactPenalty: 0,
       opponentContactBonus: 10 * scale,
       decisionAccuracyPenalty: 0,
-      fatigueRate: 0,
+      fatigueRate: 1,
       shiftProbability: 0,
       firstPitchBatterAdaptation: 0,
     },
@@ -114,7 +129,7 @@ export function getHabitEffect(
       contactPenalty: 0,
       opponentContactBonus: 0,
       decisionAccuracyPenalty: 10 * scale,
-      fatigueRate: 0,
+      fatigueRate: 1,
       shiftProbability: 0,
       firstPitchBatterAdaptation: 0,
     },
@@ -122,7 +137,7 @@ export function getHabitEffect(
       contactPenalty: 0,
       opponentContactBonus: 0,
       decisionAccuracyPenalty: 0,
-      fatigueRate: 0,
+      fatigueRate: 1,
       shiftProbability: 0,
       firstPitchBatterAdaptation: 0.8 * scale,
     },

@@ -87,6 +87,9 @@ export interface Player {
   // Breakthrough Moments System (Phase 2) — optional for backwards compatibility
   breakthroughEvents?: import("./breakthroughs").BreakthroughEvent[]; // Historical breakthrough moments
   signatureSkills?: Map<string, import("./breakthroughs").SignatureSkill>; // Active signature skills (max 1)
+  // Bad Habits System (Phase 3) — optional for backwards compatibility
+  badHabits?: import("./badHabits").BadHabit[];                    // Active and broken bad habits
+  habitUsageLog?: import("./badHabits").HabitUsageLog;             // Per-AB usage tracking
 }
 
 // Type guards
