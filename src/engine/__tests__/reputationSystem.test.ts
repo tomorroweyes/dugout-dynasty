@@ -52,7 +52,7 @@ function makePullHabitAboveThreshold(playerId: string, strength = 80): BadHabit 
   return {
     habitId: `pull-habit-${playerId}`,
     habitType: "pull_happy",
-    formationType: "skill_overuse",
+    formationType: "skill_streak",
     strength,
     isActive: true,
     consecutiveUses: 10,
@@ -66,7 +66,7 @@ function makeChaseArtistHabit(playerId: string, strength = 70): BadHabit {
   return {
     habitId: `chase-habit-${playerId}`,
     habitType: "chase_artist",
-    formationType: "approach_overuse",
+    formationType: "approach_streak",
     strength,
     isActive: true,
     consecutiveUses: 8,

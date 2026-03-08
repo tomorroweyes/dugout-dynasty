@@ -237,7 +237,7 @@ describe("triggerReinvention", () => {
       {
         habitId: "habit-test-001",
         habitType: "pull_happy",
-        formationType: "skill_overuse",
+        formationType: "skill_streak",
         strength: 80,
         isActive: true,
         consecutiveUses: 5,

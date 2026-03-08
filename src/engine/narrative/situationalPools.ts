@@ -349,3 +349,52 @@ export const SCOUT_OFFSEASON_RESET_TEXTS: string[] = [
   "New year, slightly softer intel. {playerName} starts fresh — sort of.",
   "Coaching turnover. Some of the institutional knowledge on {playerName} is lost.",
 ];
+
+// --- Mentorship / Coaching Voices Narrative Pools ---
+
+/** Style transfer — positive (accelerated discovery) */
+export const MENTOR_STYLE_TRANSFER_POSITIVE_TEXTS: string[] = [
+  "{mentorName}'s approach to {skillName} is rubbing off on {apprenticeName}.",
+  "{apprenticeName} is picking up {mentorName}'s habits — the good ones.",
+  "Watching {mentorName} work is an education. {apprenticeName} is paying attention.",
+  "Two players, one philosophy. {apprenticeName} is absorbing {mentorName}'s craft.",
+  "The lessons are quiet but real. {apprenticeName}'s {skillName} is evolving.",
+];
+
+/** Style transfer — negative (bad habit seed) */
+export const MENTOR_STYLE_TRANSFER_NEGATIVE_TEXTS: string[] = [
+  "{mentorName}'s tendencies don't all transfer cleanly. {apprenticeName} has picked something up.",
+  "Even great mentors pass on rough edges. {apprenticeName} has a new quirk to manage.",
+  "The imitation game has a cost. {apprenticeName} has inherited a tendency.",
+  "Mentorship isn't just glory. {apprenticeName} absorbed a habit that'll need breaking.",
+];
+
+/** Lineage narrative — 1 generation */
+export const LINEAGE_ONE_GEN_TEXTS: string[] = [
+  "{playerName} learned this from {mentorName}. It shows.",
+  "The {skillName} lineage runs through {mentorName}. {playerName} carries it forward.",
+  "{mentorName} once showed {playerName} how this was done.",
+  "This is {mentorName}'s fingerprint. {playerName} made it their own.",
+];
+
+/** Lineage narrative — 3 generations */
+export const LINEAGE_THREE_GEN_TEXTS: string[] = [
+  "Three generations of {skillName}. {playerName} carries the lineage.",
+  "This skill has been passed down. {playerName} is the latest keeper.",
+  "The chain holds. {playerName} represents the third chapter of this tradition.",
+];
+
+/** Coaching voice — Ice Veins */
+export const COACHING_VOICE_ICE_VEINS = "Stay calm. You've been here a hundred times.";
+
+/** Coaching voice — Pitch Recognition */
+export const COACHING_VOICE_PITCH_RECOGNITION = "You've seen this pattern. It's the slider. Wait for it.";
+
+/** Coaching voice — Clutch Composure */
+export const COACHING_VOICE_CLUTCH_COMPOSURE = "This is redemption. Right here. Take it.";
+
+/** Coaching voice — Veteran's Poise */
+export const COACHING_VOICE_VETERAN_POISE = "Seven seasons. You know what to do.";
+
+/** Coaching voice — Game Reading */
+export const COACHING_VOICE_GAME_READING = "You've cracked his tendencies. Trust the read.";

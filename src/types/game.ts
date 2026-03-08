@@ -96,6 +96,10 @@ export interface Player {
   reinventionModifiers?: import("./reinvention").ReinventionModifiers; // Active season modifiers
   // Reputation & Opponent Intel (Phase 4) — optional for backwards compatibility
   opponentIntel?: import("./reputation").OpponentIntel[];           // Per-opponent scouting records
+  // Mentorship System (Phase 5) — optional for backwards compatibility
+  activeMentorship?: import("./mentorship").MentorshipPair;         // Current active pair (as mentor or apprentice)
+  mentorshipHistory?: import("./mentorship").MentorshipPair[];      // Past mentor pairs
+  lineage?: import("./mentorship").LineageNode[];                   // Mentor chain (generation 1+)
 }
 
 // Type guards
