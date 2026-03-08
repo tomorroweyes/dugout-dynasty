@@ -270,3 +270,45 @@ export const BAD_HABIT_SCOUTED_TEXTS: string[] = [
   "Three games of footage. The pattern was obvious.",
   "Scouts don't miss tendencies like this.",
 ];
+
+// --- Signature Skill Narrative Pools ---
+
+/** When a signature skill fires at full force */
+export const SIGNATURE_SKILL_USE_TEXTS: string[] = [
+  "{playerName}'s {signatureName} — right on cue.",
+  "There it is. {playerName}'s signature move: {signatureName}.",
+  "{signatureName}. {playerName} owns this moment.",
+  "Nobody does it quite like {playerName}. {signatureName} on display.",
+  "The crowd knew. {playerName} was in their zone. {signatureName}.",
+  "Picture-perfect execution. {playerName}'s {signatureName} in full effect.",
+  "This is what {playerName} was built for. {signatureName} delivers.",
+];
+
+/** When an opponent counters / reads the signature skill */
+export const SIGNATURE_COUNTER_TEXTS: string[] = [
+  "The catcher called for an adjustment. They know.",
+  "The defense shifted. Someone did their homework.",
+  "They'd seen {signatureName} enough times now. Counter in place.",
+  "Scouting report paid off. {playerName}'s {signatureName} neutralized.",
+  "{playerName}'s signature was no longer a secret. The league had adapted.",
+  "They played for {signatureName}. Got it exactly right.",
+  "Film work. The opponent was a step ahead this time.",
+];
+
+/** When opponents first discover / learn about a signature skill */
+export const SIGNATURE_REVEAL_TEXTS: string[] = [
+  "Word was getting out about {playerName}'s {signatureName}.",
+  "The league was taking notes. {playerName}'s {signatureName} was on the radar.",
+  "Scouts were filing reports. {signatureName} was becoming a known quantity.",
+  "Other dugouts had noticed. {playerName}'s {signatureName} — catalogued.",
+  "It couldn't stay hidden forever. {playerName}'s {signatureName} was out there now.",
+];
+
+/** After reinvention — the signature is archived, slate is clean */
+export const REINVENTION_ARCHIVE_TEXTS: string[] = [
+  "Nobody knows this version of {playerName} yet.",
+  "The old {playerName} is gone. What comes next? Nobody knows.",
+  "A clean slate. {playerName} is an unknown quantity again.",
+  "The scouting reports are useless now. {playerName} has reinvented.",
+  "{playerName} burned the book on themselves. Starting fresh.",
+];

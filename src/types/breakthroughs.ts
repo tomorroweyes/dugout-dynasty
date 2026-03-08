@@ -33,6 +33,7 @@ export interface SignatureSkillReputation {
   knownBy: string[]; // team names that have seen this skill
   counterStrategies: string[]; // ["Pitch outside", "Shift left", etc.]
   scoutLevel: 0 | 1 | 2 | 3; // 0=unknown, 1=seen once, 2=pattern detected, 3=fully mapped
+  highLeverageUses: number; // cumulative count; drives tier escalation
 }
 
 export interface SignatureSkill {
@@ -43,6 +44,7 @@ export interface SignatureSkill {
   effectBonus: number; // +0.10 (10% above Rank 5 effectiveness)
   unlockedAt: BreakthroughEvent;
   isActive: boolean;
+  isArchived: boolean; // true when archived via reinvention; stays visible as legacy
   reputation: SignatureSkillReputation;
 }
 
