@@ -2,9 +2,9 @@
  * ActionBar.tsx — Game decision interface
  *
  * Unified architecture:
- * - Early exits: autoSim, pitcher feedback, results, inning complete
- * - Unified decision UI: handles both batting & pitching via mode flag
- * - Shared components: AbilityChip, DecisionSection, ZoneSelector
+ * - Early exits: autoSim, text-only results, inning complete
+ * - Unified layout: selection ↔ zone-result in-place swap, grid never moves
+ * - Shared components: AbilityChip
  */
 
 import { useState, useEffect } from "react";
@@ -110,159 +110,6 @@ function AbilityChip({
   );
 }
 
-interface DecisionSectionProps {
-  /** "batting" or "pitching" */
-  mode: "batting" | "pitching";
-  /** Current selection (approach for batting, strategy for pitching) */
-  selection: BatterApproach | PitchStrategy;
-  setSelection: (s: BatterApproach | PitchStrategy) => void;
-  selectedAbility: string | null;
-  setSelectedAbility: (id: string | null) => void;
-  abilities: Ability[];
-  currentPlayer: any;
-  selectedAbilityDef: Ability | null;
-  zoneMap: ZoneMap;
-  pitchHint?: ZoneCell[];
-  onZoneSelect: (cell: ZoneCell) => void;
-}
-
-/**
- * Unified decision interface for batting & pitching
- * Handles approach/strategy selection, ability chips, and zone grid
- */
-function DecisionSection({
-  mode,
-  selection,
-  setSelection,
-  selectedAbility,
-  setSelectedAbility,
-  abilities,
-  currentPlayer,
-  selectedAbilityDef,
-  zoneMap,
-  pitchHint,
-  onZoneSelect,
-}: DecisionSectionProps) {
-  const isBatting = mode === "batting";
-
-  // Decision options (approach or strategy)
-  const options = isBatting
-    ? APPROACH_ORDER.map((id, i) => ({
-        id,
-        config: BATTER_APPROACHES[id],
-        shortcut: APPROACH_SHORTCUTS[i],
-        isSelected: selection === id,
-      }))
-    : STRATEGY_ORDER.map((id, i) => ({
-        id,
-        config: PITCH_STRATEGIES[id],
-        shortcut: APPROACH_SHORTCUTS[i],
-        isSelected: selection === id,
-      }));
-
-  const selectionLabel = isBatting ? "Choose Approach" : "Special Abilities";
-  const showShortcutHint = isBatting;
-
-  const isGuaranteed = isGuaranteedAbility(selectedAbilityDef);
-
-  return (
-    <div className="h-full flex flex-col gap-1.5">
-      {/* Decision context label */}
-      <div className="shrink-0 text-xs text-muted-foreground font-medium">
-        {selectionLabel}
-        {showShortcutHint && <kbd className="text-[9px] font-mono opacity-50 ml-1">Q W E</kbd>}
-      </div>
-
-      {/* Selection buttons + ability chips */}
-      <div className={`flex items-center gap-2 ${isBatting ? "min-h-7" : ""} shrink-0`}>
-        {/* Approach/strategy buttons (batting only) */}
-        {isBatting && (
-          <div className="flex gap-1 flex-1">
-            {options.map(({ id, config, shortcut, isSelected }) => (
-              <button
-                key={id}
-                onClick={() => setSelection(id as BatterApproach)}
-                title={config.description}
-                className={`flex-1 py-1 px-1.5 rounded border text-xs font-medium transition-all flex items-center justify-center gap-1 ${
-                  isSelected
-                    ? "border-blue-500 bg-blue-500/15 text-foreground ring-1 ring-blue-500/30"
-                    : "border-border bg-card hover:bg-accent text-muted-foreground"
-                }`}
-              >
-                <span className="text-sm leading-none">{config.icon}</span>
-                <span>{config.label}</span>
-                <kbd className="text-[9px] font-mono opacity-40 bg-black/10 dark:bg-white/10 rounded px-1 py-px">
-                  {shortcut?.toUpperCase()}
-                </kbd>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Ability chips (both modes) */}
-        {abilities.length > 0 && (
-          <div className={`flex gap-${isBatting ? "1.5" : "2"} ${isBatting ? "overflow-x-auto" : "flex-wrap"} shrink-0`}>
-            {abilities.map((ability, i) => {
-              const { canActivate, reason } = canActivateAbility(currentPlayer, ability.id);
-              const isSelected = selectedAbility === ability.id;
-              const shortcut = ABILITY_SHORTCUT_KEYS[i];
-              return (
-                <AbilityChip
-                  key={ability.id}
-                  ability={ability}
-                  isSelected={isSelected}
-                  canActivate={canActivate}
-                  reason={reason}
-                  shortcut={shortcut}
-                  onClick={() => setSelectedAbility(isSelected ? null : ability.id)}
-                  compact={isBatting}
-                />
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Zone grid or guaranteed ability button */}
-      {isGuaranteed ? (
-        <Button
-          size="lg"
-          onClick={() => onZoneSelect({ row: 1, col: 1 })}
-          className="w-full h-auto py-3 flex items-center justify-center gap-2"
-        >
-          <span className="text-xl leading-none">{selectedAbilityDef!.iconEmoji}</span>
-          <span className="font-bold text-sm">{selectedAbilityDef!.name}</span>
-        </Button>
-      ) : (
-        <div className="flex-1 min-h-0 flex flex-col">
-          <ZoneGridDisplay
-            mode={mode}
-            zoneMap={zoneMap}
-            pitchHint={pitchHint}
-            fillHeight
-            onSelect={onZoneSelect}
-          />
-          {!isBatting && (() => {
-            const note = getExecutionNote(currentPlayer);
-            return note ? (
-              <div className="text-xs text-muted-foreground leading-tight px-0.5 mt-1 shrink-0">
-                {note}
-              </div>
-            ) : null;
-          })()}
-        </div>
-      )}
-
-      {/* Ability description */}
-      {selectedAbilityDef && (
-        <div className="text-xs px-1 text-muted-foreground leading-snug shrink-0">
-          {selectedAbilityDef.iconEmoji}{" "}
-          <span className="font-medium">{selectedAbilityDef.name}</span> — {selectedAbilityDef.description}
-        </div>
-      )}
-    </div>
-  );
-}
 
 interface ActionBarProps {
   matchState: InteractiveMatchState;
@@ -342,135 +189,6 @@ export function ActionBar({
         </div>
       </div>
     );
-  }
-
-  // ─── ZONE RESULT (batting OR pitching — player selected a zone) ─────────────
-  // Grid stays visible; overlays show pitch location (⚾) vs read zone (👀)
-  if (shouldShowZoneResult) {
-    const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
-    if (lastPlay) {
-      const meta = OUTCOME_META[lastPlay.outcome] ?? OUTCOME_META.out;
-      const isMoment = lastPlay.paintedCorner || lastPlay.perfectContact;
-      const isHit = ["homerun", "triple", "double", "single"].includes(lastPlay.outcome);
-      const mode = isMyBatter ? "batting" : "pitching";
-
-      // In both modes:
-      //   zoneAimed       = where pitch went (pitcher's aim / player's aim)
-      //   zoneBatterAimed = the "read" zone (player's prediction when batting /
-      //                     AI batter's expected zone when pitching)
-      const pitchLocation = lastPlay.zoneLanded ?? lastPlay.zoneAimed;
-      const readZone = lastPlay.zoneBatterAimed;
-
-      // Read chess result
-      const readCorrect =
-        pitchLocation &&
-        readZone &&
-        pitchLocation.row === readZone.row &&
-        pitchLocation.col === readZone.col;
-
-      const chessResult: { label: string; detail: string; color: string } | null =
-        !pitchLocation || !readZone
-          ? null
-          : isMyBatter
-          ? // Batting: did player predict where pitch came?
-            readCorrect && isHit
-            ? { label: "You called it", detail: "Pitch came right where you looked", color: "text-green-400" }
-            : readCorrect
-            ? { label: "Good read — bad contact", detail: "Right zone, wrong result", color: "text-amber-400" }
-            : { label: "Missed the read", detail: "Pitch came somewhere else", color: "text-orange-400" }
-          : // Pitching: did pitcher fool the batter?
-            !readCorrect
-          ? { label: "Fooled him", detail: "Threw where he wasn't looking", color: "text-green-400" }
-          : isHit
-          ? { label: "He read it right", detail: "Was sitting on that zone — capitalized", color: "text-red-400" }
-          : { label: "He guessed right — missed anyway", detail: "Good location held up", color: "text-amber-400" };
-
-      const continueLabel = matchState.isComplete
-        ? "See Final Score"
-        : matchState.inningComplete
-        ? "Next Inning"
-        : "Next Batter";
-
-      return (
-        <div className="h-full flex flex-col gap-2 p-3">
-          {/* Outcome card + chess read result */}
-          <div className={`rounded-lg border px-3 py-2.5 shrink-0 ${meta.bg}`}>
-            <div className="flex items-center gap-3">
-              {/* Outcome icon + label */}
-              <div className="shrink-0 text-center min-w-[3rem]">
-                <div className="text-2xl leading-none">{meta.icon}</div>
-                <div className={`text-[11px] font-bold uppercase tracking-wide mt-0.5 ${meta.color}`}>
-                  {meta.label}
-                  {isMoment && <span className="ml-0.5 text-amber-400">✨</span>}
-                </div>
-                {isHit && lastPlay.rbi != null && lastPlay.rbi > 0 && (
-                  <div className="text-[10px] text-muted-foreground">{lastPlay.rbi} RBI</div>
-                )}
-              </div>
-
-              {/* Chess result */}
-              {chessResult && (
-                <div className="flex-1 min-w-0 border-l border-border/40 pl-3">
-                  <div className={`text-xs font-bold leading-tight ${chessResult.color}`}>
-                    {chessResult.label}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                    {chessResult.detail}
-                  </div>
-                </div>
-              )}
-
-              {/* Narrative */}
-              {lastPlay.narrativeText && (
-                <p className="text-[11px] text-muted-foreground italic leading-snug line-clamp-2 flex-1 min-w-0 border-l border-border/40 pl-3">
-                  "{lastPlay.narrativeText}"
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Zone grid — shows ⚾ pitch location + 👀 read zone */}
-          <div className="flex-1 min-h-0">
-            {pitchLocation ? (
-              <ZoneGridDisplay
-                mode={mode}
-                zoneMap={zoneMap}
-                fillHeight
-                resultData={{
-                  aimed: pitchLocation,
-                  landingZone: pitchLocation,
-                  batterSwing: readZone,
-                  isPerfect: isMoment ?? false,
-                }}
-              />
-            ) : (
-              // Fallback: no zone data — show disabled grid
-              <ZoneGridDisplay
-                mode={mode}
-                zoneMap={zoneMap}
-                fillHeight
-                disabled
-                onSelect={() => {}}
-              />
-            )}
-          </div>
-
-          {/* Continue */}
-          <Button
-            size="lg"
-            onClick={() => {
-              onContinue();
-            }}
-            className="w-full py-5 shrink-0"
-          >
-            {continueLabel}
-            <kbd className="ml-2 text-[10px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1.5 py-0.5">
-              Space
-            </kbd>
-          </Button>
-        </div>
-      );
-    }
   }
 
   // ─── TEXT-ONLY RESULT (auto-simulated play, no zone selected) ────────────────
@@ -669,33 +387,222 @@ export function ActionBar({
     );
   }
 
-  // ─── NORMAL DECISION STATE ──────────────────────────────────────────
+  // ─── UNIFIED DECISION + ZONE RESULT ────────────────────────────────────────
+  // Single layout so the grid never changes size or position.
+  // Top section swaps content (approach → outcome). Grid stays. Continue button
+  // is always rendered (invisible during selection) to hold its space.
+
+  const mode = isMyBatter ? "batting" : "pitching";
+  const isBatting = isMyBatter;
+  const abilities = isMyBatter ? currentBatterAbilities : currentPitcherAbilities;
+  const currentPlayer = isMyBatter ? matchState.currentBatter : matchState.currentPitcher;
+  const isGuaranteed = isGuaranteedAbility(selectedAbilityDef);
+
+  const approachOptions = APPROACH_ORDER.map((id, i) => ({
+    id,
+    config: BATTER_APPROACHES[id],
+    shortcut: APPROACH_SHORTCUTS[i],
+    isSelected: selectedApproach === id,
+  }));
+
+  // Zone result data
+  const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
+  const isZoneResult = shouldShowZoneResult && !!lastPlay;
+
+  let resultMeta = OUTCOME_META.out;
+  let resultMoment = false;
+  let chessResult: { label: string; detail: string; color: string } | null = null;
+  let gridResultData: Parameters<typeof ZoneGridDisplay>[0]["resultData"] | undefined;
+  let continueLabel = "Next Batter";
+
+  if (isZoneResult && lastPlay) {
+    resultMeta = OUTCOME_META[lastPlay.outcome] ?? OUTCOME_META.out;
+    resultMoment = !!(lastPlay.paintedCorner || lastPlay.perfectContact);
+    const isHit = ["homerun", "triple", "double", "single"].includes(lastPlay.outcome);
+    const pitchLocation = lastPlay.zoneLanded ?? lastPlay.zoneAimed;
+    const readZone = lastPlay.zoneBatterAimed;
+
+    if (pitchLocation && readZone) {
+      const readCorrect =
+        pitchLocation.row === readZone.row && pitchLocation.col === readZone.col;
+
+      chessResult = isBatting
+        ? readCorrect && isHit
+          ? { label: "You called it", detail: "Pitch came right where you looked", color: "text-green-400" }
+          : readCorrect
+          ? { label: "Good read — bad contact", detail: "Right zone, wrong result", color: "text-amber-400" }
+          : { label: "Missed the read", detail: "Pitch came somewhere else", color: "text-orange-400" }
+        : !readCorrect
+        ? { label: "Fooled him", detail: "Threw where he wasn't looking", color: "text-green-400" }
+        : isHit
+        ? { label: "He read it right", detail: "Was sitting on that zone", color: "text-red-400" }
+        : { label: "He guessed right — missed anyway", detail: "Good location held up", color: "text-amber-400" };
+
+      gridResultData = {
+        aimed: pitchLocation,
+        landingZone: pitchLocation,
+        batterSwing: readZone,
+        isPerfect: resultMoment,
+      };
+    }
+
+    continueLabel = matchState.isComplete
+      ? "See Final Score"
+      : matchState.inningComplete
+      ? "Next Inning"
+      : "Next Batter";
+  }
 
   return (
-    <DecisionSection
-      mode={isMyBatter ? "batting" : "pitching"}
-      selection={isMyBatter ? selectedApproach : selectedStrategy}
-      setSelection={(s) => {
-        if (isMyBatter) {
-          setSelectedApproach(s as BatterApproach);
-        } else {
-          setSelectedStrategy(s as PitchStrategy);
-        }
-      }}
-      selectedAbility={selectedAbility}
-      setSelectedAbility={setSelectedAbility}
-      abilities={isMyBatter ? currentBatterAbilities : currentPitcherAbilities}
-      currentPlayer={isMyBatter ? matchState.currentBatter : matchState.currentPitcher}
-      selectedAbilityDef={selectedAbilityDef}
-      zoneMap={zoneMap}
-      pitchHint={pitchHint}
-      onZoneSelect={(cell) => {
-        if (isMyBatter) {
-          onSimulateAtBat(selectedApproach, undefined, cell);
-        } else {
-          onSimulateAtBat(undefined, selectedStrategy, cell);
-        }
-      }}
-    />
+    <div className="h-full flex flex-col gap-1.5">
+
+      {/* ── TOP: skills section ↔ outcome card (content swaps, same space) ── */}
+      <div className="shrink-0">
+        {isZoneResult && lastPlay ? (
+          // Result mode — compact row matching height of approach section
+          <div className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 ${resultMeta.bg}`}>
+            <div className="shrink-0 text-center">
+              <div className="text-xl leading-none">{resultMeta.icon}</div>
+              <div className={`text-[10px] font-bold uppercase tracking-wide leading-tight mt-0.5 ${resultMeta.color}`}>
+                {resultMeta.label}{resultMoment && " ✨"}
+              </div>
+            </div>
+            {chessResult && (
+              <div className="flex-1 min-w-0 border-l border-border/40 pl-2.5">
+                <div className={`text-xs font-bold leading-tight ${chessResult.color}`}>
+                  {chessResult.label}
+                </div>
+                <div className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                  {chessResult.detail}
+                </div>
+              </div>
+            )}
+            {lastPlay.narrativeText && (
+              <p className="text-[10px] text-muted-foreground italic leading-snug line-clamp-2 flex-1 min-w-0 border-l border-border/40 pl-2.5">
+                "{lastPlay.narrativeText}"
+              </p>
+            )}
+          </div>
+        ) : (
+          // Selection mode — label + approach buttons + ability chips
+          <div className="flex flex-col gap-1.5">
+            <div className="text-xs text-muted-foreground font-medium shrink-0">
+              {isBatting ? (
+                <>Choose Approach <kbd className="text-[9px] font-mono opacity-50 ml-1">Q W E</kbd></>
+              ) : (
+                "Special Abilities"
+              )}
+            </div>
+            <div className={`flex items-center gap-2 ${isBatting ? "min-h-7" : ""}`}>
+              {isBatting && (
+                <div className="flex gap-1 flex-1">
+                  {approachOptions.map(({ id, config, shortcut, isSelected }) => (
+                    <button
+                      key={id}
+                      onClick={() => setSelectedApproach(id as BatterApproach)}
+                      title={config.description}
+                      className={`flex-1 py-1 px-1.5 rounded border text-xs font-medium transition-all flex items-center justify-center gap-1 ${
+                        isSelected
+                          ? "border-blue-500 bg-blue-500/15 text-foreground ring-1 ring-blue-500/30"
+                          : "border-border bg-card hover:bg-accent text-muted-foreground"
+                      }`}
+                    >
+                      <span className="text-sm leading-none">{config.icon}</span>
+                      <span>{config.label}</span>
+                      <kbd className="text-[9px] font-mono opacity-40 bg-black/10 dark:bg-white/10 rounded px-1 py-px">
+                        {shortcut?.toUpperCase()}
+                      </kbd>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {abilities.length > 0 && (
+                <div className={`flex gap-${isBatting ? "1.5" : "2"} ${isBatting ? "overflow-x-auto" : "flex-wrap"} shrink-0`}>
+                  {abilities.map((ability, i) => {
+                    const { canActivate, reason } = canActivateAbility(currentPlayer, ability.id);
+                    const isSelected = selectedAbility === ability.id;
+                    return (
+                      <AbilityChip
+                        key={ability.id}
+                        ability={ability}
+                        isSelected={isSelected}
+                        canActivate={canActivate}
+                        reason={reason}
+                        shortcut={ABILITY_SHORTCUT_KEYS[i]}
+                        onClick={() => setSelectedAbility(isSelected ? null : ability.id)}
+                        compact={isBatting}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── GRID — flex-1, same position/size in both modes ── */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {isGuaranteed && !isZoneResult ? (
+          <Button
+            size="lg"
+            onClick={() => onSimulateAtBat(undefined, undefined, { row: 1, col: 1 })}
+            className="w-full h-auto py-3 flex items-center justify-center gap-2"
+          >
+            <span className="text-xl leading-none">{selectedAbilityDef!.iconEmoji}</span>
+            <span className="font-bold text-sm">{selectedAbilityDef!.name}</span>
+          </Button>
+        ) : (
+          <ZoneGridDisplay
+            mode={mode}
+            zoneMap={zoneMap}
+            pitchHint={isZoneResult ? undefined : pitchHint}
+            fillHeight
+            resultData={isZoneResult ? gridResultData : undefined}
+            onSelect={isZoneResult ? undefined : (cell) => {
+              if (isBatting) {
+                onSimulateAtBat(selectedApproach, undefined, cell);
+              } else {
+                onSimulateAtBat(undefined, selectedStrategy, cell);
+              }
+            }}
+          />
+        )}
+        {!isZoneResult && !isBatting && (() => {
+          const note = getExecutionNote(currentPlayer);
+          return note ? (
+            <div className="text-xs text-muted-foreground leading-tight px-0.5 mt-1 shrink-0">
+              {note}
+            </div>
+          ) : null;
+        })()}
+      </div>
+
+      {/* Ability description (selection only) */}
+      {!isZoneResult && selectedAbilityDef && (
+        <div className="text-xs px-1 text-muted-foreground leading-snug shrink-0">
+          {selectedAbilityDef.iconEmoji}{" "}
+          <span className="font-medium">{selectedAbilityDef.name}</span> —{" "}
+          {selectedAbilityDef.description}
+        </div>
+      )}
+
+      {/* ── CONTINUE — always present; invisible during selection to hold space ── */}
+      <Button
+        size="lg"
+        onClick={isZoneResult ? onContinue : undefined}
+        disabled={!isZoneResult}
+        className={`w-full shrink-0 py-4 text-sm transition-none ${
+          isZoneResult ? "" : "invisible pointer-events-none"
+        }`}
+      >
+        {isZoneResult ? continueLabel : "Continue"} ›
+        {isZoneResult && (
+          <kbd className="ml-2 text-[10px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1.5 py-0.5">
+            Space
+          </kbd>
+        )}
+      </Button>
+    </div>
   );
 }
