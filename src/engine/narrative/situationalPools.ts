@@ -398,3 +398,36 @@ export const COACHING_VOICE_VETERAN_POISE = "Seven seasons. You know what to do.
 
 /** Coaching voice — Game Reading */
 export const COACHING_VOICE_GAME_READING = "You've cracked his tendencies. Trust the read.";
+
+// --- Chemistry Combo Narrative Pools ---
+
+/** When a named combo fires — shown in play-by-play */
+export const CHEMISTRY_COMBO_FIRES_TEXTS: string[] = [
+  "The {comboName} combination clicks again.",
+  "There it is — {comboName}. The chemistry is undeniable.",
+  "{comboName}. The team has found something special.",
+  "Right on schedule. {comboName} delivers.",
+  "They've done this before. {comboName} — automatic.",
+];
+
+/** When Legacy Lineage combo fires */
+export const CHEMISTRY_LEGACY_LINEAGE_TEXTS: string[] = [
+  "Mentor and apprentice. Together, something extra.",
+  "The connection between them amplifies everything.",
+  "This is what lineage looks like in real time.",
+];
+
+/** When Old Dog combo fires (veteran clutch) */
+export const CHEMISTRY_OLD_DOG_TEXTS: string[] = [
+  "Nobody told {playerName} they were supposed to slow down.",
+  "Veteran's Poise. The old dog has another trick.",
+  "{playerName}. Inning 9. Of course.",
+];
+
+/** When No Mercy combo fires (reinvented player vs former team) */
+export const CHEMISTRY_NO_MERCY_TEXTS: string[] = [
+  "Former team. Wrong day to test the new version.",
+  "{playerName} saves the best for the old squad.",
+  "Nothing personal. Everything personal.",
+  "The Signature fires at 200%. The old team knows this player.",
+];
