@@ -159,6 +159,15 @@ export function InteractiveMatchView({
     if (autoSimulating || showingResult || matchState.inningComplete || matchState.isComplete) return;
     if (matchState.isTop) return; // Not my team's batting half
     if (!inningGamePlan) return; // No plan set — show game plan selector
+
+    // In close games (≤2 runs) from inning 7 onward, always give the player
+    // manual control when batting. WE-based leverage reads LOW when you're
+    // winning — the Poisson model correctly says "you're already likely to win,
+    // each run adds little WE" — but that's the wrong signal for game feel.
+    // A 2-1 game in the 8th should feel tense both offensively AND defensively.
+    const runDiff = Math.abs(matchState.myRuns - matchState.opponentRuns);
+    if (runDiff <= 2 && matchState.inning >= 7) return;
+
     if (isHighLeverage(matchState)) return; // Clutch situation — let player decide
 
     const t = setTimeout(() => handleAutoSim("gamePlan", matchState, inningGamePlan), 150);
