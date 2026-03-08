@@ -15,7 +15,6 @@ function isRoutineOut(play: PlayByPlayEvent): boolean {
 
 interface PlayByPlayLogProps {
   halfInningPlays: PlayByPlayEvent[];
-  lastRunsScored: number;
   inningComplete: boolean;
   inning: number;
   isTop: boolean; // kept for future use
@@ -24,7 +23,6 @@ interface PlayByPlayLogProps {
 
 export function PlayByPlayLog({
   halfInningPlays,
-  lastRunsScored,
   inningComplete,
   inning,
   isTop: _isTop,
@@ -79,14 +77,7 @@ export function PlayByPlayLog({
                 {play.paintedCorner && (
                   <span className="ml-1 text-blue-400 font-bold text-[10px]">🎯 CORNER</span>
                 )}
-                {/* Latest play scoring banner */}
-                {isLatest && isScoring && (
-                  <div className="mt-1.5 text-sm font-bold text-amber-500 dark:text-amber-400">
-                    {lastRunsScored === 1
-                      ? "A RUN SCORES!"
-                      : `${lastRunsScored} RUNS SCORE!`}
-                  </div>
-                )}
+
               </div>
             );
           })

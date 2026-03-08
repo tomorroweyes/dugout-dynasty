@@ -26,7 +26,7 @@ import { ActionBar } from "./match/ActionBar";
 import { TacticalPlanSelector } from "./match/TacticalPlanSelector";
 import { PostMatchInsightCards } from "./PostMatchInsightCards";
 import { BigMomentOverlay, type BigMoment } from "./match/BigMomentOverlay";
-import { ScoringFlash, type ScoringFlashData } from "./match/ScoringFlash";
+
 import { FIELD_POSITIONS, TEXT_MARKERS, type SimMode } from "./match/constants";
 import { isHighLeverage } from "@/engine/leverageCalculator";
 import {
@@ -65,7 +65,7 @@ export function InteractiveMatchView({
     y: number;
     type: string;
   } | null>(null);
-  const [scoringFlash, setScoringFlash] = useState<ScoringFlashData | null>(null);
+
   const [lastZonePlay, setLastZonePlay] = useState<{
     aimed: ZoneCell;
     zoneMap: ZoneMap;
@@ -138,19 +138,8 @@ export function InteractiveMatchView({
     }
   }, [matchState.playByPlay.length]);
 
-  // Scoring flash — fires whenever any run scores (auto-sim or player-driven)
-  useEffect(() => {
-    if (matchState.isComplete) return;
-    const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
-    if (!lastPlay || (lastPlay.rbi ?? 0) <= 0) return;
-    setScoringFlash({
-      playerName: lastPlay.batter,
-      outcome:    lastPlay.outcome,
-      rbi:        lastPlay.rbi ?? 1,
-      isMyTeam:   !matchState.isTop, // isTop=false → my team batting
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchState.playByPlay.length]);
+  // ScoringFlash removed — runs scored are shown in zone result card, play log,
+  // and score header. The sliding banner was too noisy for non-homer scoring.
 
   // Auto-simulation hook (declared before game-plan effects that reference handleAutoSim)
   const { autoSimulating, simMode, handleAutoSim } = useAutoSimulation({
@@ -509,7 +498,7 @@ export function InteractiveMatchView({
     }
 
     // Big moment overlay — home runs only (walk-off, grand slam, regular homer).
-    // Other scoring plays are already shown in the zone result card / ScoringFlash;
+    // Other scoring plays are shown in the zone result card and play log;
     // too many interrupting overlays hurts flow more than it helps.
     if (newState.playByPlay.length > 0) {
       const ev = newState.playByPlay[newState.playByPlay.length - 1];
@@ -682,7 +671,6 @@ export function InteractiveMatchView({
             <DiamondField bases={matchState.bases} fieldMarker={fieldMarker} />
             <PlayByPlayLog
               halfInningPlays={halfInningPlays}
-              lastRunsScored={lastRunsScored}
               inningComplete={matchState.inningComplete}
               inning={matchState.inning}
               isTop={matchState.isTop}
@@ -810,12 +798,7 @@ export function InteractiveMatchView({
 
       {/* Zone result is embedded in ActionBar's result card — no separate overlay needed */}
 
-      {scoringFlash && (
-        <ScoringFlash
-          flash={scoringFlash}
-          onDismiss={() => setScoringFlash(null)}
-        />
-      )}
+
 
       {bigMoment && (
         <BigMomentOverlay moment={bigMoment} onExited={() => setBigMoment(null)} />
