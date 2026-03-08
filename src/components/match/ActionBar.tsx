@@ -192,7 +192,8 @@ export function ActionBar({
   }
 
   // ─── TEXT-ONLY RESULT (auto-simulated play, no zone selected) ────────────────
-  if (showingResult) {
+  // Skip this early exit when zone was selected — the unified layout below handles it.
+  if (showingResult && !shouldShowZoneResult) {
     const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
     const meta = lastPlay ? (OUTCOME_META[lastPlay.outcome] ?? OUTCOME_META.out) : OUTCOME_META.out;
     const isHit = lastPlay && ["homerun", "triple", "double", "single"].includes(lastPlay.outcome);
@@ -250,8 +251,8 @@ export function ActionBar({
     );
   }
 
-  // Inning complete display
-  if (matchState.inningComplete) {
+  // Inning complete display — skip when zone was selected so player sees the grid result first.
+  if (matchState.inningComplete && !shouldShowZoneResult) {
     const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
     const halfInningPlays = lastPlay
       ? matchState.playByPlay.filter((p) => p.inning === lastPlay.inning && p.isTop === lastPlay.isTop)
