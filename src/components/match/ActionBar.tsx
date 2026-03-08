@@ -280,6 +280,8 @@ interface ActionBarProps {
   zoneMap: ZoneMap;
   pitchHint?: ZoneCell[];
   inningGamePlan?: BatterApproach | null;
+  /** Zone play data from parent state — survives ActionBar remount on key change */
+  zonePlay?: { aimed: ZoneCell; zoneMap: ZoneMap; isMyBatter: boolean; batterSwing?: ZoneCell } | null;
 }
 
 export function ActionBar({
@@ -298,6 +300,7 @@ export function ActionBar({
   zoneMap,
   pitchHint,
   inningGamePlan,
+  zonePlay,
 }: ActionBarProps) {
   const [selectedApproach, setSelectedApproach] = useState<BatterApproach>(
     inningGamePlan ?? matchState.lastBatterApproach ?? "contact",
@@ -305,12 +308,12 @@ export function ActionBar({
   const [selectedStrategy, setSelectedStrategy] = useState<PitchStrategy>(
     matchState.lastPitchStrategy ?? "finesse",
   );
-  const [pitcherSelection, setPitcherSelection] = useState<ZoneCell | null>(null);
-  const [batterSelection, setBatterSelection] = useState<ZoneCell | null>(null);
 
-  // Zone result shows when: result arrived and player selected a zone (either mode)
-  const shouldShowZoneResult =
-    showingResult && ((!isMyBatter && pitcherSelection !== null) || (isMyBatter && batterSelection !== null));
+  // Zone result: use parent-passed zonePlay instead of local state.
+  // Local state (batterSelection/pitcherSelection) was wiped on every remount
+  // because the ActionBar key changes when the batter ID changes after each at-bat.
+  // zonePlay comes from the parent and survives the remount.
+  const shouldShowZoneResult = showingResult && zonePlay != null;
 
   // q/w/e keyboard shortcuts for approach (batting) or strategy (pitching)
   useEffect(() => {
@@ -456,8 +459,6 @@ export function ActionBar({
           <Button
             size="lg"
             onClick={() => {
-              setPitcherSelection(null);
-              setBatterSelection(null);
               onContinue();
             }}
             className="w-full py-5 shrink-0"
@@ -690,10 +691,8 @@ export function ActionBar({
       pitchHint={pitchHint}
       onZoneSelect={(cell) => {
         if (isMyBatter) {
-          setBatterSelection(cell);
           onSimulateAtBat(selectedApproach, undefined, cell);
         } else {
-          setPitcherSelection(cell);
           onSimulateAtBat(undefined, selectedStrategy, cell);
         }
       }}
