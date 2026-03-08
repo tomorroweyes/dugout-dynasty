@@ -306,9 +306,11 @@ export function ActionBar({
     matchState.lastPitchStrategy ?? "finesse",
   );
   const [pitcherSelection, setPitcherSelection] = useState<ZoneCell | null>(null);
+  const [batterSelection, setBatterSelection] = useState<ZoneCell | null>(null);
 
-  // Pitcher feedback shows when: result arrived, we're pitching, and pitcher selected a zone
-  const shouldShowPitcherFeedback = showingResult && !isMyBatter && pitcherSelection;
+  // Zone result shows when: result arrived and player selected a zone (either mode)
+  const shouldShowZoneResult =
+    showingResult && ((!isMyBatter && pitcherSelection !== null) || (isMyBatter && batterSelection !== null));
 
   // q/w/e keyboard shortcuts for approach (batting) or strategy (pitching)
   useEffect(() => {
@@ -339,85 +341,128 @@ export function ActionBar({
     );
   }
 
-  // Pitcher feedback phase (grid with outcome card stacked above/below)
-  if (shouldShowPitcherFeedback) {
+  // ─── ZONE RESULT (batting OR pitching — player selected a zone) ─────────────
+  // Grid stays visible; overlays show pitch location (⚾) vs read zone (👀)
+  if (shouldShowZoneResult) {
     const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
-    if (lastPlay && pitcherSelection) {
-      const outcomeLabel = OUTCOME_META[lastPlay.outcome]?.label || lastPlay.outcome;
-      const isMoment = lastPlay.paintedCorner || lastPlay.perfectContact;
+    if (lastPlay) {
       const meta = OUTCOME_META[lastPlay.outcome] ?? OUTCOME_META.out;
-
-      // Pitch chess result — did we fool him?
-      const batterExpected = lastPlay.zoneBatterAimed;
-      const pitcherAimed = lastPlay.zoneAimed ?? pitcherSelection;
-      const fooled = batterExpected &&
-        (pitcherAimed.row !== batterExpected.row || pitcherAimed.col !== batterExpected.col);
+      const isMoment = lastPlay.paintedCorner || lastPlay.perfectContact;
       const isHit = ["homerun", "triple", "double", "single"].includes(lastPlay.outcome);
+      const mode = isMyBatter ? "batting" : "pitching";
 
-      const chessResult = !batterExpected
-        ? null
-        : fooled
+      // In both modes:
+      //   zoneAimed       = where pitch went (pitcher's aim / player's aim)
+      //   zoneBatterAimed = the "read" zone (player's prediction when batting /
+      //                     AI batter's expected zone when pitching)
+      const pitchLocation = lastPlay.zoneLanded ?? lastPlay.zoneAimed;
+      const readZone = lastPlay.zoneBatterAimed;
+
+      // Read chess result
+      const readCorrect =
+        pitchLocation &&
+        readZone &&
+        pitchLocation.row === readZone.row &&
+        pitchLocation.col === readZone.col;
+
+      const chessResult: { label: string; detail: string; color: string } | null =
+        !pitchLocation || !readZone
+          ? null
+          : isMyBatter
+          ? // Batting: did player predict where pitch came?
+            readCorrect && isHit
+            ? { label: "You called it", detail: "Pitch came right where you looked", color: "text-green-400" }
+            : readCorrect
+            ? { label: "Good read — bad contact", detail: "Right zone, wrong result", color: "text-amber-400" }
+            : { label: "Missed the read", detail: "Pitch came somewhere else", color: "text-orange-400" }
+          : // Pitching: did pitcher fool the batter?
+            !readCorrect
           ? { label: "Fooled him", detail: "Threw where he wasn't looking", color: "text-green-400" }
           : isHit
-            ? { label: "He read it right", detail: "Was sitting on that zone — capitalized", color: "text-red-400" }
-            : { label: "He guessed right — missed anyway", detail: "Good location held up", color: "text-amber-400" };
+          ? { label: "He read it right", detail: "Was sitting on that zone — capitalized", color: "text-red-400" }
+          : { label: "He guessed right — missed anyway", detail: "Good location held up", color: "text-amber-400" };
+
+      const continueLabel = matchState.isComplete
+        ? "See Final Score"
+        : matchState.inningComplete
+        ? "Next Inning"
+        : "Next Batter";
 
       return (
-        <div className="h-full flex flex-col gap-3 p-3">
-          {/* Top: Outcome + chess result */}
-          <div className={`rounded-lg border px-4 py-3 shrink-0 ${meta.bg}`}>
-            <div className="flex items-center gap-4">
-              {/* Outcome */}
-              <div className="flex-1 text-center">
-                <div className="text-3xl mb-1.5 leading-none">{meta.icon}</div>
-                <div className={`text-sm font-bold uppercase tracking-wide ${meta.color}`}>
-                  {outcomeLabel}
-                  {isMoment && <span className="ml-1 text-amber-400">✨</span>}
+        <div className="h-full flex flex-col gap-2 p-3">
+          {/* Outcome card + chess read result */}
+          <div className={`rounded-lg border px-3 py-2.5 shrink-0 ${meta.bg}`}>
+            <div className="flex items-center gap-3">
+              {/* Outcome icon + label */}
+              <div className="shrink-0 text-center min-w-[3rem]">
+                <div className="text-2xl leading-none">{meta.icon}</div>
+                <div className={`text-[11px] font-bold uppercase tracking-wide mt-0.5 ${meta.color}`}>
+                  {meta.label}
+                  {isMoment && <span className="ml-0.5 text-amber-400">✨</span>}
                 </div>
+                {isHit && lastPlay.rbi != null && lastPlay.rbi > 0 && (
+                  <div className="text-[10px] text-muted-foreground">{lastPlay.rbi} RBI</div>
+                )}
               </div>
 
-              {/* Chess result + narrative */}
-              <div className="flex-1 flex flex-col gap-1">
-                {chessResult && (
-                  <div>
-                    <span className={`text-sm font-bold ${chessResult.color}`}>{chessResult.label}</span>
-                    <p className="text-xs text-muted-foreground leading-tight">{chessResult.detail}</p>
+              {/* Chess result */}
+              {chessResult && (
+                <div className="flex-1 min-w-0 border-l border-border/40 pl-3">
+                  <div className={`text-xs font-bold leading-tight ${chessResult.color}`}>
+                    {chessResult.label}
                   </div>
-                )}
-                {lastPlay?.narrativeText && (
-                  <p className="text-xs text-muted-foreground italic leading-snug line-clamp-2 mt-1">
-                    "{lastPlay.narrativeText}"
-                  </p>
-                )}
-              </div>
+                  <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                    {chessResult.detail}
+                  </div>
+                </div>
+              )}
+
+              {/* Narrative */}
+              {lastPlay.narrativeText && (
+                <p className="text-[11px] text-muted-foreground italic leading-snug line-clamp-2 flex-1 min-w-0 border-l border-border/40 pl-3">
+                  "{lastPlay.narrativeText}"
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Grid: shows ⚾ where pitch landed + 👀 where batter was looking */}
+          {/* Zone grid — shows ⚾ pitch location + 👀 read zone */}
           <div className="flex-1 min-h-0">
-            <ZoneGridDisplay
-              mode="pitching"
-              zoneMap={zoneMap}
-              fillHeight
-              resultData={{
-                aimed: pitcherAimed,
-                landingZone: lastPlay.zoneLanded ?? pitcherAimed,
-                batterSwing: lastPlay.zoneBatterAimed,
-                isPerfect: isMoment ?? false,
-              }}
-            />
+            {pitchLocation ? (
+              <ZoneGridDisplay
+                mode={mode}
+                zoneMap={zoneMap}
+                fillHeight
+                resultData={{
+                  aimed: pitchLocation,
+                  landingZone: pitchLocation,
+                  batterSwing: readZone,
+                  isPerfect: isMoment ?? false,
+                }}
+              />
+            ) : (
+              // Fallback: no zone data — show disabled grid
+              <ZoneGridDisplay
+                mode={mode}
+                zoneMap={zoneMap}
+                fillHeight
+                disabled
+                onSelect={() => {}}
+              />
+            )}
           </div>
 
-          {/* Continue button */}
+          {/* Continue */}
           <Button
             size="lg"
             onClick={() => {
               setPitcherSelection(null);
+              setBatterSelection(null);
               onContinue();
             }}
             className="w-full py-5 shrink-0"
           >
-            Continue
+            {continueLabel}
             <kbd className="ml-2 text-[10px] font-mono opacity-50 bg-black/10 dark:bg-white/10 rounded px-1.5 py-0.5">
               Space
             </kbd>
@@ -427,7 +472,7 @@ export function ActionBar({
     }
   }
 
-  // Result display (after at-bat completes)
+  // ─── TEXT-ONLY RESULT (auto-simulated play, no zone selected) ────────────────
   if (showingResult) {
     const lastPlay = matchState.playByPlay[matchState.playByPlay.length - 1];
     const meta = lastPlay ? (OUTCOME_META[lastPlay.outcome] ?? OUTCOME_META.out) : OUTCOME_META.out;
@@ -645,6 +690,7 @@ export function ActionBar({
       pitchHint={pitchHint}
       onZoneSelect={(cell) => {
         if (isMyBatter) {
+          setBatterSelection(cell);
           onSimulateAtBat(selectedApproach, undefined, cell);
         } else {
           setPitcherSelection(cell);
