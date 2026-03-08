@@ -345,7 +345,7 @@ export const SCOUT_FULL_GAMEPLAN_TEXTS: string[] = [
 /** Off-season reputation reset (Tier 3 → Tier 1) */
 export const SCOUT_OFFSEASON_RESET_TEXTS: string[] = [
   "Rosters change. The book on {playerName} needs updating.",
-  "Off-season. Teams forget some of what they knew.",
+  "Off-season. Teams forget some of what they knew about {playerName}.",
   "New year, slightly softer intel. {playerName} starts fresh — sort of.",
   "Coaching turnover. Some of the institutional knowledge on {playerName} is lost.",
 ];
