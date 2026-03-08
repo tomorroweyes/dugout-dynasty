@@ -312,3 +312,40 @@ export const REINVENTION_ARCHIVE_TEXTS: string[] = [
   "The scouting reports are useless now. {playerName} has reinvented.",
   "{playerName} burned the book on themselves. Starting fresh.",
 ];
+
+// --- Opponent Reputation / Scouting Narrative Pools ---
+
+/** When opponent has identified a pull-happy habit and shifted (Tier 1+) */
+export const SCOUT_INFIELD_SHIFT_TEXTS: string[] = [
+  "The infield shifted before the pitch. They know.",
+  "A pre-pitched shift. The catcher called it before the windup.",
+  "Pull-shift in place. The scouting report was right.",
+  "The defense moved. {playerName}'s tendency was mapped.",
+  "Infield shift. Someone had done their homework.",
+];
+
+/** When opponent counters signature skill (Tier 2+) */
+export const SCOUT_SIGNATURE_COUNTER_TEXTS: string[] = [
+  "The catcher called for an adjustment. They know.",
+  "The defense shifted. Someone did their homework.",
+  "Pitching away from {playerName}'s signature. They'd seen it before.",
+  "The game plan had one rule: don't let {playerName} get comfortable.",
+  "Counter in place. The signature was scouted.",
+];
+
+/** When opponent uses full game plan vs player (Tier 3) */
+export const SCOUT_FULL_GAMEPLAN_TEXTS: string[] = [
+  "The whole team was ready for this. Film work pays off.",
+  "A coordinated response. Every defender in position, every pitcher briefed.",
+  "Tier-three preparation. {playerName} was the subject of a full scouting session.",
+  "They had a plan for everything {playerName} does. All of it.",
+  "Post-season film sessions. {playerName}'s every move, catalogued and countered.",
+];
+
+/** Off-season reputation reset (Tier 3 → Tier 1) */
+export const SCOUT_OFFSEASON_RESET_TEXTS: string[] = [
+  "Rosters change. The book on {playerName} needs updating.",
+  "Off-season. Teams forget some of what they knew.",
+  "New year, slightly softer intel. {playerName} starts fresh — sort of.",
+  "Coaching turnover. Some of the institutional knowledge on {playerName} is lost.",
+];

@@ -94,6 +94,8 @@ export interface Player {
   seasonsPlayed?: number;                                           // Career season count (1-indexed)
   reinventionEvent?: import("./reinvention").ReinventionEvent;      // Stored event when reinvention triggered
   reinventionModifiers?: import("./reinvention").ReinventionModifiers; // Active season modifiers
+  // Reputation & Opponent Intel (Phase 4) — optional for backwards compatibility
+  opponentIntel?: import("./reputation").OpponentIntel[];           // Per-opponent scouting records
 }
 
 // Type guards
