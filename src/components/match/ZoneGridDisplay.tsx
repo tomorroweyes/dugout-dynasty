@@ -91,7 +91,9 @@ export function ZoneGridDisplay({
         <div className={`mb-1.5 shrink-0`}>
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
             <span>⚾ pitch location</span>
-            {resultData?.batterSwing && <span>👀 batter expected</span>}
+            {resultData?.batterSwing && (
+              <span>👀 {mode === "batting" ? "your read" : "batter expected"}</span>
+            )}
             {resultData?.isPerfect && <span className="text-amber-400">✨ perfect execution</span>}
           </div>
         </div>
