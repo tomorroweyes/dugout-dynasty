@@ -90,6 +90,16 @@ export interface Player {
   // Bad Habits System (Phase 3) — optional for backwards compatibility
   badHabits?: import("./badHabits").BadHabit[];                    // Active and broken bad habits
   habitUsageLog?: import("./badHabits").HabitUsageLog;             // Per-AB usage tracking
+  // Reinvention Arc System (Phase 4) — optional for backwards compatibility
+  seasonsPlayed?: number;                                           // Career season count (1-indexed)
+  reinventionEvent?: import("./reinvention").ReinventionEvent;      // Stored event when reinvention triggered
+  reinventionModifiers?: import("./reinvention").ReinventionModifiers; // Active season modifiers
+  // Reputation & Opponent Intel (Phase 4) — optional for backwards compatibility
+  opponentIntel?: import("./reputation").OpponentIntel[];           // Per-opponent scouting records
+  // Mentorship System (Phase 5) — optional for backwards compatibility
+  activeMentorship?: import("./mentorship").MentorshipPair;         // Current active pair (as mentor or apprentice)
+  mentorshipHistory?: import("./mentorship").MentorshipPair[];      // Past mentor pairs
+  lineage?: import("./mentorship").LineageNode[];                   // Mentor chain (generation 1+)
 }
 
 // Type guards

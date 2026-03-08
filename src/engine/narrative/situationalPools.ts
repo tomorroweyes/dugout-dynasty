@@ -270,3 +270,164 @@ export const BAD_HABIT_SCOUTED_TEXTS: string[] = [
   "Three games of footage. The pattern was obvious.",
   "Scouts don't miss tendencies like this.",
 ];
+
+// --- Signature Skill Narrative Pools ---
+
+/** When a signature skill fires at full force */
+export const SIGNATURE_SKILL_USE_TEXTS: string[] = [
+  "{playerName}'s {signatureName} — right on cue.",
+  "There it is. {playerName}'s signature move: {signatureName}.",
+  "{signatureName}. {playerName} owns this moment.",
+  "Nobody does it quite like {playerName}. {signatureName} on display.",
+  "The crowd knew. {playerName} was in their zone. {signatureName}.",
+  "Picture-perfect execution. {playerName}'s {signatureName} in full effect.",
+  "This is what {playerName} was built for. {signatureName} delivers.",
+];
+
+/** When an opponent counters / reads the signature skill */
+export const SIGNATURE_COUNTER_TEXTS: string[] = [
+  "The catcher called for an adjustment. They know.",
+  "The defense shifted. Someone did their homework.",
+  "They'd seen {signatureName} enough times now. Counter in place.",
+  "Scouting report paid off. {playerName}'s {signatureName} neutralized.",
+  "{playerName}'s signature was no longer a secret. The league had adapted.",
+  "They played for {signatureName}. Got it exactly right.",
+  "Film work. The opponent was a step ahead this time.",
+];
+
+/** When opponents first discover / learn about a signature skill */
+export const SIGNATURE_REVEAL_TEXTS: string[] = [
+  "Word was getting out about {playerName}'s {signatureName}.",
+  "The league was taking notes. {playerName}'s {signatureName} was on the radar.",
+  "Scouts were filing reports. {signatureName} was becoming a known quantity.",
+  "Other dugouts had noticed. {playerName}'s {signatureName} — catalogued.",
+  "It couldn't stay hidden forever. {playerName}'s {signatureName} was out there now.",
+];
+
+/** After reinvention — the signature is archived, slate is clean */
+export const REINVENTION_ARCHIVE_TEXTS: string[] = [
+  "Nobody knows this version of {playerName} yet.",
+  "The old {playerName} is gone. What comes next? Nobody knows.",
+  "A clean slate. {playerName} is an unknown quantity again.",
+  "The scouting reports are useless now. {playerName} has reinvented.",
+  "{playerName} burned the book on themselves. Starting fresh.",
+];
+
+// --- Opponent Reputation / Scouting Narrative Pools ---
+
+/** When opponent has identified a pull-happy habit and shifted (Tier 1+) */
+export const SCOUT_INFIELD_SHIFT_TEXTS: string[] = [
+  "The infield shifted before the pitch. They know.",
+  "A pre-pitched shift. The catcher called it before the windup.",
+  "Pull-shift in place. The scouting report was right.",
+  "The defense moved. {playerName}'s tendency was mapped.",
+  "Infield shift. Someone had done their homework.",
+];
+
+/** When opponent counters signature skill (Tier 2+) */
+export const SCOUT_SIGNATURE_COUNTER_TEXTS: string[] = [
+  "The catcher called for an adjustment. They know.",
+  "The defense shifted. Someone did their homework.",
+  "Pitching away from {playerName}'s signature. They'd seen it before.",
+  "The game plan had one rule: don't let {playerName} get comfortable.",
+  "Counter in place. The signature was scouted.",
+];
+
+/** When opponent uses full game plan vs player (Tier 3) */
+export const SCOUT_FULL_GAMEPLAN_TEXTS: string[] = [
+  "The whole team was ready for this. Film work pays off.",
+  "A coordinated response. Every defender in position, every pitcher briefed.",
+  "Tier-three preparation. {playerName} was the subject of a full scouting session.",
+  "They had a plan for everything {playerName} does. All of it.",
+  "Post-season film sessions. {playerName}'s every move, catalogued and countered.",
+];
+
+/** Off-season reputation reset (Tier 3 → Tier 1) */
+export const SCOUT_OFFSEASON_RESET_TEXTS: string[] = [
+  "Rosters change. The book on {playerName} needs updating.",
+  "Off-season. Teams forget some of what they knew.",
+  "New year, slightly softer intel. {playerName} starts fresh — sort of.",
+  "Coaching turnover. Some of the institutional knowledge on {playerName} is lost.",
+];
+
+// --- Mentorship / Coaching Voices Narrative Pools ---
+
+/** Style transfer — positive (accelerated discovery) */
+export const MENTOR_STYLE_TRANSFER_POSITIVE_TEXTS: string[] = [
+  "{mentorName}'s approach to {skillName} is rubbing off on {apprenticeName}.",
+  "{apprenticeName} is picking up {mentorName}'s habits — the good ones.",
+  "Watching {mentorName} work is an education. {apprenticeName} is paying attention.",
+  "Two players, one philosophy. {apprenticeName} is absorbing {mentorName}'s craft.",
+  "The lessons are quiet but real. {apprenticeName}'s {skillName} is evolving.",
+];
+
+/** Style transfer — negative (bad habit seed) */
+export const MENTOR_STYLE_TRANSFER_NEGATIVE_TEXTS: string[] = [
+  "{mentorName}'s tendencies don't all transfer cleanly. {apprenticeName} has picked something up.",
+  "Even great mentors pass on rough edges. {apprenticeName} has a new quirk to manage.",
+  "The imitation game has a cost. {apprenticeName} has inherited a tendency.",
+  "Mentorship isn't just glory. {apprenticeName} absorbed a habit that'll need breaking.",
+];
+
+/** Lineage narrative — 1 generation */
+export const LINEAGE_ONE_GEN_TEXTS: string[] = [
+  "{playerName} learned this from {mentorName}. It shows.",
+  "The {skillName} lineage runs through {mentorName}. {playerName} carries it forward.",
+  "{mentorName} once showed {playerName} how this was done.",
+  "This is {mentorName}'s fingerprint. {playerName} made it their own.",
+];
+
+/** Lineage narrative — 3 generations */
+export const LINEAGE_THREE_GEN_TEXTS: string[] = [
+  "Three generations of {skillName}. {playerName} carries the lineage.",
+  "This skill has been passed down. {playerName} is the latest keeper.",
+  "The chain holds. {playerName} represents the third chapter of this tradition.",
+];
+
+/** Coaching voice — Ice Veins */
+export const COACHING_VOICE_ICE_VEINS = "Stay calm. You've been here a hundred times.";
+
+/** Coaching voice — Pitch Recognition */
+export const COACHING_VOICE_PITCH_RECOGNITION = "You've seen this pattern. It's the slider. Wait for it.";
+
+/** Coaching voice — Clutch Composure */
+export const COACHING_VOICE_CLUTCH_COMPOSURE = "This is redemption. Right here. Take it.";
+
+/** Coaching voice — Veteran's Poise */
+export const COACHING_VOICE_VETERAN_POISE = "Seven seasons. You know what to do.";
+
+/** Coaching voice — Game Reading */
+export const COACHING_VOICE_GAME_READING = "You've cracked his tendencies. Trust the read.";
+
+// --- Chemistry Combo Narrative Pools ---
+
+/** When a named combo fires — shown in play-by-play */
+export const CHEMISTRY_COMBO_FIRES_TEXTS: string[] = [
+  "The {comboName} combination clicks again.",
+  "There it is — {comboName}. The chemistry is undeniable.",
+  "{comboName}. The team has found something special.",
+  "Right on schedule. {comboName} delivers.",
+  "They've done this before. {comboName} — automatic.",
+];
+
+/** When Legacy Lineage combo fires */
+export const CHEMISTRY_LEGACY_LINEAGE_TEXTS: string[] = [
+  "Mentor and apprentice. Together, something extra.",
+  "The connection between them amplifies everything.",
+  "This is what lineage looks like in real time.",
+];
+
+/** When Old Dog combo fires (veteran clutch) */
+export const CHEMISTRY_OLD_DOG_TEXTS: string[] = [
+  "Nobody told {playerName} they were supposed to slow down.",
+  "Veteran's Poise. The old dog has another trick.",
+  "{playerName}. Inning 9. Of course.",
+];
+
+/** When No Mercy combo fires (reinvented player vs former team) */
+export const CHEMISTRY_NO_MERCY_TEXTS: string[] = [
+  "Former team. Wrong day to test the new version.",
+  "{playerName} saves the best for the old squad.",
+  "Nothing personal. Everything personal.",
+  "The Signature fires at 200%. The old team knows this player.",
+];

@@ -26,7 +26,8 @@ export type BadHabitType =
 export type HabitFormationType =
   | "skill_streak"         // 10+ consecutive same-skill uses
   | "approach_streak"      // 10+ consecutive same-approach uses
-  | "overspecialization";  // Single mental skill used in 5+ consecutive ABs
+  | "overspecialization"   // Single mental skill used in 5+ consecutive ABs
+  | "style_transfer";      // Seeded via mentorship negative transfer
 
 /**
  * Bad Habit object - tracks formation, strength, and breaking

@@ -5,12 +5,12 @@
 
 import type {
   BreakthroughEvent,
-  SignatureSkill,
 } from "@/types/breakthroughs";
 import type { Player } from "@/types/game";
 import type { MentalSkill } from "@/types/mentalSkills";
 import type { RandomProvider } from "./randomProvider";
 import { hasActiveBadHabit } from "./badHabitSystem";
+import { generateSignatureSkill, attachSignatureToPlayer } from "./signatureSkillSystem";
 import {
   BREAKTHROUGH_CONTRAST_TEXTS,
   BREAKTHROUGH_STREAK_TEXTS,
@@ -307,49 +307,13 @@ export function activateBreakthrough(
   }
   player.breakthroughEvents.push(breakthrough);
 
-  // Generate signature skill if applicable
+  // Generate signature skill if applicable (Rank 4→5, no active bad habit)
   if (breakthrough.signatureSkillId && breakthrough.skillRank === 5) {
-    generateSignatureSkill(player, breakthrough);
+    const signature = generateSignatureSkill(player, breakthrough);
+    try {
+      attachSignatureToPlayer(player, signature);
+    } catch {
+      // Player already has an active signature — skip silently
+    }
   }
-}
-
-/**
- * Generate signature skill from breakthrough
- */
-function generateSignatureSkill(
-  player: Player,
-  breakthrough: BreakthroughEvent
-): void {
-  if (!breakthrough.signatureSkillId) {
-    return;
-  }
-
-  const skillNames: Record<string, string> = {
-    ice_veins: "Ice Veins",
-    pitch_recognition: "Pitch Recognition",
-    clutch_composure: "Clutch Composure",
-    veteran_poise: "Veteran's Poise",
-    game_reading: "Game Reading",
-  };
-
-  const signature: SignatureSkill = {
-    signatureId: breakthrough.signatureSkillId,
-    skillId: breakthrough.skillId,
-    playerId: player.id,
-    skillName: `${skillNames[breakthrough.skillId] || breakthrough.skillId}`,
-    effectBonus: 0.1, // 10% above Rank 5
-    unlockedAt: breakthrough,
-    isActive: true,
-    reputation: {
-      knownBy: [],
-      counterStrategies: [],
-      scoutLevel: 0,
-    },
-  };
-
-  if (!player.signatureSkills) {
-    player.signatureSkills = new Map();
-  }
-
-  player.signatureSkills.set(breakthrough.signatureSkillId, signature);
 }
