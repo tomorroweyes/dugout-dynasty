@@ -66,7 +66,12 @@ export function useAutoSimulation({
               // Stop at half-inning boundary
               if (prev.isTop !== startIsTop || prev.inning !== startInning) return true;
               // Stop at high-leverage moments so player can make an explicit call
-              return isHighLeverage(prev);
+              if (isHighLeverage(prev)) return true;
+              // Close game (≤2 runs) from inning 7+ — stop when batting so player
+              // always gets manual control. WE leverage is misleadingly low for the
+              // leading team, but game feel demands equal engagement both ways.
+              if (!startIsTop && prev.inning >= 7 && Math.abs(prev.myRuns - prev.opponentRuns) <= 2) return true;
+              return false;
             case "half":
               return prev.isTop !== startIsTop || prev.inning !== startInning;
             case "inning":
