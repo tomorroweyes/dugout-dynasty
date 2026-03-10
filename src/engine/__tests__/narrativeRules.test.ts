@@ -874,3 +874,197 @@ describe("redemption flag arming — positive arm case", () => {
     expect(flagArmedInAnyRun).toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Approach Feedback Rules — #102
+// correct_approach_read (priority 45) and approach_mismatch (priority 42)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("correct_approach_read rule", () => {
+  it("fires when power approach beats finesse strategy with a hit", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: "power", pitchStrategy: "finesse", result: "single" })
+    );
+    expect(rule?.id).toBe("correct_approach_read");
+  });
+
+  it("fires when contact approach beats challenge strategy with a hit", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: "contact", pitchStrategy: "challenge", result: "double" })
+    );
+    expect(rule?.id).toBe("correct_approach_read");
+  });
+
+  it("fires when patient approach beats paint strategy with a walk", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: "patient", pitchStrategy: "paint", result: "walk" })
+    );
+    expect(rule?.id).toBe("correct_approach_read");
+  });
+
+  it("does NOT fire on a correct read when outcome is an out", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: "power", pitchStrategy: "finesse", result: "groundout" })
+    );
+    // No high-leverage factors set, so no rule should match
+    expect(rule?.id).not.toBe("correct_approach_read");
+  });
+
+  it("does NOT fire when approach and strategy are neutral (no counter)", () => {
+    // power vs. challenge — no counter relationship defined
+    const rule = matchingRule(
+      ctx({ batterApproach: "power", pitchStrategy: "challenge", result: "single" })
+    );
+    expect(rule?.id).not.toBe("correct_approach_read");
+  });
+
+  it("does NOT fire when batterApproach is undefined", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: undefined, pitchStrategy: "finesse", result: "single" })
+    );
+    expect(rule?.id).not.toBe("correct_approach_read");
+  });
+
+  it("does NOT fire when pitchStrategy is undefined", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: "power", pitchStrategy: undefined, result: "single" })
+    );
+    expect(rule?.id).not.toBe("correct_approach_read");
+  });
+
+  it("evaluator returns a non-empty string with {batter}/{pitcher} filled", () => {
+    const result = evaluateNarrativeRules(
+      ctx({ batterApproach: "contact", pitchStrategy: "challenge", result: "single" }),
+      rng
+    );
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("{batter}");
+    expect(result).not.toContain("{pitcher}");
+  });
+});
+
+describe("approach_mismatch rule", () => {
+  it("fires when power approach is exploited by paint strategy with a strikeout", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: "power", pitchStrategy: "paint", result: "strikeout" })
+    );
+    expect(rule?.id).toBe("approach_mismatch");
+  });
+
+  it("fires when contact approach is exploited by finesse strategy with an out", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: "contact", pitchStrategy: "finesse", result: "flyout" })
+    );
+    expect(rule?.id).toBe("approach_mismatch");
+  });
+
+  it("fires when patient approach is exploited by challenge strategy with a strikeout", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: "patient", pitchStrategy: "challenge", result: "strikeout" })
+    );
+    expect(rule?.id).toBe("approach_mismatch");
+  });
+
+  it("does NOT fire on a strategy-beats-approach matchup when outcome is a hit", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: "power", pitchStrategy: "paint", result: "single" })
+    );
+    expect(rule?.id).not.toBe("approach_mismatch");
+  });
+
+  it("does NOT fire when approach and strategy are neutral", () => {
+    // patient vs. finesse — no mismatch relationship defined
+    const rule = matchingRule(
+      ctx({ batterApproach: "patient", pitchStrategy: "finesse", result: "strikeout" })
+    );
+    expect(rule?.id).not.toBe("approach_mismatch");
+  });
+
+  it("does NOT fire when batterApproach is undefined", () => {
+    const rule = matchingRule(
+      ctx({ batterApproach: undefined, pitchStrategy: "paint", result: "strikeout" })
+    );
+    expect(rule?.id).not.toBe("approach_mismatch");
+  });
+
+  it("evaluator returns a non-empty string with {batter}/{pitcher} filled", () => {
+    const result = evaluateNarrativeRules(
+      ctx({ batterApproach: "power", pitchStrategy: "paint", result: "strikeout" }),
+      rng
+    );
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("{batter}");
+    expect(result).not.toContain("{pitcher}");
+  });
+});
+
+describe("approach feedback priority — does not override high-leverage rules", () => {
+  it("correct_approach_read is suppressed by a higher-priority clutch rule", () => {
+    // power beats finesse (correct read) + high-leverage hit → clutch_homer or similar wins
+    const rule = matchingRule(
+      ctx({
+        result: "homerun",
+        batterApproach: "power",
+        pitchStrategy: "finesse",
+        runsScored: 4, // grand slam wins at priority 110
+        bases: [true, true, true],
+      })
+    );
+    expect(rule?.id).toBe("grand_slam");
+  });
+
+  it("approach_mismatch is suppressed by a higher-priority frustration rule", () => {
+    // Batter with 2 Ks + mismatch strikeout → frustration_strikeout (82) wins over approach_mismatch (42)
+    const rule = matchingRule(
+      ctx({
+        result: "strikeout",
+        batterApproach: "power",
+        pitchStrategy: "paint",
+        batterHistory: { abs: 3, hits: 0, strikeouts: 2, walks: 0 },
+      })
+    );
+    expect(rule?.id).toBe("frustration_strikeout");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Predicate unit tests — approachBeatsStrategy / strategyBeatsApproach
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { approachBeatsStrategy, strategyBeatsApproach } from "../narrative/narrativeContext";
+
+describe("approachBeatsStrategy predicate", () => {
+  it("power beats finesse", () =>
+    expect(approachBeatsStrategy(ctx({ batterApproach: "power", pitchStrategy: "finesse" }))).toBe(true));
+  it("contact beats challenge", () =>
+    expect(approachBeatsStrategy(ctx({ batterApproach: "contact", pitchStrategy: "challenge" }))).toBe(true));
+  it("patient beats paint", () =>
+    expect(approachBeatsStrategy(ctx({ batterApproach: "patient", pitchStrategy: "paint" }))).toBe(true));
+  it("returns false for neutral matchup (power vs challenge)", () =>
+    expect(approachBeatsStrategy(ctx({ batterApproach: "power", pitchStrategy: "challenge" }))).toBe(false));
+  it("returns false when approach is undefined", () =>
+    expect(approachBeatsStrategy(ctx({ batterApproach: undefined, pitchStrategy: "finesse" }))).toBe(false));
+  it("returns false when strategy is undefined", () =>
+    expect(approachBeatsStrategy(ctx({ batterApproach: "power", pitchStrategy: undefined }))).toBe(false));
+});
+
+describe("strategyBeatsApproach predicate", () => {
+  it("paint beats power", () =>
+    expect(strategyBeatsApproach(ctx({ batterApproach: "power", pitchStrategy: "paint" }))).toBe(true));
+  it("finesse beats contact", () =>
+    expect(strategyBeatsApproach(ctx({ batterApproach: "contact", pitchStrategy: "finesse" }))).toBe(true));
+  it("challenge beats patient", () =>
+    expect(strategyBeatsApproach(ctx({ batterApproach: "patient", pitchStrategy: "challenge" }))).toBe(true));
+  it("returns false for neutral matchup (contact vs paint)", () =>
+    expect(strategyBeatsApproach(ctx({ batterApproach: "contact", pitchStrategy: "paint" }))).toBe(false));
+  it("returns false when approach is undefined", () =>
+    expect(strategyBeatsApproach(ctx({ batterApproach: undefined, pitchStrategy: "paint" }))).toBe(false));
+  it("returns false when strategy is undefined", () =>
+    expect(strategyBeatsApproach(ctx({ batterApproach: "power", pitchStrategy: undefined }))).toBe(false));
+  it("correct-read matchups do not also trigger strategyBeatsApproach", () => {
+    // The triangles are mutually exclusive
+    expect(strategyBeatsApproach(ctx({ batterApproach: "power", pitchStrategy: "finesse" }))).toBe(false);
+    expect(strategyBeatsApproach(ctx({ batterApproach: "contact", pitchStrategy: "challenge" }))).toBe(false);
+    expect(strategyBeatsApproach(ctx({ batterApproach: "patient", pitchStrategy: "paint" }))).toBe(false);
+  });
+});
