@@ -55,6 +55,16 @@ export interface BatterHistory {
    * Drives setup_for_redemption and redemption_payoff narrative rules.
    */
   redemptionOpportunity?: boolean;
+  /**
+   * Count of times each approach has been used this game by this batter.
+   * When all three are ≥ 1, the batter has "cycled" through the full toolkit.
+   * Drives approach_cycle_payoff narrative rule.
+   */
+  approachMix?: {
+    power: number;
+    contact: number;
+    patient: number;
+  };
 }
 
 /**

@@ -9,6 +9,7 @@
 import { describe, it, expect } from "vitest";
 import { evaluateNarrativeRules, NARRATIVE_RULES, type NarrativeRule } from "../narrative/narrativeRules";
 import type { NarrativeContext } from "../narrative/narrativeContext";
+import { hasUsedAllApproaches } from "../narrative/narrativeContext";
 import { SeededRandomProvider } from "../randomProvider";
 import { simulateInningWithStats } from "../matchEngine";
 import type { Player, BatterStats, PitcherStats } from "@/types/game";
@@ -872,5 +873,229 @@ describe("redemption flag arming — positive arm case", () => {
     // With 20 seeds, a contact team vs. weak pitcher in a tied inning 8 should
     // eventually produce RISP + out, arming the flag at least once.
     expect(flagArmedInAnyRun).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hasUsedAllApproaches predicate
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("hasUsedAllApproaches predicate", () => {
+  it("returns true when all three approaches have been used at least once", () => {
+    const c = ctx({
+      batterHistory: {
+        abs: 4, hits: 2, strikeouts: 1, walks: 0,
+        approachMix: { power: 1, contact: 2, patient: 1 },
+      },
+    });
+    expect(hasUsedAllApproaches(c)).toBe(true);
+  });
+
+  it("returns false when power is missing", () => {
+    const c = ctx({
+      batterHistory: {
+        abs: 3, hits: 1, strikeouts: 1, walks: 0,
+        approachMix: { power: 0, contact: 2, patient: 1 },
+      },
+    });
+    expect(hasUsedAllApproaches(c)).toBe(false);
+  });
+
+  it("returns false when contact is missing", () => {
+    const c = ctx({
+      batterHistory: {
+        abs: 3, hits: 1, strikeouts: 1, walks: 0,
+        approachMix: { power: 1, contact: 0, patient: 1 },
+      },
+    });
+    expect(hasUsedAllApproaches(c)).toBe(false);
+  });
+
+  it("returns false when patient is missing", () => {
+    const c = ctx({
+      batterHistory: {
+        abs: 3, hits: 1, strikeouts: 1, walks: 0,
+        approachMix: { power: 1, contact: 1, patient: 0 },
+      },
+    });
+    expect(hasUsedAllApproaches(c)).toBe(false);
+  });
+
+  it("returns false when approachMix is absent", () => {
+    const c = ctx({
+      batterHistory: { abs: 3, hits: 1, strikeouts: 1, walks: 0 },
+    });
+    expect(hasUsedAllApproaches(c)).toBe(false);
+  });
+
+  it("returns false when batterHistory is absent", () => {
+    const c = ctx({ batterHistory: undefined });
+    expect(hasUsedAllApproaches(c)).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// approach_cycle_payoff rule
+// ─────────────────────────────────────────────────────────────────────────────
+
+const allApproachesMix = { power: 1, contact: 1, patient: 1 };
+
+describe("approach_cycle_payoff rule", () => {
+  // ── Positive cases ──────────────────────────────────────────────────────
+
+  it("fires for single when all approaches used", () => {
+    const rule = matchingRule(ctx({
+      result: "single",
+      batterHistory: { abs: 4, hits: 1, strikeouts: 1, walks: 0, approachMix: allApproachesMix },
+    }));
+    expect(rule?.id).toBe("approach_cycle_payoff");
+  });
+
+  it("fires for double when all approaches used", () => {
+    const rule = matchingRule(ctx({
+      result: "double",
+      batterHistory: { abs: 4, hits: 1, strikeouts: 1, walks: 0, approachMix: allApproachesMix },
+    }));
+    expect(rule?.id).toBe("approach_cycle_payoff");
+  });
+
+  it("fires for triple when all approaches used", () => {
+    const rule = matchingRule(ctx({
+      result: "triple",
+      batterHistory: { abs: 4, hits: 1, strikeouts: 1, walks: 0, approachMix: allApproachesMix },
+    }));
+    expect(rule?.id).toBe("approach_cycle_payoff");
+  });
+
+  it("fires for homerun when all approaches used (and no higher rule wins)", () => {
+    // Mid-game, non-clutch homerun — no walkoff/grand_slam/clutch/redemption rule fires first.
+    const rule = matchingRule(ctx({
+      result: "homerun",
+      runsScored: 1,
+      inning: 4,
+      scoreDiff: 2,
+      bases: [false, false, false],
+      batterHistory: { abs: 4, hits: 2, strikeouts: 0, walks: 0, approachMix: allApproachesMix },
+    }));
+    expect(rule?.id).toBe("approach_cycle_payoff");
+  });
+
+  it("fires when approaches are used multiple times each (count > 1)", () => {
+    const rule = matchingRule(ctx({
+      result: "single",
+      batterHistory: { abs: 7, hits: 2, strikeouts: 1, walks: 1, approachMix: { power: 3, contact: 2, patient: 2 } },
+    }));
+    expect(rule?.id).toBe("approach_cycle_payoff");
+  });
+
+  // ── Negative cases — rule must NOT fire ─────────────────────────────────
+
+  it("does NOT fire for an out even if all approaches used", () => {
+    const rule = matchingRule(ctx({
+      result: "groundout",
+      batterHistory: { abs: 4, hits: 1, strikeouts: 1, walks: 0, approachMix: allApproachesMix },
+    }));
+    expect(rule?.id).not.toBe("approach_cycle_payoff");
+  });
+
+  it("does NOT fire for strikeout even if all approaches used", () => {
+    const rule = matchingRule(ctx({
+      result: "strikeout",
+      batterHistory: { abs: 4, hits: 1, strikeouts: 1, walks: 0, approachMix: allApproachesMix },
+    }));
+    expect(rule?.id).not.toBe("approach_cycle_payoff");
+  });
+
+  it("does NOT fire for walk even if all approaches used", () => {
+    const rule = matchingRule(ctx({
+      result: "walk",
+      batterHistory: { abs: 4, hits: 1, strikeouts: 1, walks: 0, approachMix: allApproachesMix },
+    }));
+    expect(rule?.id).not.toBe("approach_cycle_payoff");
+  });
+
+  it("does NOT fire when only two approaches have been used", () => {
+    const rule = matchingRule(ctx({
+      result: "single",
+      batterHistory: { abs: 3, hits: 1, strikeouts: 0, walks: 0, approachMix: { power: 2, contact: 1, patient: 0 } },
+    }));
+    expect(rule?.id).not.toBe("approach_cycle_payoff");
+  });
+
+  it("does NOT fire when one approach has been used (first AB, contact only)", () => {
+    const rule = matchingRule(ctx({
+      result: "single",
+      batterHistory: { abs: 1, hits: 0, strikeouts: 0, walks: 0, approachMix: { power: 0, contact: 1, patient: 0 } },
+    }));
+    expect(rule?.id).not.toBe("approach_cycle_payoff");
+  });
+
+  it("does NOT fire when approachMix is absent (no approach data)", () => {
+    const rule = matchingRule(ctx({
+      result: "single",
+      batterHistory: { abs: 4, hits: 1, strikeouts: 1, walks: 0 },
+    }));
+    expect(rule?.id).not.toBe("approach_cycle_payoff");
+  });
+
+  it("does NOT fire when batterHistory is absent", () => {
+    const rule = matchingRule(ctx({
+      result: "single",
+      batterHistory: undefined,
+    }));
+    expect(rule?.id).not.toBe("approach_cycle_payoff");
+  });
+
+  // ── Priority guard — higher rules supersede ─────────────────────────────
+
+  it("is superseded by grand_slam (priority 110 > 43)", () => {
+    // Grand slam with all approaches used — grand_slam must win
+    const rule = matchingRule(ctx({
+      result: "homerun",
+      runsScored: 4,
+      batterHistory: { abs: 5, hits: 2, strikeouts: 0, walks: 0, approachMix: allApproachesMix },
+    }));
+    expect(rule?.id).toBe("grand_slam");
+  });
+
+  it("is superseded by redemption_hit (priority 87 > 43)", () => {
+    // First hit of the game (hitless) after 3 ABs + all approaches used
+    const rule = matchingRule(ctx({
+      result: "single",
+      batterHistory: {
+        abs: 3, hits: 0, strikeouts: 1, walks: 0,
+        approachMix: allApproachesMix,
+      },
+    }));
+    expect(rule?.id).toBe("redemption_hit");
+  });
+
+  it("is superseded by clutch_hit_risp (priority 70 > 43) when RISP and late/close game", () => {
+    // RISP + late game (inning 9) + close game (within 2 runs) + runs scoring
+    // clutch_hit_risp matches with higher priority
+    const rule = matchingRule(ctx({
+      result: "single",
+      inning: 9,
+      scoreDiff: 1,
+      bases: [false, true, false],
+      runsScored: 1,
+      batterHistory: { abs: 4, hits: 1, strikeouts: 1, walks: 0, approachMix: allApproachesMix },
+    }));
+    expect(rule?.id).toBe("clutch_hit_risp");
+  });
+
+  // ── Text output validation ───────────────────────────────────────────────
+
+  it("returns a non-empty string with tokens filled", () => {
+    const result = evaluateNarrativeRules(
+      ctx({
+        result: "single",
+        batterHistory: { abs: 4, hits: 1, strikeouts: 1, walks: 0, approachMix: allApproachesMix },
+      }),
+      rng
+    );
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("{batter}");
+    expect(result).not.toContain("{pitcher}");
   });
 });

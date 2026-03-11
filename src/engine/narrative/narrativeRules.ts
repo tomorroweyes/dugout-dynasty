@@ -23,6 +23,7 @@ import {
   isTrailing,
   isHighLeverageSituation,
   isPotentialWalkoff,
+  hasUsedAllApproaches,
 } from "./narrativeContext";
 import {
   GRAND_SLAM_TEXTS,
@@ -39,6 +40,7 @@ import {
   CLUTCH_OUT_TEXTS,
   REDEMPTION_SETUP_TEXTS,
   REDEMPTION_PAYOFF_TEXTS,
+  APPROACH_CYCLE_TEXTS,
 } from "./situationalPools";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -278,6 +280,18 @@ export const NARRATIVE_RULES: NarrativeRule[] = [
       hasRISP(ctx) &&
       isHighLeverageSituation(ctx),
     pool: CLUTCH_OUT_TEXTS,
+  },
+
+  // ── Priority 43: Discovery/pattern flavor ────────────────────────────────
+
+  {
+    id: "approach_cycle_payoff",
+    name: "Approach Cycle — hit after using all three approaches this game",
+    priority: 43,
+    matches: (ctx) =>
+      isHit(ctx.result) &&
+      hasUsedAllApproaches(ctx),
+    pool: APPROACH_CYCLE_TEXTS,
   },
 
 ];

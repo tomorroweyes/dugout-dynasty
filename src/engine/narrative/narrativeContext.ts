@@ -75,3 +75,14 @@ export function isHighLeverageSituation(ctx: NarrativeContext): boolean {
 export function isPotentialWalkoff(ctx: NarrativeContext): boolean {
   return ctx.inning >= 9 && ctx.scoreDiff <= 0 && ctx.runsScored > 0;
 }
+
+/**
+ * Returns true when the batter has used all three approaches (power, contact,
+ * patient) at least once this game. Indicates the batter has cycled through
+ * their full toolkit — a signal for the approach_cycle_payoff rule.
+ */
+export function hasUsedAllApproaches(ctx: NarrativeContext): boolean {
+  const mix = ctx.batterHistory?.approachMix;
+  if (!mix) return false;
+  return mix.power >= 1 && mix.contact >= 1 && mix.patient >= 1;
+}
