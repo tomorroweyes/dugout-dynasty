@@ -605,6 +605,7 @@ function simulateInningWithStats(
       const isCloseAtAB = Math.abs(narrativeGameState.scoreDiff ?? 0) <= 2;
       const armRedemption = isOutOrStrikeout && hadRISP && isHighLeverageInning && isCloseAtAB;
 
+      const prevMix = prev.approachMix ?? { power: 0, contact: 0, patient: 0 };
       crossInningBatterHistory.set(batter.id, {
         abs: prev.abs + 1,
         hits: prev.hits + (isHit ? 1 : 0),
@@ -612,6 +613,12 @@ function simulateInningWithStats(
         walks: prev.walks + (result === "walk" ? 1 : 0),
         // Clear existing flag (consumed this AB); re-arm if this AB qualifies
         redemptionOpportunity: armRedemption,
+        // Track which approaches have been used — drives approach_cycle_payoff rule
+        approachMix: {
+          power: prevMix.power + (batterApproach === "power" ? 1 : 0),
+          contact: prevMix.contact + (batterApproach === "contact" ? 1 : 0),
+          patient: prevMix.patient + (batterApproach === "patient" ? 1 : 0),
+        },
       });
     }
     // Append speed narrative if a runner tried for an extra base

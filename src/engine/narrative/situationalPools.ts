@@ -401,6 +401,31 @@ export const COACHING_VOICE_GAME_READING = "You've cracked his tendencies. Trust
 
 // --- Chemistry Combo Narrative Pools ---
 
+// ─────────────────────────────────────────────────────────────────────────────
+// APPROACH CYCLING
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fires when a batter gets a hit after having used all three approaches
+ * (power, contact, patient) at least once this game. The batter has
+ * cracked the code by mixing it up — pitcher couldn't lock in on a pattern.
+ */
+export const APPROACH_CYCLE_TEXTS: string[] = [
+  "{batter} has kept the pitcher guessing all day — and it's paying off.",
+  "Power, patience, contact — {batter} has run the full playbook. {pitcher} has no read.",
+  "{batter} has been unpredictable at the plate. {pitcher} can't get ahead of him.",
+  "Every approach in the bag. {batter} finds a gap.",
+  "You can't pattern {batter} today. He's been everything the pitcher didn't expect.",
+  "{batter} has mixed it up all afternoon. Now he makes it count.",
+  "{pitcher} has been trying to find a weakness all game. {batter} keeps changing the answer.",
+  "The full toolkit on display. {batter} delivers.",
+  "{batter} — power, contact, patience — picked them all. Now the payoff.",
+  "No tells, no tells, no tells. {batter} earns it the hard way.",
+  "{pitcher} can't get comfortable with {batter}. Each look has been different.",
+  "Three approaches, three different reads. {batter} lands the fourth.",
+  "The batter who keeps you guessing is the hardest to get out. {batter} proves it again.",
+];
+
 /** When a named combo fires — shown in play-by-play */
 export const CHEMISTRY_COMBO_FIRES_TEXTS: string[] = [
   "The {comboName} combination clicks again.",

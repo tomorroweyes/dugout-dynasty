@@ -10,7 +10,7 @@ import { simulateAtBat } from "./atBatSimulator";
 import { applyOutcome, resolveExtraBaseAttempts, BaseRunnerIds } from "./outcomeConfig";
 import { calculatePlayerStatsWithEquipment } from "./itemStatsCalculator";
 import { BatterStats } from "@/types/game";
-import { generateNarrativeText, generateSituationalFlavor } from "./narrativeEngine";
+import { generateNarrativeText, generateSituationalFlavor, type BatterHistory } from "./narrativeEngine";
 import { generateItem, shouldDropLoot } from "./lootGenerator";
 import { LootDrop } from "@/types/item";
 import { RandomProvider, getDefaultRandomProvider, SeededRandomProvider } from "./randomProvider";
@@ -315,6 +315,40 @@ export function initializeInteractiveMatch(
 }
 
 /**
+ * Compute cumulative batter history from the play-by-play log.
+ * Used to pass rich context to the narrative rules engine during interactive matches,
+ * enabling situation-aware rules (frustration_strikeout, approach_cycle_payoff, etc.)
+ * that depend on how the batter has performed and played this game so far.
+ *
+ * Only includes plays that have already been resolved (not the current at-bat).
+ */
+function computeInteractiveBatterHistory(
+  batterName: string,
+  playByPlay: PlayByPlayEvent[]
+): BatterHistory {
+  const HIT_OUTCOMES = new Set(["single", "double", "triple", "homerun"]);
+  const plays = playByPlay.filter((p) => p.batter === batterName);
+
+  const approachMix = { power: 0, contact: 0, patient: 0 };
+  for (const play of plays) {
+    if (play.batterApproach === "power") approachMix.power++;
+    else if (play.batterApproach === "contact") approachMix.contact++;
+    else if (play.batterApproach === "patient") approachMix.patient++;
+  }
+
+  return {
+    abs: plays.filter((p) => p.outcome !== "walk").length,
+    hits: plays.filter((p) => HIT_OUTCOMES.has(p.outcome)).length,
+    strikeouts: plays.filter((p) => p.outcome === "strikeout").length,
+    walks: plays.filter((p) => p.outcome === "walk").length,
+    approachMix,
+    // Note: redemptionOpportunity is not tracked here — it requires cross-AB
+    // context (high-leverage RISP failure) that isn't stored in PlayByPlayEvent.
+    // The interactive engine does not currently drive setup_for_redemption.
+  };
+}
+
+/**
  * Simulate the current at-bat and advance match state
  */
 export function simulateAtBat_Interactive(
@@ -527,7 +561,15 @@ export function simulateAtBat_Interactive(
     }
   }
 
-  // Generate narrative text with ability, approach/strategy, and zone context
+  // Compute batter history from prior at-bats this game (drives narrative rules
+  // like frustration_strikeout, approach_cycle_payoff, and future rules).
+  // Only previous ABs are included — current at-bat hasn't been appended yet.
+  const interactiveBatterHistory = computeInteractiveBatterHistory(
+    currentBatter.name,
+    state.playByPlay
+  );
+
+  // Generate narrative text with ability, approach/strategy, zone, and history context
   let narrativeText = generateNarrativeText(
     result,
     currentBatter,
@@ -542,7 +584,8 @@ export function simulateAtBat_Interactive(
     runsScored,
     isPerfectZone
       ? { perfectContact: !isTop, paintedCorner: isTop }
-      : undefined
+      : undefined,
+    interactiveBatterHistory
   );
   if (speedNarrative) {
     narrativeText = narrativeText
