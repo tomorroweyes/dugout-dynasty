@@ -5,6 +5,7 @@ import { getStatColor } from "@/lib/utils";
 import { getXpToNextLevel, isMaxLevel } from "@/engine/xpSystem";
 import { generatePlayerAvatar } from "@/utils/avatarGenerator";
 import { SkillTreePanel } from "@/components/SkillTreePanel";
+import { MentalSkillsPanel } from "@/components/MentalSkillsPanel";
 import { useGameStore } from "@/store/gameStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/8bit/tabs";
 import { Card } from "@/components/ui/8bit/card";
@@ -82,6 +83,7 @@ export function CharacterSheet({ player }: CharacterSheetProps) {
         <TabsList className="w-full rounded-none border-b">
           <TabsTrigger value="stats">Stats</TabsTrigger>
           <TabsTrigger value="skills">Skills</TabsTrigger>
+          <TabsTrigger value="mental">Mental</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stats" className="flex-1 overflow-y-auto m-0 p-4">
@@ -119,6 +121,10 @@ export function CharacterSheet({ player }: CharacterSheetProps) {
             onUnlockAbility={unlockAbility}
             onUpgradeAbility={upgradeAbility}
           />
+        </TabsContent>
+
+        <TabsContent value="mental" className="flex-1 overflow-y-auto m-0">
+          <MentalSkillsPanel player={player} />
         </TabsContent>
       </Tabs>
     </Card>
