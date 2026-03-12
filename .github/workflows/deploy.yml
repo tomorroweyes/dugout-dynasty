@@ -11,7 +11,6 @@ permissions:
   pages: write
   id-token: write
 
-# Only one deployment at a time; cancel in-progress if a newer push arrives
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -37,27 +36,13 @@ jobs:
         run: npm run test:run
 
       - name: Build Dugout Dynasty
-        # Use vite build directly — tsc has pre-existing errors in unused imports/stale code
-        # across many engine files. Tests gate logic; esbuild transpiles TS cleanly.
-        # Track remaining tsc errors in: https://github.com/tomorroweyes/dugout-dynasty/issues
         run: npx vite build
-
-      - name: Check if Fantasy Tool code changed
-        id: fantasy-check
-        run: |
-          # Check if any fantasy-draft-tool source files changed (not just dist)
-          if git diff --name-only HEAD~1..HEAD | grep -qE "^fantasy-draft-tool/(src|scripts|package|tsconfig|vite|index\.html|tailwind)"; then
-            echo "code_changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "code_changed=false" >> $GITHUB_OUTPUT
-          fi
 
       - name: Install dependencies (Fantasy Tool)
         working-directory: fantasy-draft-tool
         run: npm ci
 
-      - name: Fetch data (Fantasy Tool) - only if code changed
-        if: steps.fantasy-check.outputs.code_changed == 'true'
+      - name: Fetch latest data (Fantasy Tool)
         working-directory: fantasy-draft-tool
         run: npm run fetch-data
 
@@ -67,11 +52,8 @@ jobs:
 
       - name: Prepare Pages artifact
         run: |
-          # Create artifact directory structure
           mkdir -p _pages
-          # Copy Dugout Dynasty (root)
           cp -r dist/* _pages/
-          # Copy Fantasy Tool (subdirectory)
           mkdir -p _pages/fantasy-draft-tool
           cp -r fantasy-draft-tool/dist/* _pages/fantasy-draft-tool/
 
