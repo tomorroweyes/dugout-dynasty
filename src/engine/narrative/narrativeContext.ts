@@ -7,6 +7,7 @@
 
 import type { AtBatResult } from "../atBatSimulator";
 import type { BatterHistory } from "../narrativeEngine";
+import type { BatterApproach, PitchStrategy } from "@/types/approach";
 
 export interface NarrativeContext {
   // ── Core outcome ──────────────────────────────────────────────────────────
@@ -30,6 +31,12 @@ export interface NarrativeContext {
   // ── Narrative enrichment ─────────────────────────────────────────────────
   isCritical: boolean;     // crit roll fired
   batterHistory?: BatterHistory; // cumulative game stats for this batter
+
+  // ── Approach / strategy ───────────────────────────────────────────────────
+  /** Batter's chosen approach for this at-bat (undefined if AI / not chosen) */
+  batterApproach?: BatterApproach;
+  /** Pitcher's chosen strategy for this at-bat (undefined if AI / not chosen) */
+  pitchStrategy?: PitchStrategy;
 }
 
 /**
@@ -74,4 +81,41 @@ export function isHighLeverageSituation(ctx: NarrativeContext): boolean {
  */
 export function isPotentialWalkoff(ctx: NarrativeContext): boolean {
   return ctx.inning >= 9 && ctx.scoreDiff <= 0 && ctx.runsScored > 0;
+}
+
+/**
+ * Counter matrix (rock-paper-scissors):
+ *   power beats finesse   — power hitter feasts on off-speed pitching
+ *   contact beats challenge — contact hitter neutralises pure heat
+ *   patient beats paint     — patient eye draws walks vs. a corner-nibbler
+ *
+ * Returns true when the batter's approach directly counters the pitcher's
+ * strategy, AND both sides chose (i.e. neither is undefined).
+ */
+export function approachBeatsStrategy(ctx: NarrativeContext): boolean {
+  const { batterApproach: a, pitchStrategy: s } = ctx;
+  if (!a || !s) return false;
+  return (
+    (a === "power" && s === "finesse") ||
+    (a === "contact" && s === "challenge") ||
+    (a === "patient" && s === "paint")
+  );
+}
+
+/**
+ * Mismatch — the pitcher's strategy exploited the batter's approach:
+ *   paint  beats power   — precise corners expose a free-swinging approach
+ *   finesse beats contact — soft stuff produces exactly the weak contact it wants
+ *   challenge beats patient — pure heat prevents working the count
+ *
+ * Returns true when the pitcher's strategy has the upper hand.
+ */
+export function strategyBeatsApproach(ctx: NarrativeContext): boolean {
+  const { batterApproach: a, pitchStrategy: s } = ctx;
+  if (!a || !s) return false;
+  return (
+    (a === "power" && s === "paint") ||
+    (a === "contact" && s === "finesse") ||
+    (a === "patient" && s === "challenge")
+  );
 }

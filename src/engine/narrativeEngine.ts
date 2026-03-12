@@ -217,6 +217,8 @@ export function generateNarrativeText(
     pitcherControl: (pitcherStats as { control?: number }).control ?? 50,
     isCritical,
     batterHistory,
+    batterApproach,
+    pitchStrategy,
   };
 
   let outcomeText = evaluateNarrativeRules(narrativeCtx, rng) ?? "";

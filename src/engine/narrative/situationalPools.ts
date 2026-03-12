@@ -431,3 +431,69 @@ export const CHEMISTRY_NO_MERCY_TEXTS: string[] = [
   "Nothing personal. Everything personal.",
   "The Signature fires at 200%. The old team knows this player.",
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APPROACH FEEDBACK — Post-decision read validation (#102)
+//
+// Tokens: {batter}, {pitcher}
+// Fires when the batter's approach countered the pitcher's strategy (correct
+// read) or fell right into the pitcher's plan (mismatch).
+//
+// Counter matrix (rock-paper-scissors):
+//   power beats finesse   — power hitter feasts on off-speed
+//   contact beats challenge — contact hitter neutralises pure heat
+//   patient beats paint     — patient eye draws walks vs. a nibbler
+//
+// Mismatch (strategy wins):
+//   power vs. paint   — precise corners expose a free-swinging approach
+//   contact vs. finesse — soft stuff produces exactly the weak contact finesse wants
+//   patient vs. challenge — blazing heat prevents working the count
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fires when batter's approach countered the pitcher's strategy AND outcome is
+ * positive (hit or walk). Communicates "you read it right."
+ * Tokens: {batter}, {pitcher}
+ */
+export const CORRECT_APPROACH_READ_TEXTS: string[] = [
+  // power beats finesse
+  "{batter} was sitting on the off-speed. Exactly what he got.",
+  "Change of pace? {batter} had it timed all along.",
+  "Soft pitch, hard swing. {batter} knew it was coming.",
+  // contact beats challenge
+  "{batter} shortened up and put the heat in play. Smart at-bat.",
+  "All that velocity and {batter} just… makes contact. Textbook.",
+  "{pitcher} challenged him. {batter} accepted — and won.",
+  // patient beats paint
+  "{batter} worked every inch of that zone. Drew {pitcher} to the edge.",
+  "Nibbled too fine. {batter} waited him out.",
+  "Paint the corners all you want — {batter}'s eye is sharper.",
+  // generic correct-read callouts
+  "Perfect read. {batter} had the right approach all at-bat.",
+  "He called it. Right approach, right pitch, right result.",
+  "The read was there from pitch one. {batter} executed.",
+];
+
+/**
+ * Fires when the pitcher's strategy exploited the batter's approach AND outcome
+ * is negative (strikeout or out). Communicates "wrong guess — here's why."
+ * Tokens: {batter}, {pitcher}
+ */
+export const APPROACH_MISMATCH_TEXTS: string[] = [
+  // power vs. paint
+  "Free-swinging into corners. {pitcher} was too precise for that approach.",
+  "{batter} brought the lumber — {pitcher} brought the location. No contest.",
+  "You can't power your way through painted corners. {batter} learned that.",
+  // contact vs. finesse
+  "Soft pitch, soft contact — right where {pitcher} wanted it.",
+  "{batter} made contact. Exactly the contact {pitcher} was selling.",
+  "Finesse pitching is a trap. {batter} walked right in.",
+  // patient vs. challenge
+  "Trying to work the count against that kind of heat? {pitcher} isn't walking anyone.",
+  "Pure velocity breaks the patient approach. {batter} ran out of pitches to watch.",
+  "{pitcher} dared him to take strike three. He did.",
+  // generic mismatch callouts
+  "Wrong read. Wrong approach. {pitcher} had the answer the whole time.",
+  "{batter} guessed. {pitcher} knew. This was over early.",
+  "The approach backfired. Credit {pitcher} for exploiting it.",
+];

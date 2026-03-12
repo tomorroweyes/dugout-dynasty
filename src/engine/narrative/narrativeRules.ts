@@ -23,6 +23,8 @@ import {
   isTrailing,
   isHighLeverageSituation,
   isPotentialWalkoff,
+  approachBeatsStrategy,
+  strategyBeatsApproach,
 } from "./narrativeContext";
 import {
   GRAND_SLAM_TEXTS,
@@ -39,6 +41,8 @@ import {
   CLUTCH_OUT_TEXTS,
   REDEMPTION_SETUP_TEXTS,
   REDEMPTION_PAYOFF_TEXTS,
+  CORRECT_APPROACH_READ_TEXTS,
+  APPROACH_MISMATCH_TEXTS,
 } from "./situationalPools";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -278,6 +282,30 @@ export const NARRATIVE_RULES: NarrativeRule[] = [
       hasRISP(ctx) &&
       isHighLeverageSituation(ctx),
     pool: CLUTCH_OUT_TEXTS,
+  },
+
+  // ── Priority 45–42: Approach feedback (post-decision read validation) ─────
+  // Lower priority than situational drama — fires as mild flavor when no
+  // high-leverage rule matched. Validates (or punishes) the player's read.
+
+  {
+    id: "correct_approach_read",
+    name: "Correct Approach Read — batter's approach countered pitcher's strategy, positive outcome",
+    priority: 45,
+    matches: (ctx) =>
+      approachBeatsStrategy(ctx) &&
+      (isHit(ctx.result) || ctx.result === "walk"),
+    pool: CORRECT_APPROACH_READ_TEXTS,
+  },
+
+  {
+    id: "approach_mismatch",
+    name: "Approach Mismatch — pitcher's strategy exploited batter's approach, negative outcome",
+    priority: 42,
+    matches: (ctx) =>
+      strategyBeatsApproach(ctx) &&
+      (isOut(ctx.result) || ctx.result === "strikeout"),
+    pool: APPROACH_MISMATCH_TEXTS,
   },
 
 ];
