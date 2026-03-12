@@ -4,7 +4,7 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/fantasy-draft-tool/',
+  base: '/dugout-dynasty/fantasy-draft-tool/',
   build: {
     outDir: 'dist',
     sourcemap: false,
