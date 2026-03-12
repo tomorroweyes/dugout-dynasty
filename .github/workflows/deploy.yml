@@ -30,22 +30,44 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
+      - name: Install dependencies (Dugout Dynasty)
         run: npm ci
 
       - name: Run tests
         run: npm run test:run
 
-      - name: Build
+      - name: Build Dugout Dynasty
         # Use vite build directly — tsc has pre-existing errors in unused imports/stale code
         # across many engine files. Tests gate logic; esbuild transpiles TS cleanly.
         # Track remaining tsc errors in: https://github.com/tomorroweyes/dugout-dynasty/issues
         run: npx vite build
 
+      - name: Install dependencies (Fantasy Tool)
+        working-directory: fantasy-draft-tool
+        run: npm ci
+
+      - name: Fetch data (Fantasy Tool)
+        working-directory: fantasy-draft-tool
+        run: npm run fetch-data
+
+      - name: Build Fantasy Tool
+        working-directory: fantasy-draft-tool
+        run: npm run build
+
+      - name: Prepare Pages artifact
+        run: |
+          # Create artifact directory structure
+          mkdir -p _pages
+          # Copy Dugout Dynasty (root)
+          cp -r dist/* _pages/
+          # Copy Fantasy Tool (subdirectory)
+          mkdir -p _pages/fantasy-draft-tool
+          cp -r fantasy-draft-tool/dist/* _pages/fantasy-draft-tool/
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: _pages
 
   deploy:
     name: Deploy
