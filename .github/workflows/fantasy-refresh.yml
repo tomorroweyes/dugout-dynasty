@@ -1,0 +1,38 @@
+name: Fantasy Data Refresh (Manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    name: Refresh Fantasy Tool Data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: 'fantasy-draft-tool/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: fantasy-draft-tool
+        run: npm ci
+
+      - name: Fetch latest data from Baseball Savant
+        working-directory: fantasy-draft-tool
+        run: npm run fetch-data
+
+      - name: Commit and push
+        run: |
+          git config user.name "Brit (GitHub App)"
+          git config user.email "brit@github.local"
+          git add fantasy-draft-tool/public/data/draft-data.json
+          git commit -m "[AUTO] Refresh fantasy data" || echo "No changes to commit"
+          git push origin main
