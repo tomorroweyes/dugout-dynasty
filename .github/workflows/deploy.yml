@@ -42,17 +42,28 @@ jobs:
         # Track remaining tsc errors in: https://github.com/tomorroweyes/dugout-dynasty/issues
         run: npx vite build
 
+      - name: Check if Fantasy Tool changed
+        id: fantasy-check
+        run: |
+          if git diff --name-only origin/main..HEAD | grep -q "^fantasy-draft-tool/"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install dependencies (Fantasy Tool)
+        if: steps.fantasy-check.outputs.changed == 'true'
         working-directory: fantasy-draft-tool
         run: npm ci
 
-      - name: Fetch data (Fantasy Tool)
+      - name: Fetch data (Fantasy Tool) - only if changed
+        if: steps.fantasy-check.outputs.changed == 'true'
         working-directory: fantasy-draft-tool
         run: npm run fetch-data
 
-      - name: Build Fantasy Tool
+      - name: Build Fantasy Tool (use cached data if not changed)
         working-directory: fantasy-draft-tool
-        run: npm run build
+        run: npm ci && npm run build
 
       - name: Prepare Pages artifact
         run: |
