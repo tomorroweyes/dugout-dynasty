@@ -1,0 +1,61 @@
+name: Deploy Fantasy Draft Tool
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'fantasy-draft-tool/**'
+      - '.github/workflows/deploy-fantasy-draft.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'fantasy-draft-tool/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: fantasy-draft-tool
+        run: npm ci
+
+      - name: Fetch data
+        working-directory: fantasy-draft-tool
+        run: npm run fetch-data
+
+      - name: Build
+        working-directory: fantasy-draft-tool
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'fantasy-draft-tool/dist'
+          retention-days: 30
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
