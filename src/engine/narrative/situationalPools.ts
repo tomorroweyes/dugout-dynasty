@@ -497,3 +497,46 @@ export const APPROACH_MISMATCH_TEXTS: string[] = [
   "{batter} guessed. {pitcher} knew. This was over early.",
   "The approach backfired. Credit {pitcher} for exploiting it.",
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MENTAL SKILL COMBOS — CLUTCH LEGEND
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fires when the batter has both ice_veins (rank ≥ 3) AND clutch_composure
+ * (rank ≥ 3), both active, in a high-leverage situation.
+ *
+ * This is the "Clutch Legend" moment — the compound effect of two mastered
+ * mental skills. Rare, memorable, earned. Tokens: {batter}, {pitcher}
+ */
+export const CLUTCH_LEGEND_TEXTS: string[] = [
+  "Ice Veins. Heart of a Champion. {batter} has both — and right now, {pitcher} is just in the way.",
+  "{batter} doesn't feel pressure anymore. He converts it. The Clutch Legend at work.",
+  "The moment is big. {batter} is bigger. Two seasons of mental mastery pay off right here.",
+  "Most players tighten up. {batter} opens up. Ice and heart — the rarest combination in the game.",
+  "{batter} has been building to this. Cold nerves, burning will — he delivers when it matters most.",
+  "Unshakeable under pressure. Unstoppable when it counts. {batter} has learned to be both.",
+  "Everything on the line. {batter} made for exactly this. The Clutch Legend lives up to the name.",
+  "{pitcher} picked the wrong moment to test {batter}'s resolve. This is where that resolve was forged.",
+  "Fear nothing. Want it all. {batter} embodies both at once.",
+  "Two qualities you can't teach — and {batter} has mastered them. The game is his right now.",
+  "The cold calm of {batter} in the big moment. The fire underneath it. Both are real. Both are here.",
+  "He doesn't rise to the occasion. He's been preparing for it. {batter} — Clutch Legend.",
+];
+
+/**
+ * Fires when the batter is close to the Clutch Legend combo — both ice_veins
+ * AND clutch_composure are active at rank ≥ 2, but not yet both at rank 3+.
+ *
+ * Subtle "something is building" hint. Should feel like the game noticed
+ * something before the player did. Tokens: {batter}
+ */
+export const CLUTCH_LEGEND_HINT_TEXTS: string[] = [
+  "Something is different about {batter} in these moments. Hard to name. Hard to miss.",
+  "{batter} looks dialed in. There's a quality there — still developing, but unmistakable.",
+  "The pressure doesn't seem to reach him the same way. {batter} is growing into something.",
+  "Ice and composure — {batter} has both, and they're sharpening. This game feels different.",
+  "Whatever {batter} is building, it's starting to show.",
+  "{batter} plays bigger when the game gets bigger. Something's clicking.",
+  "There's a calm in {batter} tonight that you can't fake. It's been earned.",
+];

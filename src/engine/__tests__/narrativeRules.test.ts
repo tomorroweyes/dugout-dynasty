@@ -1068,3 +1068,522 @@ describe("strategyBeatsApproach predicate", () => {
     expect(strategyBeatsApproach(ctx({ batterApproach: "patient", pitchStrategy: "paint" }))).toBe(false);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mental Skill Combo Predicates — hasClutchLegendCombo / isNearClutchLegend
+// ─────────────────────────────────────────────────────────────────────────────
+
+import {
+  hasClutchLegendCombo,
+  isNearClutchLegend,
+  type MentalSkillSnapshot,
+} from "../narrative/narrativeContext";
+
+// Helpers for mental skill snapshots
+function makeSkill(
+  skillId: MentalSkillSnapshot["skillId"],
+  rank: number,
+  isActive = true
+): MentalSkillSnapshot {
+  return { skillId, rank, isActive };
+}
+
+const FULL_COMBO: MentalSkillSnapshot[] = [
+  makeSkill("ice_veins", 3),
+  makeSkill("clutch_composure", 3),
+];
+
+const NEAR_COMBO: MentalSkillSnapshot[] = [
+  makeSkill("ice_veins", 2),
+  makeSkill("clutch_composure", 2),
+];
+
+describe("hasClutchLegendCombo predicate", () => {
+  it("returns true when both skills are rank 3 and active", () => {
+    expect(hasClutchLegendCombo(ctx({ batterMentalSkills: FULL_COMBO }))).toBe(true);
+  });
+
+  it("returns true when both skills are rank 5 (max)", () => {
+    expect(
+      hasClutchLegendCombo(
+        ctx({
+          batterMentalSkills: [makeSkill("ice_veins", 5), makeSkill("clutch_composure", 4)],
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("returns false when ice_veins is rank 2 (below threshold)", () => {
+    expect(
+      hasClutchLegendCombo(
+        ctx({
+          batterMentalSkills: [makeSkill("ice_veins", 2), makeSkill("clutch_composure", 3)],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when clutch_composure is rank 2 (below threshold)", () => {
+    expect(
+      hasClutchLegendCombo(
+        ctx({
+          batterMentalSkills: [makeSkill("ice_veins", 3), makeSkill("clutch_composure", 2)],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when ice_veins is inactive (confidence lost)", () => {
+    expect(
+      hasClutchLegendCombo(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("ice_veins", 3, false),
+            makeSkill("clutch_composure", 3),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when clutch_composure is inactive", () => {
+    expect(
+      hasClutchLegendCombo(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("ice_veins", 3),
+            makeSkill("clutch_composure", 3, false),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when only ice_veins is present (no clutch_composure)", () => {
+    expect(
+      hasClutchLegendCombo(
+        ctx({ batterMentalSkills: [makeSkill("ice_veins", 4)] })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when only clutch_composure is present (no ice_veins)", () => {
+    expect(
+      hasClutchLegendCombo(
+        ctx({ batterMentalSkills: [makeSkill("clutch_composure", 4)] })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when batterMentalSkills is empty", () => {
+    expect(hasClutchLegendCombo(ctx({ batterMentalSkills: [] }))).toBe(false);
+  });
+
+  it("returns false when batterMentalSkills is absent", () => {
+    expect(hasClutchLegendCombo(ctx({ batterMentalSkills: undefined }))).toBe(false);
+  });
+
+  it("ignores unrelated skills — returns true when combo is met plus other skills", () => {
+    expect(
+      hasClutchLegendCombo(
+        ctx({
+          batterMentalSkills: [
+            ...FULL_COMBO,
+            makeSkill("pitch_recognition", 5),
+            makeSkill("veteran_poise", 2),
+          ],
+        })
+      )
+    ).toBe(true);
+  });
+});
+
+describe("isNearClutchLegend predicate", () => {
+  it("returns true when both skills are rank 2 and active", () => {
+    expect(isNearClutchLegend(ctx({ batterMentalSkills: NEAR_COMBO }))).toBe(true);
+  });
+
+  it("returns true when one skill is rank 2 and the other is rank 3 (asymmetric near)", () => {
+    expect(
+      isNearClutchLegend(
+        ctx({
+          batterMentalSkills: [makeSkill("ice_veins", 2), makeSkill("clutch_composure", 3)],
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("returns false when both skills are rank 3 (that's the full combo, not near)", () => {
+    expect(isNearClutchLegend(ctx({ batterMentalSkills: FULL_COMBO }))).toBe(false);
+  });
+
+  it("returns false when ice_veins is rank 1 (not 2+)", () => {
+    expect(
+      isNearClutchLegend(
+        ctx({
+          batterMentalSkills: [makeSkill("ice_veins", 1), makeSkill("clutch_composure", 2)],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when clutch_composure is rank 1 (not 2+)", () => {
+    expect(
+      isNearClutchLegend(
+        ctx({
+          batterMentalSkills: [makeSkill("ice_veins", 2), makeSkill("clutch_composure", 1)],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when ice_veins is inactive", () => {
+    expect(
+      isNearClutchLegend(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("ice_veins", 2, false),
+            makeSkill("clutch_composure", 2),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when clutch_composure is inactive", () => {
+    expect(
+      isNearClutchLegend(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("ice_veins", 2),
+            makeSkill("clutch_composure", 2, false),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when only one skill is present", () => {
+    expect(
+      isNearClutchLegend(ctx({ batterMentalSkills: [makeSkill("ice_veins", 2)] }))
+    ).toBe(false);
+  });
+
+  it("returns false when batterMentalSkills is absent", () => {
+    expect(isNearClutchLegend(ctx({ batterMentalSkills: undefined }))).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// clutch_legend_combo rule (priority 55)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// High-leverage context shared by most clutch_legend tests
+function clutchCtx(
+  overrides: Partial<NarrativeContext> = {}
+): NarrativeContext {
+  return ctx({
+    inning: 9,
+    scoreDiff: -1, // trailing — triggers isHighLeverageSituation
+    batterMentalSkills: FULL_COMBO,
+    ...overrides,
+  });
+}
+
+describe("clutch_legend_combo rule", () => {
+  // ── Positive cases ──────────────────────────────────────────────────────
+
+  it("fires for single with full combo in high-leverage", () => {
+    const rule = matchingRule(clutchCtx({ result: "single" }));
+    expect(rule?.id).toBe("clutch_legend_combo");
+  });
+
+  it("fires for double with full combo in high-leverage", () => {
+    const rule = matchingRule(clutchCtx({ result: "double" }));
+    expect(rule?.id).toBe("clutch_legend_combo");
+  });
+
+  it("fires for triple with full combo in high-leverage", () => {
+    const rule = matchingRule(clutchCtx({ result: "triple" }));
+    expect(rule?.id).toBe("clutch_legend_combo");
+  });
+
+  it("fires for double in high-leverage (inning 8, close game) — no homer rules apply", () => {
+    // inning 8, close game — high leverage. clutch_homer only fires for homerun.
+    // No redemption context. clutch_legend_combo (55) wins.
+    const rule = matchingRule(
+      ctx({
+        result: "double",
+        runsScored: 0,
+        inning: 8,
+        scoreDiff: 1,  // close game, high leverage
+        bases: [false, false, false],
+        batterMentalSkills: FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("clutch_legend_combo");
+  });
+
+  it("fires when ice_veins is rank 5 and clutch_composure is rank 3", () => {
+    const rule = matchingRule(
+      clutchCtx({
+        result: "single",
+        batterMentalSkills: [makeSkill("ice_veins", 5), makeSkill("clutch_composure", 3)],
+      })
+    );
+    expect(rule?.id).toBe("clutch_legend_combo");
+  });
+
+  it("fires in close late game (inning 8, scoreDiff=1) — qualifies as high-leverage", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 8,
+        scoreDiff: 1,
+        batterMentalSkills: FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("clutch_legend_combo");
+  });
+
+  // ── Negative cases — rule must NOT fire ─────────────────────────────────
+
+  it("does NOT fire when combo is present but result is strikeout", () => {
+    const rule = matchingRule(clutchCtx({ result: "strikeout" }));
+    expect(rule?.id).not.toBe("clutch_legend_combo");
+  });
+
+  it("does NOT fire when combo is present but result is groundout", () => {
+    const rule = matchingRule(clutchCtx({ result: "groundout" }));
+    expect(rule?.id).not.toBe("clutch_legend_combo");
+  });
+
+  it("does NOT fire when combo is present but result is walk", () => {
+    const rule = matchingRule(clutchCtx({ result: "walk" }));
+    expect(rule?.id).not.toBe("clutch_legend_combo");
+  });
+
+  it("does NOT fire without high-leverage situation (mid-game, comfortable lead)", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 4,
+        scoreDiff: 5, // comfortable lead, low leverage
+        batterMentalSkills: FULL_COMBO,
+      })
+    );
+    expect(rule?.id).not.toBe("clutch_legend_combo");
+  });
+
+  it("does NOT fire when combo skills are below rank 3", () => {
+    const rule = matchingRule(
+      clutchCtx({
+        result: "single",
+        batterMentalSkills: NEAR_COMBO, // both at rank 2 — not threshold
+      })
+    );
+    expect(rule?.id).not.toBe("clutch_legend_combo");
+  });
+
+  it("does NOT fire when only ice_veins is present", () => {
+    const rule = matchingRule(
+      clutchCtx({
+        result: "single",
+        batterMentalSkills: [makeSkill("ice_veins", 4)],
+      })
+    );
+    expect(rule?.id).not.toBe("clutch_legend_combo");
+  });
+
+  it("does NOT fire when batterMentalSkills is absent", () => {
+    const rule = matchingRule(
+      clutchCtx({ result: "single", batterMentalSkills: undefined })
+    );
+    expect(rule?.id).not.toBe("clutch_legend_combo");
+  });
+
+  // ── Priority guards ──────────────────────────────────────────────────────
+
+  it("is superseded by walkoff_hit (priority 95) when walk-off conditions met", () => {
+    // Bases loaded, tied in inning 9, batter gets a single scoring the winning run
+    const rule = matchingRule(
+      clutchCtx({
+        result: "single",
+        inning: 9,
+        scoreDiff: 0,          // tied — if run scores, offense wins
+        runsScored: 1,
+        bases: [true, false, false],
+        batterMentalSkills: FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("walkoff_hit");
+  });
+
+  it("is superseded by redemption_hit (priority 87) when it's a first hit after 3+ hitless ABs", () => {
+    const rule = matchingRule(
+      clutchCtx({
+        result: "single",
+        batterHistory: {
+          abs: 3,
+          hits: 0,
+          strikeouts: 2,
+          walks: 0,
+        },
+        batterMentalSkills: FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("redemption_hit");
+  });
+
+  it("is superseded by clutch_hit_risp (priority 70) when RISP + late/close with runs scoring", () => {
+    // Use inning 8 (not 9) so that isPotentialWalkoff doesn't fire (walkoff needs inning ≥ 9).
+    // clutch_hit_risp (70) > clutch_legend_combo (55).
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 8,
+        scoreDiff: -1,
+        bases: [false, true, false], // runner on 2nd
+        runsScored: 1,
+        batterMentalSkills: FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("clutch_hit_risp");
+  });
+
+  it("beats approach rules (priority 45) when both would match", () => {
+    // Correct approach read (power vs finesse, single) in high-leverage + full combo
+    // clutch_legend_combo (55) > correct_approach_read (45)
+    const rule = matchingRule(
+      clutchCtx({
+        result: "single",
+        batterApproach: "power",
+        pitchStrategy: "finesse",
+        batterMentalSkills: FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("clutch_legend_combo");
+  });
+
+  // ── Text output ──────────────────────────────────────────────────────────
+
+  it("returns non-empty string with {batter} and {pitcher} tokens filled", () => {
+    const result = evaluateNarrativeRules(
+      clutchCtx({ result: "single", batterName: "Rivera", pitcherName: "Tanaka" }),
+      rng
+    );
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("{batter}");
+    expect(result).not.toContain("{pitcher}");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// clutch_legend_hint rule (priority 15)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("clutch_legend_hint rule", () => {
+  it("fires for a hit in high-leverage when near-combo (both rank 2)", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1,
+        batterMentalSkills: NEAR_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("clutch_legend_hint");
+  });
+
+  it("fires when asymmetric near-combo: ice_veins rank 2, clutch rank 3", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1,
+        batterMentalSkills: [makeSkill("ice_veins", 2), makeSkill("clutch_composure", 3)],
+      })
+    );
+    expect(rule?.id).toBe("clutch_legend_hint");
+  });
+
+  it("does NOT fire when full combo is active (clutch_legend_combo takes priority)", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1,
+        batterMentalSkills: FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("clutch_legend_combo");
+    expect(rule?.id).not.toBe("clutch_legend_hint");
+  });
+
+  it("does NOT fire outside high-leverage situations", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 3,
+        scoreDiff: 4,
+        batterMentalSkills: NEAR_COMBO,
+      })
+    );
+    expect(rule?.id).not.toBe("clutch_legend_hint");
+  });
+
+  it("does NOT fire on non-hit results", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "groundout",
+        inning: 9,
+        scoreDiff: -1,
+        batterMentalSkills: NEAR_COMBO,
+      })
+    );
+    expect(rule?.id).not.toBe("clutch_legend_hint");
+  });
+
+  it("does NOT fire when only one skill is present", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1,
+        batterMentalSkills: [makeSkill("ice_veins", 2)],
+      })
+    );
+    expect(rule?.id).not.toBe("clutch_legend_hint");
+  });
+
+  it("is superseded by higher-priority rules in clutch moments", () => {
+    // RISP + late game + near-combo: clutch_hit_risp (70) should win
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1,
+        bases: [false, true, false],
+        runsScored: 1,
+        batterMentalSkills: NEAR_COMBO,
+      })
+    );
+    // clutch_hit_risp (70) or redemption rules take precedence
+    expect(rule?.id).not.toBe("clutch_legend_hint");
+  });
+
+  it("returns non-empty text with {batter} token filled", () => {
+    const result = evaluateNarrativeRules(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1,
+        batterMentalSkills: NEAR_COMBO,
+        batterName: "Cruz",
+      }),
+      rng
+    );
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("{batter}");
+  });
+});

@@ -8,6 +8,14 @@
 import type { AtBatResult } from "../atBatSimulator";
 import type { BatterHistory } from "../narrativeEngine";
 import type { BatterApproach, PitchStrategy } from "@/types/approach";
+import type { MentalSkillType } from "@/types/mentalSkills";
+
+/** Lightweight mental skill snapshot for narrative combo detection. */
+export interface MentalSkillSnapshot {
+  skillId: MentalSkillType;
+  rank: number;
+  isActive: boolean;
+}
 
 export interface NarrativeContext {
   // ── Core outcome ──────────────────────────────────────────────────────────
@@ -31,6 +39,13 @@ export interface NarrativeContext {
   // ── Narrative enrichment ─────────────────────────────────────────────────
   isCritical: boolean;     // crit roll fired
   batterHistory?: BatterHistory; // cumulative game stats for this batter
+
+  /**
+   * Active mental skills for the batter (rank + active status).
+   * Used to detect individual mental-skill combos (e.g. Clutch Legend).
+   * Only active skills are included (confidence >= threshold).
+   */
+  batterMentalSkills?: ReadonlyArray<MentalSkillSnapshot>;
 
   // ── Approach / strategy ───────────────────────────────────────────────────
   /** Batter's chosen approach for this at-bat (undefined if AI / not chosen) */
@@ -118,4 +133,47 @@ export function strategyBeatsApproach(ctx: NarrativeContext): boolean {
     (a === "contact" && s === "finesse") ||
     (a === "patient" && s === "challenge")
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mental Skill Combo Predicates
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Clutch Legend combo: batter has both ice_veins (rank ≥ 3) AND
+ * clutch_composure (rank ≥ 3), both active. In high-leverage situations
+ * these two skills compound — nerves of steel meets peak-pressure lift.
+ *
+ * First time this fires for a player it should feel like a discovery.
+ */
+export function hasClutchLegendCombo(ctx: NarrativeContext): boolean {
+  const skills = ctx.batterMentalSkills;
+  if (!skills || skills.length === 0) return false;
+  const hasIceVeins = skills.some(
+    (s) => s.skillId === "ice_veins" && s.rank >= 3 && s.isActive
+  );
+  const hasClutchComposure = skills.some(
+    (s) => s.skillId === "clutch_composure" && s.rank >= 3 && s.isActive
+  );
+  return hasIceVeins && hasClutchComposure;
+}
+
+/**
+ * Near-combo hint: both ice_veins AND clutch_composure are active
+ * and at rank ≥ 2, but not yet both at rank 3+ (combo not yet unlocked).
+ *
+ * Used to fire a subtle "something's building" hint narrative so players
+ * discover the combo through play rather than a guide.
+ */
+export function isNearClutchLegend(ctx: NarrativeContext): boolean {
+  const skills = ctx.batterMentalSkills;
+  if (!skills || skills.length === 0) return false;
+  const iv = skills.find((s) => s.skillId === "ice_veins");
+  const cc = skills.find((s) => s.skillId === "clutch_composure");
+  if (!iv || !cc) return false;
+  if (!iv.isActive || !cc.isActive) return false;
+  // Both active at rank 2+, but not both at rank 3+ yet
+  const bothAtLeastTwo = iv.rank >= 2 && cc.rank >= 2;
+  const notBothThree   = !(iv.rank >= 3 && cc.rank >= 3);
+  return bothAtLeastTwo && notBothThree;
 }

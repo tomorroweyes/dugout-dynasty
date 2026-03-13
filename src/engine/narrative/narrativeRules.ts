@@ -25,6 +25,8 @@ import {
   isPotentialWalkoff,
   approachBeatsStrategy,
   strategyBeatsApproach,
+  hasClutchLegendCombo,
+  isNearClutchLegend,
 } from "./narrativeContext";
 import {
   GRAND_SLAM_TEXTS,
@@ -43,6 +45,8 @@ import {
   REDEMPTION_PAYOFF_TEXTS,
   CORRECT_APPROACH_READ_TEXTS,
   APPROACH_MISMATCH_TEXTS,
+  CLUTCH_LEGEND_TEXTS,
+  CLUTCH_LEGEND_HINT_TEXTS,
 } from "./situationalPools";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -306,6 +310,38 @@ export const NARRATIVE_RULES: NarrativeRule[] = [
       strategyBeatsApproach(ctx) &&
       (isOut(ctx.result) || ctx.result === "strikeout"),
     pool: APPROACH_MISMATCH_TEXTS,
+  },
+
+  // ── Priority 55: Mental skill combo — Clutch Legend ──────────────────────
+  // Fires when batter has mastered BOTH ice_veins AND clutch_composure (rank 3+)
+  // and delivers a hit in a high-leverage moment. Higher priority than approach
+  // flavor (42-45) because it's a rarer, earned discovery moment. Lower than
+  // clutch situational rules (70+) because explicit RISP/late-game drama wins.
+
+  {
+    id: "clutch_legend_combo",
+    name: "Clutch Legend — ice_veins + clutch_composure at rank 3+, hit in high-leverage",
+    priority: 55,
+    matches: (ctx) =>
+      isHit(ctx.result) &&
+      hasClutchLegendCombo(ctx) &&
+      isHighLeverageSituation(ctx),
+    pool: CLUTCH_LEGEND_TEXTS,
+  },
+
+  // ── Priority 15: Clutch Legend near-combo hint ───────────────────────────
+  // Subtle "something is building" signal fires before the full combo unlocks.
+  // Very low priority — activates only when no other rule claimed this at-bat.
+
+  {
+    id: "clutch_legend_hint",
+    name: "Clutch Legend Hint — both skills active at rank 2+ but combo not yet unlocked",
+    priority: 15,
+    matches: (ctx) =>
+      isHit(ctx.result) &&
+      isNearClutchLegend(ctx) &&
+      isHighLeverageSituation(ctx),
+    pool: CLUTCH_LEGEND_HINT_TEXTS,
   },
 
 ];
