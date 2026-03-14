@@ -7,7 +7,9 @@ import {
   simulateAtBat_Interactive,
   finalizeInteractiveMatch,
   derivePitcherFatigueLevel,
+  type AtBatDecision,
 } from "../interactiveMatchEngine";
+import type { ZoneModifier } from "../zoneSystem";
 
 function createTeam(id: string, seed: number): Team {
   const roster = generateStarterTeam(new SeededRandomProvider(seed), "SANDLOT");
@@ -106,5 +108,152 @@ describe("derivePitcherFatigueLevel", () => {
 
   it("returns 'gassed' when both gassed conditions are met", () => {
     expect(derivePitcherFatigueLevel(6, 1.5)).toBe("gassed");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// zoneLanded — play-by-play records actual pitch landing, not just aim
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// The zone grid resolves landing via resolvePitchLanding() which applies
+// control variance — low-control pitchers can miss their aimed zone.
+// PlayByPlayEvent.zoneLanded must reflect the actual landing zone so the
+// zone grid result display (⚾ icon) shows where the pitch ACTUALLY went,
+// not where the pitcher AIMED.
+
+describe("zoneLanded in PlayByPlayEvent", () => {
+  function makeMatch(seed: number) {
+    const myTeam: Team = {
+      id: "my-team",
+      cash: 5000,
+      fans: 1,
+      roster: generateStarterTeam(new SeededRandomProvider(seed), "SANDLOT"),
+      lineup: [],
+      wins: 0,
+      losses: 0,
+      colors: { primary: "#1E40AF", secondary: "#DBEAFE" },
+    };
+    myTeam.lineup = myTeam.roster.map((p) => p.id);
+
+    const oppTeam: Team = {
+      ...myTeam,
+      id: "opp-team",
+      roster: generateStarterTeam(new SeededRandomProvider(seed + 1), "SANDLOT"),
+    };
+    oppTeam.lineup = oppTeam.roster.map((p) => p.id);
+
+    return initializeInteractiveMatch(myTeam, oppTeam, seed, false);
+  }
+
+  function fakeZoneResult(
+    override: Partial<ZoneModifier> = {}
+  ): ZoneModifier {
+    return {
+      strikeoutBonus: 0,
+      hitBonus: 0,
+      homerunBonus: 0,
+      walkBonus: 0,
+      isPerfect: false,
+      landingZone: { row: 1, col: 1 },
+      ...override,
+    };
+  }
+
+  it("sets zoneLanded to zoneResult.landingZone when present (no control miss)", () => {
+    const state = makeMatch(11111);
+    const aimed = { row: 0 as const, col: 0 as const };
+    const landing = { row: 0 as const, col: 0 as const }; // same cell — perfect aim
+
+    const decision: AtBatDecision = {
+      batterApproach: "contact",
+      pitcherAimedZone: aimed,
+      batterAimedZone: { row: 0 as const, col: 1 as const },
+      zoneResult: fakeZoneResult({ landingZone: landing }),
+    };
+
+    const next = simulateAtBat_Interactive(state, decision);
+    const lastPlay = next.playByPlay[next.playByPlay.length - 1];
+
+    expect(lastPlay.zoneAimed).toEqual(aimed);
+    expect(lastPlay.zoneLanded).toEqual(landing);
+  });
+
+  it("sets zoneLanded to zoneResult.landingZone even when it differs from aimed (control miss)", () => {
+    const state = makeMatch(22222);
+    const aimed = { row: 0 as const, col: 0 as const };
+    // Pitch misses aimed zone — lands one cell away
+    const landing = { row: 0 as const, col: 1 as const };
+
+    const decision: AtBatDecision = {
+      batterApproach: "power",
+      pitcherAimedZone: aimed,
+      batterAimedZone: { row: 0 as const, col: 0 as const },
+      zoneResult: fakeZoneResult({ landingZone: landing }),
+    };
+
+    const next = simulateAtBat_Interactive(state, decision);
+    const lastPlay = next.playByPlay[next.playByPlay.length - 1];
+
+    // zoneLanded must be actual landing, not pitcherAimedZone
+    expect(lastPlay.zoneAimed).toEqual(aimed);
+    expect(lastPlay.zoneLanded).toEqual(landing);
+    expect(lastPlay.zoneLanded).not.toEqual(lastPlay.zoneAimed);
+  });
+
+  it("falls back to pitcherAimedZone when zoneResult is absent (auto-sim path)", () => {
+    const state = makeMatch(33333);
+    const aimed = { row: 2 as const, col: 2 as const };
+
+    const decision: AtBatDecision = {
+      pitchStrategy: "finesse",
+      pitcherAimedZone: aimed,
+      // No zoneResult — auto-sim (opponent's half-inning)
+    };
+
+    const next = simulateAtBat_Interactive(state, decision);
+    const lastPlay = next.playByPlay[next.playByPlay.length - 1];
+
+    expect(lastPlay.zoneAimed).toEqual(aimed);
+    expect(lastPlay.zoneLanded).toEqual(aimed);
+  });
+
+  it("leaves both zoneAimed and zoneLanded undefined when no zone data at all", () => {
+    const state = makeMatch(44444);
+
+    const decision: AtBatDecision = {
+      batterApproach: "contact",
+      // No zone data at all
+    };
+
+    const next = simulateAtBat_Interactive(state, decision);
+    const lastPlay = next.playByPlay[next.playByPlay.length - 1];
+
+    expect(lastPlay.zoneAimed).toBeUndefined();
+    expect(lastPlay.zoneLanded).toBeUndefined();
+  });
+
+  it("zoneBatterAimed is recorded independently of zoneLanded", () => {
+    const state = makeMatch(55555);
+    const aimed    = { row: 1 as const, col: 0 as const };
+    const landing  = { row: 1 as const, col: 1 as const }; // control miss
+    const battery  = { row: 0 as const, col: 2 as const }; // batter was looking elsewhere
+
+    const decision: AtBatDecision = {
+      batterApproach: "patient",
+      pitcherAimedZone: aimed,
+      batterAimedZone: battery,
+      zoneResult: fakeZoneResult({ landingZone: landing }),
+    };
+
+    const next = simulateAtBat_Interactive(state, decision);
+    const lastPlay = next.playByPlay[next.playByPlay.length - 1];
+
+    expect(lastPlay.zoneAimed).toEqual(aimed);
+    expect(lastPlay.zoneLanded).toEqual(landing);
+    expect(lastPlay.zoneBatterAimed).toEqual(battery);
+
+    // All three are distinct
+    expect(lastPlay.zoneLanded).not.toEqual(lastPlay.zoneAimed);
+    expect(lastPlay.zoneBatterAimed).not.toEqual(lastPlay.zoneLanded);
   });
 });
