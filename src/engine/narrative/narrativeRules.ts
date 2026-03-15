@@ -27,6 +27,8 @@ import {
   strategyBeatsApproach,
   hasClutchLegendCombo,
   isNearClutchLegend,
+  hasDiamondMindCombo,
+  isNearDiamondMind,
 } from "./narrativeContext";
 import {
   GRAND_SLAM_TEXTS,
@@ -47,6 +49,8 @@ import {
   APPROACH_MISMATCH_TEXTS,
   CLUTCH_LEGEND_TEXTS,
   CLUTCH_LEGEND_HINT_TEXTS,
+  DIAMOND_MIND_TEXTS,
+  DIAMOND_MIND_HINT_TEXTS,
 } from "./situationalPools";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -329,6 +333,24 @@ export const NARRATIVE_RULES: NarrativeRule[] = [
     pool: CLUTCH_LEGEND_TEXTS,
   },
 
+  // ── Priority 52: Mental skill combo — Diamond Mind ────────────────────────
+  // Fires when batter has mastered BOTH pitch_recognition AND game_reading
+  // (rank 3+) and delivers a hit or walk. Two cognitive skills compound into
+  // near-prescient plate vision. Unlike Clutch Legend, this fires regardless
+  // of leverage — the mastery shows up throughout the game.
+  // Higher than approach flavor (42-45), lower than Clutch Legend (55) because
+  // Clutch Legend reflects a rarer, high-stakes earned moment.
+
+  {
+    id: "diamond_mind_combo",
+    name: "Diamond Mind — pitch_recognition + game_reading at rank 3+, hit or walk",
+    priority: 52,
+    matches: (ctx) =>
+      (isHit(ctx.result) || ctx.result === "walk") &&
+      hasDiamondMindCombo(ctx),
+    pool: DIAMOND_MIND_TEXTS,
+  },
+
   // ── Priority 15: Clutch Legend near-combo hint ───────────────────────────
   // Subtle "something is building" signal fires before the full combo unlocks.
   // Very low priority — activates only when no other rule claimed this at-bat.
@@ -342,6 +364,21 @@ export const NARRATIVE_RULES: NarrativeRule[] = [
       isNearClutchLegend(ctx) &&
       isHighLeverageSituation(ctx),
     pool: CLUTCH_LEGEND_HINT_TEXTS,
+  },
+
+  // ── Priority 12: Diamond Mind near-combo hint ────────────────────────────
+  // Subtle "something's sharpening" hint fires when both skills are active
+  // at rank 2+ but not yet both at rank 3+. Very low priority — only fires
+  // when no other rule claimed this at-bat.
+
+  {
+    id: "diamond_mind_hint",
+    name: "Diamond Mind Hint — both skills active at rank 2+ but combo not yet unlocked",
+    priority: 12,
+    matches: (ctx) =>
+      (isHit(ctx.result) || ctx.result === "walk") &&
+      isNearDiamondMind(ctx),
+    pool: DIAMOND_MIND_HINT_TEXTS,
   },
 
 ];
