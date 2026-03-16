@@ -177,3 +177,47 @@ export function isNearClutchLegend(ctx: NarrativeContext): boolean {
   const notBothThree   = !(iv.rank >= 3 && cc.rank >= 3);
   return bothAtLeastTwo && notBothThree;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Veteran's Eye Combo Predicates
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Veteran's Eye combo: batter has both veteran_poise (rank ≥ 3) AND
+ * pitch_recognition (rank ≥ 3), both active. Years of experience fused with
+ * elite pitch-reading — the batter who has seen every pitcher tendency fires
+ * before the ball is even halfway to the plate.
+ *
+ * Distinct from Clutch Legend (pressure/nerves) — this combo is about pure
+ * mental mastery of the game itself, earned over a long career.
+ */
+export function hasVeteranEyeCombo(ctx: NarrativeContext): boolean {
+  const skills = ctx.batterMentalSkills;
+  if (!skills || skills.length === 0) return false;
+  const hasVeteranPoise = skills.some(
+    (s) => s.skillId === "veteran_poise" && s.rank >= 3 && s.isActive
+  );
+  const hasPitchRecognition = skills.some(
+    (s) => s.skillId === "pitch_recognition" && s.rank >= 3 && s.isActive
+  );
+  return hasVeteranPoise && hasPitchRecognition;
+}
+
+/**
+ * Near-combo hint: both veteran_poise AND pitch_recognition are active
+ * and at rank ≥ 2, but not yet both at rank 3+ (combo not yet unlocked).
+ *
+ * Subtle "something is connecting" signal fires before the full combo unlocks.
+ */
+export function isNearVeteranEye(ctx: NarrativeContext): boolean {
+  const skills = ctx.batterMentalSkills;
+  if (!skills || skills.length === 0) return false;
+  const vp = skills.find((s) => s.skillId === "veteran_poise");
+  const pr = skills.find((s) => s.skillId === "pitch_recognition");
+  if (!vp || !pr) return false;
+  if (!vp.isActive || !pr.isActive) return false;
+  // Both active at rank 2+, but not both at rank 3+ yet
+  const bothAtLeastTwo = vp.rank >= 2 && pr.rank >= 2;
+  const notBothThree   = !(vp.rank >= 3 && pr.rank >= 3);
+  return bothAtLeastTwo && notBothThree;
+}
