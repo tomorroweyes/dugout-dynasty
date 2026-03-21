@@ -1,5 +1,9 @@
-import React from 'react';
-import type { TierSummary } from '../lib/data';
+interface TierSummary {
+  tier: string;
+  count: number;
+  avgOps?: number;
+  avgK?: number;
+}
 
 interface TierBreakdownProps {
   tiers: TierSummary[];
@@ -7,24 +11,39 @@ interface TierBreakdownProps {
 
 export default function TierBreakdown({ tiers }: TierBreakdownProps) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-6 mb-8">
-      <h2 className="text-2xl font-bold mb-4">Tier Breakdown</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {tiers.map(tier => (
+    <div
+      className="mb-8 p-6"
+      style={{ background: "var(--color-surface)", border: "1px solid rgba(255,255,255,0.12)" }}
+    >
+      <h2
+        className="font-display mb-4 text-2xl font-bold uppercase text-white"
+        style={{ letterSpacing: "0.04em" }}
+      >
+        Tier Breakdown
+      </h2>
+      <div className="grid grid-cols-2 gap-px md:grid-cols-3 lg:grid-cols-5">
+        {tiers.map((tier) => (
           <div
             key={tier.tier}
-            className="bg-slate-50 dark:bg-slate-800 rounded p-4 text-center border border-slate-200 dark:border-slate-700"
+            className="p-4 text-center"
+            style={{ background: "var(--color-card)", border: "1px solid rgba(255,255,255,0.1)" }}
           >
-            <p className="font-bold text-lg mb-1">{tier.tier === 'ELITE' ? '⭐ ELITE' : `Tier ${tier.tier}`}</p>
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">{tier.count}</p>
-            {tier.avgOps && (
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Avg OPS: <span className="font-semibold">{tier.avgOps.toFixed(3)}</span>
+            <p className="font-display mb-1 text-lg font-bold uppercase text-dim">
+              {tier.tier === "ELITE" ? "ELITE" : `Tier ${tier.tier}`}
+            </p>
+            <p className="font-data mb-2 text-3xl font-bold text-accent">
+              {tier.count}
+            </p>
+            {tier.avgOps != null && (
+              <p className="text-xs text-dim">
+                Avg OPS{" "}
+                <span className="font-semibold text-body">{tier.avgOps.toFixed(3)}</span>
               </p>
             )}
-            {tier.avgK && (
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Avg K: <span className="font-semibold">{tier.avgK.toFixed(0)}</span>
+            {tier.avgK != null && (
+              <p className="text-xs text-dim">
+                Avg K{" "}
+                <span className="font-semibold text-body">{tier.avgK.toFixed(0)}</span>
               </p>
             )}
           </div>

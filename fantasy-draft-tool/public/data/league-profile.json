@@ -1,0 +1,66 @@
+{
+  "owner": "Cam",
+  "leagueName": "2025 EELite League",
+  "draftPerspective": "From 1.01 in a shallow H2H categories room, maximize star-level category separation early and refuse fake scarcity taxes.",
+  "goals": [
+    "Use 1.01 on the cleanest category monster on the board, ideally a bat who banks OPS and power without forcing a later speed panic.",
+    "Leave the early rounds with an elite hitting spine — Ohtani's two-way production effectively gives you an ace-level SP arm already, so the goal is bats first through at least round 6, then start building the pitching staff around round 7.",
+    "Avoid paying an early catcher tax, but do not leave the C slot unfilled. Target the best available catcher by the middle rounds — an empty C slot is a wasted lineup spot every week."
+  ],
+  "strategyPillars": [
+    {
+      "title": "Exploit 1.01 for category separation",
+      "detail": "At the top of the board, the job is not to get cute. Take the player who creates the widest weekly category edge, usually an elite bat with power, OPS, and enough speed to keep later rounds flexible.",
+      "phase": "early"
+    },
+    {
+      "title": "Build around real category leaks",
+      "detail": "In the middle rounds (4-6), stop drafting names and start drafting roster shape. Patch missing speed and keep OPS from becoming a late tax. Do NOT pivot to SP here — stay on bats until at least round 7.",
+      "phase": "middle"
+    },
+    {
+      "title": "Ratios matter more than raw pitcher count",
+      "detail": "QS and strikeouts are useful only when ERA and WHIP survive. Favor durable starters with real leash and use your weekly flexibility to avoid ratio blowups.",
+      "phase": "all"
+    },
+    {
+      "title": "Delay SP aggressively — target round 7+ for your first non-ace starter",
+      "detail": "In an 8-team shallow format, hold off on SP until round 7 at the earliest — the only exceptions are Paul Skenes and Tarik Skubal, who are consensus top-10 picks worth taking whenever they are available. Every other SP should wait. The historical pattern in winning teams confirms this: first SP goes around round 7, then the board gets worked again for several more picks before the next one. CRITICAL: Ohtani is already on your roster and contributes elite pitching categories as a two-way player — this effectively gives you an additional ace-level SP arm beyond whoever you draft. Factor this in: you need fewer traditional SP slots filled early, which makes the round 7+ delay even more defensible. Do not let the AI recommend a 'good value' SP in rounds 3-6 — that is a strategy violation.",
+      "phase": "early"
+    },
+    {
+      "title": "Delay the reliever tax",
+      "detail": "SVHD flattens closer scarcity and can be found in rounds 12+ consistently. Do NOT be the first manager in the room to buy RP — let the market move and react to a run rather than triggering one. Do not use the ratios argument to justify early RP: a reliever pitching 70 IP moves aggregate ratios by noise, not signal. Stay on hitters and SP quality until the board forces the issue.",
+      "phase": "late"
+    }
+  ],
+  "historicalSeasons": [],
+  "historyPrompt": "Drop prior draft results and category outcomes into this file once you have them. The dashboard already has a slot for multi-year tendencies, but the repo does not contain real league history yet.",
+  "watchCategories": ["OPS", "HR", "SB", "K", "ERA", "WHIP"],
+  "dataWarnings": [],
+  "rosterSlots": [
+    { "id": "c", "label": "C", "type": "batter" },
+    { "id": "1b", "label": "1B", "type": "batter" },
+    { "id": "2b", "label": "2B", "type": "batter" },
+    { "id": "3b", "label": "3B", "type": "batter" },
+    { "id": "ss", "label": "SS", "type": "batter" },
+    { "id": "of1", "label": "OF 1", "type": "batter" },
+    { "id": "of2", "label": "OF 2", "type": "batter" },
+    { "id": "of3", "label": "OF 3", "type": "batter" },
+    { "id": "dh", "label": "DH", "type": "batter" },
+    { "id": "util1", "label": "UTIL 1", "type": "batter" },
+    { "id": "util2", "label": "UTIL 2", "type": "batter" },
+    { "id": "sp1", "label": "SP 1", "type": "pitcher" },
+    { "id": "sp2", "label": "SP 2", "type": "pitcher" },
+    { "id": "sp3", "label": "SP 3", "type": "pitcher" },
+    { "id": "sp4", "label": "SP 4", "type": "pitcher" },
+    { "id": "sp5", "label": "SP 5", "type": "pitcher" },
+    { "id": "sp6", "label": "SP 6", "type": "pitcher" },
+    { "id": "rp1", "label": "RP 1", "type": "pitcher" },
+    { "id": "rp2", "label": "RP 2", "type": "pitcher" },
+    { "id": "rp3", "label": "RP 3", "type": "pitcher" },
+    { "id": "bench1", "label": "Bench 1", "type": "batter" },
+    { "id": "bench2", "label": "Bench 2", "type": "batter" },
+    { "id": "bench3", "label": "Bench 3", "type": "pitcher" }
+  ]
+}

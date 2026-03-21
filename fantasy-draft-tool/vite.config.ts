@@ -1,20 +1,18 @@
-import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
-import path from 'path';
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from "vite";
+import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
-  base: '/dugout-dynasty/fantasy-draft-tool/',
+  plugins: [tailwindcss(), react()],
+  base: "./",
   build: {
-    outDir: 'dist',
+    outDir: "dist",
     sourcemap: false,
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      "@": path.resolve(__dirname, "./src"),
     },
-  },
-  css: {
-    postcss: false,
   },
 });

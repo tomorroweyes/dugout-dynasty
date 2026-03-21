@@ -1,1 +1,83 @@
 @import "tailwindcss";
+
+@theme {
+  /* ── Action / status ──────────────────────────────────────────────────────── */
+  --color-accent:      #b4f000;  /* lime — primary action, on-clock, T2        */
+  --color-danger:      #ff3d3d;  /* red — urgent, ELITE tier                   */
+  --color-danger-soft: #ff8888;  /* red (lightened) — error text               */
+  --color-warn:        #ff8800;  /* orange — watch, T1                         */
+  --color-info:        #00d4ff;  /* cyan — safe, T3                            */
+  --color-blue:        #00aaff;  /* blue — import / sync actions               */
+  --color-blue-soft:   #88ccff;  /* blue (lightened) — import button text      */
+  --color-purple:      #7878b8;  /* muted purple — T4, expert rank badge       */
+
+  /* ── Surfaces ────────────────────────────────────────────────────────────── */
+  --color-base:    #0a0a0e;  /* deepest background                             */
+  --color-surface: #111118;  /* header, sidebar                                */
+  --color-panel:   #131318;  /* sidebar queue/roster rows                      */
+  --color-raised:  #141420;  /* intel panel sections                           */
+  --color-card:    #16161e;  /* player cards                                   */
+
+  /* ── Text ────────────────────────────────────────────────────────────────── */
+  --color-body:  #e0e0e0;  /* primary content text                             */
+  --color-soft:  #aaaaaa;  /* secondary values, de-emphasised                  */
+  --color-muted: #7878a0;  /* muted labels (purple-tinted)                     */
+  --color-dim:   #686878;  /* dim labels, inactive controls                    */
+  --color-ghost: #444444;  /* barely-visible labels                            */
+}
+
+:root {
+  color-scheme: dark;
+  font-family: "Barlow", system-ui, sans-serif;
+  background: var(--color-base);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--color-base);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 28%, transparent);
+  color: var(--color-base);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-base);
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a30;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-dim);
+}
+
+/* Font utility classes */
+.font-display {
+  font-family: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+
+.font-data {
+  font-family: "DM Mono", "Courier New", monospace;
+}
