@@ -219,6 +219,11 @@ export function generateNarrativeText(
     batterHistory,
     batterApproach,
     pitchStrategy,
+    // Mental skill snapshots — enables combo detection in narrative rules
+    // (e.g. Clutch Legend: ice_veins + clutch_composure at rank 3+)
+    batterMentalSkills: batter.mentalSkills
+      ?.filter((s) => s.isActive)
+      .map((s) => ({ skillId: s.skillId, rank: s.rank, isActive: s.isActive })),
   };
 
   let outcomeText = evaluateNarrativeRules(narrativeCtx, rng) ?? "";
