@@ -147,16 +147,28 @@ function getDraftPhase(
       totalBatStarters > 0 ? 1 - openBatCount / totalBatStarters : 1;
     if (
       filledBatPct >= PHASE_BOUNDARIES.bat_fill_override &&
-      picksMade < Math.max(PHASE_BOUNDARIES.early_min_picks, Math.ceil(userRosterSize * PHASE_BOUNDARIES.early_fraction))
+      picksMade <
+        Math.max(
+          PHASE_BOUNDARIES.early_min_picks,
+          Math.ceil(userRosterSize * PHASE_BOUNDARIES.early_fraction),
+        )
     ) {
       return "middle";
     }
   }
 
-  if (picksMade < Math.max(PHASE_BOUNDARIES.early_min_picks, Math.ceil(userRosterSize * PHASE_BOUNDARIES.early_fraction))) {
+  if (
+    picksMade <
+    Math.max(
+      PHASE_BOUNDARIES.early_min_picks,
+      Math.ceil(userRosterSize * PHASE_BOUNDARIES.early_fraction),
+    )
+  ) {
     return "early";
   }
-  if (picksMade < Math.ceil(userRosterSize * PHASE_BOUNDARIES.middle_fraction)) {
+  if (
+    picksMade < Math.ceil(userRosterSize * PHASE_BOUNDARIES.middle_fraction)
+  ) {
     return "middle";
   }
   return "late";
@@ -258,7 +270,9 @@ function buildCategoryProfile(draftedPlayers: Player[], allPlayers: Player[]) {
   // Use the same 50/50 blend (actuals + Steamer) as draftScore and tier, so leak
   // detection signals match the scoring view consistently across all three systems.
   const draftedOps = average(
-    draftedBatters.map((player) => blendBatting(player)?.ops ?? 0).filter(Boolean),
+    draftedBatters
+      .map((player) => blendBatting(player)?.ops ?? 0)
+      .filter(Boolean),
   );
   const draftedHr = average(
     draftedBatters.map((player) => blendBatting(player)?.hr ?? 0),
@@ -273,10 +287,14 @@ function buildCategoryProfile(draftedPlayers: Player[], allPlayers: Player[]) {
     draftedPitchers.map((player) => blendPitching(player)?.qs ?? 0),
   );
   const draftedEra = average(
-    draftedPitchers.map((player) => blendPitching(player)?.era ?? 0).filter(Boolean),
+    draftedPitchers
+      .map((player) => blendPitching(player)?.era ?? 0)
+      .filter(Boolean),
   );
   const draftedWhip = average(
-    draftedPitchers.map((player) => blendPitching(player)?.whip ?? 0).filter(Boolean),
+    draftedPitchers
+      .map((player) => blendPitching(player)?.whip ?? 0)
+      .filter(Boolean),
   );
   const draftedSvhd = average(
     draftedPitchers.map((player) => blendPitching(player)?.svhd ?? 0),
@@ -285,15 +303,27 @@ function buildCategoryProfile(draftedPlayers: Player[], allPlayers: Player[]) {
   const poolOps = average(
     allBatters.map((player) => blendBatting(player)?.ops ?? 0).filter(Boolean),
   );
-  const poolHr = average(allBatters.map((player) => blendBatting(player)?.hr ?? 0));
-  const poolSb = average(allBatters.map((player) => blendBatting(player)?.sb ?? 0));
-  const poolK = average(allPitchers.map((player) => blendPitching(player)?.k ?? 0));
-  const poolQs = average(allPitchers.map((player) => blendPitching(player)?.qs ?? 0));
+  const poolHr = average(
+    allBatters.map((player) => blendBatting(player)?.hr ?? 0),
+  );
+  const poolSb = average(
+    allBatters.map((player) => blendBatting(player)?.sb ?? 0),
+  );
+  const poolK = average(
+    allPitchers.map((player) => blendPitching(player)?.k ?? 0),
+  );
+  const poolQs = average(
+    allPitchers.map((player) => blendPitching(player)?.qs ?? 0),
+  );
   const poolEra = average(
-    allPitchers.map((player) => blendPitching(player)?.era ?? 0).filter(Boolean),
+    allPitchers
+      .map((player) => blendPitching(player)?.era ?? 0)
+      .filter(Boolean),
   );
   const poolWhip = average(
-    allPitchers.map((player) => blendPitching(player)?.whip ?? 0).filter(Boolean),
+    allPitchers
+      .map((player) => blendPitching(player)?.whip ?? 0)
+      .filter(Boolean),
   );
   const poolSvhd = average(
     allPitchers.map((player) => blendPitching(player)?.svhd ?? 0),
@@ -308,16 +338,26 @@ function buildCategoryProfile(draftedPlayers: Player[], allPlayers: Player[]) {
     draftedEra,
     draftedWhip,
     draftedSvhd,
-    weakOps: draftedBatters.length > 1 && draftedOps < poolOps * CATEGORY_LEAK.ops,
-    weakPower: draftedBatters.length > 1 && draftedHr < poolHr * CATEGORY_LEAK.power,
-    weakSpeed: draftedBatters.length > 1 && draftedSb < poolSb * CATEGORY_LEAK.speed,
-    weakStrikeouts: draftedPitchers.length > 1 && draftedK < poolK * CATEGORY_LEAK.k,
+    weakOps:
+      draftedBatters.length > 1 && draftedOps < poolOps * CATEGORY_LEAK.ops,
+    weakPower:
+      draftedBatters.length > 1 && draftedHr < poolHr * CATEGORY_LEAK.power,
+    weakSpeed:
+      draftedBatters.length > 1 && draftedSb < poolSb * CATEGORY_LEAK.speed,
+    weakStrikeouts:
+      draftedPitchers.length > 1 && draftedK < poolK * CATEGORY_LEAK.k,
     weakQs:
-      draftedPitchers.length > 1 && draftedQs > 0 && draftedQs < poolQs * CATEGORY_LEAK.qs,
+      draftedPitchers.length > 1 &&
+      draftedQs > 0 &&
+      draftedQs < poolQs * CATEGORY_LEAK.qs,
     weakRatios:
       draftedPitchers.length > 1 &&
-      ((draftedEra > 0 && poolEra > 0 && draftedEra > poolEra * CATEGORY_LEAK.era) ||
-        (draftedWhip > 0 && poolWhip > 0 && draftedWhip > poolWhip * CATEGORY_LEAK.whip)),
+      ((draftedEra > 0 &&
+        poolEra > 0 &&
+        draftedEra > poolEra * CATEGORY_LEAK.era) ||
+        (draftedWhip > 0 &&
+          poolWhip > 0 &&
+          draftedWhip > poolWhip * CATEGORY_LEAK.whip)),
     needsReliefHelp:
       draftedPitchers.length >= 4 &&
       draftedSvhd >= 0 &&
@@ -485,16 +525,36 @@ function getPositionalScarcityBonus(
 
   // Find how many tier steps down until the next non-empty tier
   let nextIdx = currentIdx + 1;
-  while (nextIdx < tierOrder.length && (tierCounts[tierOrder[nextIdx]] ?? 0) === 0) {
+  while (
+    nextIdx < tierOrder.length &&
+    (tierCounts[tierOrder[nextIdx]] ?? 0) === 0
+  ) {
     nextIdx++;
   }
   const dropSteps = nextIdx - currentIdx;
 
-  if (countAtTier <= 1 && dropSteps >= 2) return { bonus: SCARCITY_BONUSES.tier_cliff_deep_single, label: "Tier cliff soon" };
-  if (countAtTier <= 2 && dropSteps >= 2) return { bonus: SCARCITY_BONUSES.tier_cliff_deep_double, label: "Tier cliff soon" };
-  if (countAtTier <= 1 && dropSteps === 1) return { bonus: SCARCITY_BONUSES.dwindling_single, label: "Dwindling tier" };
-  if (countAtTier <= 3 && dropSteps >= 2) return { bonus: SCARCITY_BONUSES.dwindling_triple, label: "Dwindling tier" };
-  if (countAtTier <= 2 && dropSteps === 1) return { bonus: SCARCITY_BONUSES.dwindling_double, label: null };
+  if (countAtTier <= 1 && dropSteps >= 2)
+    return {
+      bonus: SCARCITY_BONUSES.tier_cliff_deep_single,
+      label: "Tier cliff soon",
+    };
+  if (countAtTier <= 2 && dropSteps >= 2)
+    return {
+      bonus: SCARCITY_BONUSES.tier_cliff_deep_double,
+      label: "Tier cliff soon",
+    };
+  if (countAtTier <= 1 && dropSteps === 1)
+    return {
+      bonus: SCARCITY_BONUSES.dwindling_single,
+      label: "Dwindling tier",
+    };
+  if (countAtTier <= 3 && dropSteps >= 2)
+    return {
+      bonus: SCARCITY_BONUSES.dwindling_triple,
+      label: "Dwindling tier",
+    };
+  if (countAtTier <= 2 && dropSteps === 1)
+    return { bonus: SCARCITY_BONUSES.dwindling_double, label: null };
   return { bonus: 0, label: null };
 }
 
@@ -548,17 +608,24 @@ export function applyDraftContext(
       if (player.injured) {
         const penalty = getInjuryPenalty(player.injuryStatus, player.notes);
         decisionScore -= penalty;
-        const severityLabel = getInjurySeverityLabel(player.injuryStatus, player.notes);
-        const noteDetail = player.notes && player.notes.length > 0
-          ? ` — ${player.notes[0]}`
-          : "";
+        const severityLabel = getInjurySeverityLabel(
+          player.injuryStatus,
+          player.notes,
+        );
+        const noteDetail =
+          player.notes && player.notes.length > 0
+            ? ` — ${player.notes[0]}`
+            : "";
         fitWarning = `${severityLabel}${noteDetail}`;
       }
 
       // Expert rank is used only as an internal scoring signal — not surfaced in the prompt.
       if (player.type === "pitcher") {
         decisionScore += getPitcherExpertRankModifier(player.expertRank);
-      } else if (player.expertRank == null && (phase === "early" || phase === "middle")) {
+      } else if (
+        player.expertRank == null &&
+        (phase === "early" || phase === "middle")
+      ) {
         decisionScore += CONTEXT.batter_no_expert_rank;
       }
 
@@ -584,7 +651,8 @@ export function applyDraftContext(
         }
 
         if (isSP) {
-          decisionScore += spCount === 0 ? CONTEXT.early_sp_first : CONTEXT.early_sp_extra;
+          decisionScore +=
+            spCount === 0 ? CONTEXT.early_sp_first : CONTEXT.early_sp_extra;
           if (entry.strengths.includes("Ratios")) {
             decisionScore += CONTEXT.early_sp_ratios_bonus;
             fitLabels.push("Ace fallback");
@@ -605,7 +673,9 @@ export function applyDraftContext(
 
       if (phase === "middle") {
         // Bats-first enforcement: boost batters when lineup is still thin
-        const batterTarget = Math.ceil(starterTargets.batterStarters * CONTEXT.middle_bat_target_fraction);
+        const batterTarget = Math.ceil(
+          starterTargets.batterStarters * CONTEXT.middle_bat_target_fraction,
+        );
         if (player.type === "batter" && batterCount < batterTarget) {
           decisionScore += CONTEXT.middle_batter_thin_bonus;
           fitLabels.push("Lineup depth");
@@ -613,7 +683,10 @@ export function applyDraftContext(
 
         if (isSP && spCount < 2) {
           // Reduce SP pull when batting lineup is underbuilt
-          const spBonus = batterCount >= batterTarget ? CONTEXT.middle_sp_built_bonus : CONTEXT.middle_sp_thin_bonus;
+          const spBonus =
+            batterCount >= batterTarget
+              ? CONTEXT.middle_sp_built_bonus
+              : CONTEXT.middle_sp_thin_bonus;
           decisionScore += spBonus;
           fitLabels.push("SP backbone");
         }
@@ -633,7 +706,8 @@ export function applyDraftContext(
             fitLabels.push("C slot open");
           } else if (batterCount < starterTargets.batterStarters - 2) {
             decisionScore += CONTEXT.middle_c_early_penalty;
-            fitWarning = "Still early for catcher unless the value gap is obvious.";
+            fitWarning =
+              "Still early for catcher unless the value gap is obvious.";
           }
         }
 
@@ -667,13 +741,16 @@ export function applyDraftContext(
 
       if (phase === "late") {
         if (isRP) {
-          decisionScore += rpCount < 3 ? CONTEXT.late_rp_first_3 : CONTEXT.late_rp_additional;
+          decisionScore +=
+            rpCount < 3 ? CONTEXT.late_rp_first_3 : CONTEXT.late_rp_additional;
           fitLabels.push("SV+H patch");
         }
 
         if (isSP) {
           decisionScore +=
-            categoryProfile.weakStrikeouts || categoryProfile.weakQs ? CONTEXT.late_sp_category_need : CONTEXT.late_sp_base;
+            categoryProfile.weakStrikeouts || categoryProfile.weakQs
+              ? CONTEXT.late_sp_category_need
+              : CONTEXT.late_sp_base;
           fitLabels.push("Streamable volume");
         }
 
@@ -684,12 +761,16 @@ export function applyDraftContext(
         }
 
         if (player.type === "batter" && entry.strengths.includes("Speed")) {
-          decisionScore += categoryProfile.weakSpeed ? CONTEXT.late_speed_weak : CONTEXT.late_speed_ok;
+          decisionScore += categoryProfile.weakSpeed
+            ? CONTEXT.late_speed_weak
+            : CONTEXT.late_speed_ok;
           fitLabels.push("Cheap speed");
         }
 
         if (player.type === "batter" && entry.strengths.includes("Power")) {
-          decisionScore += categoryProfile.weakPower ? CONTEXT.late_power_weak : CONTEXT.late_power_ok;
+          decisionScore += categoryProfile.weakPower
+            ? CONTEXT.late_power_weak
+            : CONTEXT.late_power_ok;
           fitLabels.push("Bench thump");
         }
       }
@@ -718,7 +799,11 @@ export function applyDraftContext(
       let bestScarcityBonus = 0;
       let bestScarcityLabel: string | null = null;
       for (const pos of playerPositions) {
-        const { bonus, label } = getPositionalScarcityBonus(pos, player.tier, positionTierMap);
+        const { bonus, label } = getPositionalScarcityBonus(
+          pos,
+          player.tier,
+          positionTierMap,
+        );
         if (bonus > bestScarcityBonus) {
           bestScarcityBonus = bonus;
           bestScarcityLabel = label;
@@ -796,12 +881,15 @@ export function loadEspnLeagueData(): Promise<EspnLeagueData> {
 export function loadEspnLeagueDataFresh(): Promise<EspnLeagueData> {
   const url = `${import.meta.env.BASE_URL}data/espn-league-data.json?t=${Date.now()}`;
   return fetch(url).then((res) => {
-    if (!res.ok) throw new Error(`Failed to reload ESPN data: ${res.statusText}`);
+    if (!res.ok)
+      throw new Error(`Failed to reload ESPN data: ${res.statusText}`);
     return res.json() as Promise<EspnLeagueData>;
   });
 }
 
-export function loadDraftHistory(): Promise<import("../lib/advice").DraftHistory> {
+export function loadDraftHistory(): Promise<
+  import("../lib/advice").DraftHistory
+> {
   return loadJson("data/draft-history.json");
 }
 
@@ -833,7 +921,10 @@ export function loadInjuries(): Promise<FangraphsInjuries> {
 
 // Merges Fangraphs injury data into players as a fallback when ESPN has no data.
 // ESPN data always wins — this only fills gaps for players ESPN doesn't track.
-export function mergeInjuryData(players: Player[], injuries: FangraphsInjuries): Player[] {
+export function mergeInjuryData(
+  players: Player[],
+  injuries: FangraphsInjuries,
+): Player[] {
   const byName = new Map(
     injuries.players.map((e) => [normalizeName(e.name), e]),
   );
@@ -855,9 +946,7 @@ export function mergeExpertRankings(
   players: Player[],
   rankings: ExpertRanking[],
 ): Player[] {
-  const byName = new Map(
-    rankings.map((r) => [normalizeName(r.name), r.rank]),
-  );
+  const byName = new Map(rankings.map((r) => [normalizeName(r.name), r.rank]));
   return players.map((p) => {
     const rank = byName.get(normalizeName(p.name));
     return rank != null ? { ...p, expertRank: rank } : p;
@@ -928,7 +1017,13 @@ export function buildAdpMap(
   );
   return Object.fromEntries(
     players
-      .map((p) => [p.id, byName.get(normalizeName(p.name))] as [string, number | undefined])
+      .map(
+        (p) =>
+          [p.id, byName.get(normalizeName(p.name))] as [
+            string,
+            number | undefined,
+          ],
+      )
       .filter((pair): pair is [string, number] => pair[1] != null),
   );
 }
@@ -998,10 +1093,12 @@ export function buildEspnAvailabilityMap(
       // #28 who is Expert #13 is NOT safe — they're just mispriced by the autopick model.
       const EXPERT_KNOWN_THRESHOLD = 25;
       const expertKnown =
-        player.expertRank != null && player.expertRank <= EXPERT_KNOWN_THRESHOLD;
+        player.expertRank != null &&
+        player.expertRank <= EXPERT_KNOWN_THRESHOLD;
 
       let status: EspnAvailabilitySignal["status"] = "safe";
-      let note = "Buried beyond typical screen visibility — unlikely to be targeted unless a run starts.";
+      let note =
+        "Buried beyond typical screen visibility — unlikely to be targeted unless a run starts.";
 
       if (clock.isUserOnClock && rank <= 3) {
         status = "now";
@@ -1009,7 +1106,8 @@ export function buildEspnAvailabilityMap(
           "Top ESPN autopick pressure right now. Do not assume this player comes back.";
       } else if (windowPicks === 0) {
         // No buffer — anything on screen or expert-known is at real risk.
-        status = rank <= SCREEN_VISIBLE_THRESHOLD || expertKnown ? "fragile" : "safe";
+        status =
+          rank <= SCREEN_VISIBLE_THRESHOLD || expertKnown ? "fragile" : "safe";
         note =
           status === "fragile"
             ? expertKnown && rank > SCREEN_VISIBLE_THRESHOLD
@@ -1108,12 +1206,11 @@ function percentile(
   return higherIsBetter ? raw : 1 - raw;
 }
 
-
 function getPitcherExpertRankModifier(rank?: number): number {
   if (rank == null) return PITCHER_EXPERT_MODIFIERS.no_rank;
-  if (rank <= 15)   return PITCHER_EXPERT_MODIFIERS.top_15;
-  if (rank <= 30)   return PITCHER_EXPERT_MODIFIERS.top_30;
-  if (rank <= 50)   return PITCHER_EXPERT_MODIFIERS.top_50;
+  if (rank <= 15) return PITCHER_EXPERT_MODIFIERS.top_15;
+  if (rank <= 30) return PITCHER_EXPERT_MODIFIERS.top_30;
+  if (rank <= 50) return PITCHER_EXPERT_MODIFIERS.top_50;
   return PITCHER_EXPERT_MODIFIERS.beyond;
 }
 
@@ -1125,14 +1222,18 @@ function formatDecimal(value: number, digits = 3): string {
 // In H2H categories, a multi-month absence is not just a "hurt player" — it is a dead
 // active roster slot through every matchup week until the player returns. The penalty
 // must reflect that lost weekly contribution, not just abstract injury risk.
-function getInjuryPenalty(status: string | undefined, notes: string[] | undefined): number {
+function getInjuryPenalty(
+  status: string | undefined,
+  notes: string[] | undefined,
+): number {
   if (!status) return INJURY_PENALTIES.unknown;
   const s = status.toUpperCase();
   if (s === "DAY_TO_DAY") return INJURY_PENALTIES.day_to_day;
   if (s.includes("10") || s.includes("15")) return INJURY_PENALTIES.il_10_or_15;
   if (s.includes("60")) return INJURY_PENALTIES.il_60;
   const noteText = (notes ?? []).join(" ").toLowerCase();
-  if (/august|september|\bmonths?\b/.test(noteText)) return INJURY_PENALTIES.return_aug_sep;
+  if (/august|september|\bmonths?\b/.test(noteText))
+    return INJURY_PENALTIES.return_aug_sep;
   if (/july/.test(noteText)) return INJURY_PENALTIES.return_jul;
   if (/june/.test(noteText)) return INJURY_PENALTIES.return_jun;
   return INJURY_PENALTIES.generic_out;
@@ -1149,25 +1250,29 @@ function getInjurySeverityLabel(
   if (s.includes("10") || s.includes("15")) return "Short IL (10/15-day)";
   if (s.includes("60")) return "60-day IL — dead slot 2+ months";
   const noteText = (notes ?? []).join(" ").toLowerCase();
-  if (/august|september/.test(noteText)) return "Out Aug/Sep — near-season loss, IL stash only";
-  if (/july/.test(noteText))             return "Out until July — dead slot Apr–Jun (half H2H season)";
-  if (/june/.test(noteText))             return "Out until June — dead slot Apr–May";
+  if (/august|september/.test(noteText))
+    return "Out Aug/Sep — near-season loss, IL stash only";
+  if (/july/.test(noteText))
+    return "Out until July — dead slot Apr–Jun (half H2H season)";
+  if (/june/.test(noteText)) return "Out until June — dead slot Apr–May";
   return "OUT — duration unclear, likely 6+ weeks";
 }
 
 // Returns a 50/50 blend of 2025 actuals and Steamer projections for tier computation.
 // Falls back to whichever is available if only one exists.
-function blendBatting(player: Player): import("../types").BattingStats | undefined {
+function blendBatting(
+  player: Player,
+): import("../types").BattingStats | undefined {
   const actual = player.batting;
   const proj = player.projections?.batting;
   if (actual && proj) {
     return {
-      pa:  (actual.pa  + proj.pa)  / 2,
-      h:   (actual.h   + proj.h)   / 2,
-      r:   (actual.r   + proj.r)   / 2,
-      hr:  (actual.hr  + proj.hr)  / 2,
+      pa: (actual.pa + proj.pa) / 2,
+      h: (actual.h + proj.h) / 2,
+      r: (actual.r + proj.r) / 2,
+      hr: (actual.hr + proj.hr) / 2,
       rbi: (actual.rbi + proj.rbi) / 2,
-      sb:  (actual.sb  + proj.sb)  / 2,
+      sb: (actual.sb + proj.sb) / 2,
       avg: (actual.avg + proj.avg) / 2,
       obp: (actual.obp + proj.obp) / 2,
       slg: (actual.slg + proj.slg) / 2,
@@ -1177,20 +1282,31 @@ function blendBatting(player: Player): import("../types").BattingStats | undefin
   return actual ?? proj;
 }
 
-function blendPitching(player: Player): import("../types").PitchingStats | undefined {
+function blendPitching(
+  player: Player,
+): import("../types").PitchingStats | undefined {
   const actual = player.pitching;
   const proj = player.projections?.pitching;
   if (actual && proj) {
     return {
-      pa:    (actual.pa    + proj.pa)    / 2,
-      ip:    actual.ip != null && proj.ip != null ? (actual.ip + proj.ip) / 2 : actual.ip ?? proj.ip,
-      k:     (actual.k     + proj.k)     / 2,
-      kpct:  (actual.kpct  + proj.kpct)  / 2,
+      pa: (actual.pa + proj.pa) / 2,
+      ip:
+        actual.ip != null && proj.ip != null
+          ? (actual.ip + proj.ip) / 2
+          : (actual.ip ?? proj.ip),
+      k: (actual.k + proj.k) / 2,
+      kpct: (actual.kpct + proj.kpct) / 2,
       bbpct: (actual.bbpct + proj.bbpct) / 2,
-      era:   (actual.era   + proj.era)   / 2,
-      whip:  (actual.whip  + proj.whip)  / 2,
-      qs:    actual.qs != null && proj.qs != null ? (actual.qs + proj.qs) / 2 : actual.qs ?? proj.qs,
-      svhd:  actual.svhd != null && proj.svhd != null ? (actual.svhd + proj.svhd) / 2 : actual.svhd ?? proj.svhd,
+      era: (actual.era + proj.era) / 2,
+      whip: (actual.whip + proj.whip) / 2,
+      qs:
+        actual.qs != null && proj.qs != null
+          ? (actual.qs + proj.qs) / 2
+          : (actual.qs ?? proj.qs),
+      svhd:
+        actual.svhd != null && proj.svhd != null
+          ? (actual.svhd + proj.svhd) / 2
+          : (actual.svhd ?? proj.svhd),
     };
   }
   return actual ?? proj;
@@ -1199,10 +1315,10 @@ function blendPitching(player: Player): import("../types").PitchingStats | undef
 // Buckets a composite percentile score (0–1) into a display tier.
 function scoreToTier(score: number): import("../types").Tier {
   if (score >= TIER_THRESHOLDS.ELITE) return "ELITE";
-  if (score >= TIER_THRESHOLDS.T1)    return "1";
-  if (score >= TIER_THRESHOLDS.T2)    return "2";
-  if (score >= TIER_THRESHOLDS.T3)    return "3";
-  if (score >= TIER_THRESHOLDS.T4)    return "4";
+  if (score >= TIER_THRESHOLDS.T1) return "1";
+  if (score >= TIER_THRESHOLDS.T2) return "2";
+  if (score >= TIER_THRESHOLDS.T3) return "3";
+  if (score >= TIER_THRESHOLDS.T4) return "4";
   return "5";
 }
 
@@ -1213,47 +1329,53 @@ function evaluateBatter(player: Player, hitters: Player[]): EvaluatedPlayer {
   // All scoring — draftScore, tier, and decision score — use the same 50/50 blend
   // of 2025 actuals and Steamer projections. Falls back to whichever is available.
   const opsValues = hitters.map((h) => blendBatting(h)?.ops ?? 0);
-  const hrValues  = hitters.map((h) => blendBatting(h)?.hr  ?? 0);
-  const rValues   = hitters.map((h) => blendBatting(h)?.r   ?? 0);
+  const hrValues = hitters.map((h) => blendBatting(h)?.hr ?? 0);
+  const rValues = hitters.map((h) => blendBatting(h)?.r ?? 0);
   const rbiValues = hitters.map((h) => blendBatting(h)?.rbi ?? 0);
-  const sbValues  = hitters.map((h) => blendBatting(h)?.sb  ?? 0);
-  const hValues   = hitters.map((h) => blendBatting(h)?.h   ?? 0);
-  const paValues  = hitters.map((h) => blendBatting(h)?.pa  ?? 0);
+  const sbValues = hitters.map((h) => blendBatting(h)?.sb ?? 0);
+  const hValues = hitters.map((h) => blendBatting(h)?.h ?? 0);
+  const paValues = hitters.map((h) => blendBatting(h)?.pa ?? 0);
 
   const opsPct = percentile(opsValues, stats?.ops ?? 0);
-  const hrPct  = percentile(hrValues,  stats?.hr  ?? 0);
-  const rPct   = percentile(rValues,   stats?.r   ?? 0);
+  const hrPct = percentile(hrValues, stats?.hr ?? 0);
+  const rPct = percentile(rValues, stats?.r ?? 0);
   const rbiPct = percentile(rbiValues, stats?.rbi ?? 0);
-  const sbPct  = percentile(sbValues,  stats?.sb  ?? 0);
-  const hPct   = percentile(hValues,   stats?.h   ?? 0);
-  const paPct  = percentile(paValues,  stats?.pa  ?? 0);
+  const sbPct = percentile(sbValues, stats?.sb ?? 0);
+  const hPct = percentile(hValues, stats?.h ?? 0);
+  const paPct = percentile(paValues, stats?.pa ?? 0);
 
   // Weights reflect all 6 H2H scoring categories with approximately equal share.
   // H is slightly below the other counting stats since it overlaps with R/OPS.
   // PA is removed from scoring (not a category); it remains as a caution/label check only.
   const tierComposite =
     opsPct * BATTER_WEIGHTS.OPS +
-    hrPct  * BATTER_WEIGHTS.HR +
-    rPct   * BATTER_WEIGHTS.R +
+    hrPct * BATTER_WEIGHTS.HR +
+    rPct * BATTER_WEIGHTS.R +
     rbiPct * BATTER_WEIGHTS.RBI +
-    sbPct  * BATTER_WEIGHTS.SB +
-    hPct   * BATTER_WEIGHTS.H;
+    sbPct * BATTER_WEIGHTS.SB +
+    hPct * BATTER_WEIGHTS.H;
 
   const tier = scoreToTier(tierComposite);
 
   const age = player.age ?? 0;
-  const agePenalty = age >= 37 ? BATTER_AGE_PENALTIES.age_37_plus
-    : age >= 35 ? BATTER_AGE_PENALTIES.age_35_36
-    : age >= 33 ? BATTER_AGE_PENALTIES.age_33_34 : 0;
+  const agePenalty =
+    age >= 37
+      ? BATTER_AGE_PENALTIES.age_37_plus
+      : age >= 35
+        ? BATTER_AGE_PENALTIES.age_35_36
+        : age >= 33
+          ? BATTER_AGE_PENALTIES.age_33_34
+          : 0;
 
   const draftScore = Math.round(
     (opsPct * BATTER_WEIGHTS.OPS +
-      hrPct  * BATTER_WEIGHTS.HR +
-      rPct   * BATTER_WEIGHTS.R +
+      hrPct * BATTER_WEIGHTS.HR +
+      rPct * BATTER_WEIGHTS.R +
       rbiPct * BATTER_WEIGHTS.RBI +
-      sbPct  * BATTER_WEIGHTS.SB +
-      hPct   * BATTER_WEIGHTS.H) *
-      100 - agePenalty,
+      sbPct * BATTER_WEIGHTS.SB +
+      hPct * BATTER_WEIGHTS.H) *
+      100 -
+      agePenalty,
   );
 
   const strengths: string[] = [];
@@ -1272,7 +1394,10 @@ function evaluateBatter(player: Player, hitters: Player[]): EvaluatedPlayer {
     strengths.push("Speed");
     focusTags.push("speed");
   }
-  if (rPct >= BATTER_THRESHOLDS.strength_pct || rbiPct >= BATTER_THRESHOLDS.strength_pct) {
+  if (
+    rPct >= BATTER_THRESHOLDS.strength_pct ||
+    rbiPct >= BATTER_THRESHOLDS.strength_pct
+  ) {
     strengths.push("Run production");
   }
   if (paPct < BATTER_THRESHOLDS.weakness_pa_pct) {
@@ -1286,7 +1411,10 @@ function evaluateBatter(player: Player, hitters: Player[]): EvaluatedPlayer {
   let archetype = "Balanced bat";
   if (player.pitching) {
     archetype = "Two-way player";
-  } else if (hrPct >= BATTER_THRESHOLDS.anchor_threshold && opsPct >= BATTER_THRESHOLDS.anchor_threshold) {
+  } else if (
+    hrPct >= BATTER_THRESHOLDS.anchor_threshold &&
+    opsPct >= BATTER_THRESHOLDS.anchor_threshold
+  ) {
     archetype = "Middle-order anchor";
   } else if (sbPct >= BATTER_THRESHOLDS.speed_archetype) {
     archetype = "Speed pressure bat";
@@ -1319,10 +1447,22 @@ function evaluateBatter(player: Player, hitters: Player[]): EvaluatedPlayer {
       value: stats ? formatDecimal(stats.ops) : "—",
     },
     secondaryStats: [
-      { label: usingProjections ? "HR (blend)" : "HR", value: `${stats?.hr ?? 0}` },
-      { label: usingProjections ? "SB (blend)" : "SB", value: `${stats?.sb ?? 0}` },
-      { label: usingProjections ? "R (blend)"  : "R",  value: `${stats?.r  ?? 0}` },
-      { label: usingProjections ? "RBI (blend)": "RBI", value: `${stats?.rbi ?? displayBatting?.rbi ?? 0}` },
+      {
+        label: usingProjections ? "HR (blend)" : "HR",
+        value: `${stats?.hr ?? 0}`,
+      },
+      {
+        label: usingProjections ? "SB (blend)" : "SB",
+        value: `${stats?.sb ?? 0}`,
+      },
+      {
+        label: usingProjections ? "R (blend)" : "R",
+        value: `${stats?.r ?? 0}`,
+      },
+      {
+        label: usingProjections ? "RBI (blend)" : "RBI",
+        value: `${stats?.rbi ?? displayBatting?.rbi ?? 0}`,
+      },
       ...(player.pitching
         ? [
             { label: "ERA", value: player.pitching.era.toFixed(2) },
@@ -1341,23 +1481,27 @@ function evaluatePitcher(player: Player, pitchers: Player[]): EvaluatedPlayer {
 
   // All scoring — draftScore, tier, and decision score — use the same 50/50 blend
   // of 2025 actuals and Steamer projections. Falls back to whichever is available.
-  const kValues    = pitchers.map((p) => blendPitching(p)?.k    ?? 0);
-  const eraValues  = pitchers.map((p) => blendPitching(p)?.era  ?? 9);
+  const kValues = pitchers.map((p) => blendPitching(p)?.k ?? 0);
+  const eraValues = pitchers.map((p) => blendPitching(p)?.era ?? 9);
   const whipValues = pitchers.map((p) => blendPitching(p)?.whip ?? 3);
-  const paValues   = pitchers.map((p) => blendPitching(p)?.pa   ?? 0);
-  const qsValues   = pitchers.map((p) => blendPitching(p)?.qs   ?? 0);
+  const paValues = pitchers.map((p) => blendPitching(p)?.pa ?? 0);
+  const qsValues = pitchers.map((p) => blendPitching(p)?.qs ?? 0);
   const svhdValues = pitchers.map((p) => blendPitching(p)?.svhd ?? 0);
 
-  const kPct      = percentile(kValues,    stats?.k    ?? 0);
-  const eraPct    = percentile(eraValues,  stats?.era  ?? 9, false);
-  const whipPct   = percentile(whipValues, stats?.whip ?? 3, false);
-  const volumePct = percentile(paValues,   stats?.pa   ?? 0);
-  const qsPct     = percentile(qsValues,   stats?.qs   ?? 0);
-  const svhdPct   = percentile(svhdValues, stats?.svhd ?? 0);
+  const kPct = percentile(kValues, stats?.k ?? 0);
+  const eraPct = percentile(eraValues, stats?.era ?? 9, false);
+  const whipPct = percentile(whipValues, stats?.whip ?? 3, false);
+  const volumePct = percentile(paValues, stats?.pa ?? 0);
+  const qsPct = percentile(qsValues, stats?.qs ?? 0);
+  const svhdPct = percentile(svhdValues, stats?.svhd ?? 0);
 
   const tierComposite = isRP
-    ? svhdPct   * 0.55 + eraPct * 0.20 + whipPct   * 0.20 + kPct      * 0.05
-    : kPct      * 0.28 + eraPct * 0.22 + whipPct   * 0.22 + qsPct     * 0.20 + volumePct * 0.08;
+    ? svhdPct * 0.55 + eraPct * 0.2 + whipPct * 0.2 + kPct * 0.05
+    : kPct * 0.28 +
+      eraPct * 0.22 +
+      whipPct * 0.22 +
+      qsPct * 0.2 +
+      volumePct * 0.08;
 
   const tier = scoreToTier(tierComposite);
 
@@ -1372,10 +1516,11 @@ function evaluatePitcher(player: Player, pitchers: Player[]): EvaluatedPlayer {
         // SVHD is the primary RP category in H2H — closers' 65 IP barely moves
         // ERA/WHIP vs. the 170+ IP from SPs already covering those lines.
         // Weight SVHD heavily; keep ratios as a meaningful but secondary signal.
-        (svhdPct * 0.55 + eraPct * 0.20 + whipPct * 0.20 + kPct * 0.05) * 100,
+        (svhdPct * 0.55 + eraPct * 0.2 + whipPct * 0.2 + kPct * 0.05) * 100,
       )
     : Math.round(
-        (kPct * 0.28 + eraPct * 0.24 + whipPct * 0.24 + qsPct * 0.24) * 100 - agePenalty,
+        (kPct * 0.28 + eraPct * 0.24 + whipPct * 0.24 + qsPct * 0.24) * 100 -
+          agePenalty,
       );
 
   const strengths: string[] = [];
@@ -1465,14 +1610,32 @@ function evaluatePitcher(player: Player, pitchers: Player[]): EvaluatedPlayer {
     },
     secondaryStats: isRP
       ? [
-          { label: usingProjections ? "ERA (blend)" : "ERA",  value: stats ? stats.era.toFixed(2) : "—" },
-          { label: usingProjections ? "WHIP (blend)": "WHIP", value: stats ? formatDecimal(stats.whip) : "—" },
-          { label: usingProjections ? "K (blend)"   : "K",    value: `${stats?.k ?? 0}` },
+          {
+            label: usingProjections ? "ERA (blend)" : "ERA",
+            value: stats ? stats.era.toFixed(2) : "—",
+          },
+          {
+            label: usingProjections ? "WHIP (blend)" : "WHIP",
+            value: stats ? formatDecimal(stats.whip) : "—",
+          },
+          {
+            label: usingProjections ? "K (blend)" : "K",
+            value: `${stats?.k ?? 0}`,
+          },
         ]
       : [
-          { label: usingProjections ? "QS (blend)"  : "QS",   value: `${stats?.qs  ?? 0}` },
-          { label: usingProjections ? "ERA (blend)"  : "ERA",  value: stats ? stats.era.toFixed(2) : "—" },
-          { label: usingProjections ? "WHIP (blend)" : "WHIP", value: stats ? formatDecimal(stats.whip) : "—" },
+          {
+            label: usingProjections ? "QS (blend)" : "QS",
+            value: `${stats?.qs ?? 0}`,
+          },
+          {
+            label: usingProjections ? "ERA (blend)" : "ERA",
+            value: stats ? stats.era.toFixed(2) : "—",
+          },
+          {
+            label: usingProjections ? "WHIP (blend)" : "WHIP",
+            value: stats ? formatDecimal(stats.whip) : "—",
+          },
         ],
   };
 }
