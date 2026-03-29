@@ -177,3 +177,50 @@ export function isNearClutchLegend(ctx: NarrativeContext): boolean {
   const notBothThree   = !(iv.rank >= 3 && cc.rank >= 3);
   return bothAtLeastTwo && notBothThree;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Diamond Mind Combo Predicates
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Diamond Mind combo: batter has both pitch_recognition (rank ≥ 3) AND
+ * game_reading (rank ≥ 3), both active. When a batter can read pitch type
+ * before release AND has decoded the pitcher's tendencies, the result is
+ * near-prescient plate vision — seeing every pitch coming before it's thrown.
+ *
+ * Unlike Clutch Legend (which requires high-leverage), Diamond Mind fires on
+ * any hit or walk — the mastery shows up all game long, not just in crisis.
+ *
+ * First time this fires for a player it should feel like a discovery moment.
+ */
+export function hasDiamondMindCombo(ctx: NarrativeContext): boolean {
+  const skills = ctx.batterMentalSkills;
+  if (!skills || skills.length === 0) return false;
+  const hasPitchRecognition = skills.some(
+    (s) => s.skillId === "pitch_recognition" && s.rank >= 3 && s.isActive
+  );
+  const hasGameReading = skills.some(
+    (s) => s.skillId === "game_reading" && s.rank >= 3 && s.isActive
+  );
+  return hasPitchRecognition && hasGameReading;
+}
+
+/**
+ * Near-combo hint: both pitch_recognition AND game_reading are active
+ * and at rank ≥ 2, but not yet both at rank 3+ (combo not yet unlocked).
+ *
+ * Fires a subtle "something is sharpening" narrative to hint at the
+ * discovery without spelling it out.
+ */
+export function isNearDiamondMind(ctx: NarrativeContext): boolean {
+  const skills = ctx.batterMentalSkills;
+  if (!skills || skills.length === 0) return false;
+  const pr = skills.find((s) => s.skillId === "pitch_recognition");
+  const gr = skills.find((s) => s.skillId === "game_reading");
+  if (!pr || !gr) return false;
+  if (!pr.isActive || !gr.isActive) return false;
+  // Both active at rank 2+, but not both at rank 3+ yet
+  const bothAtLeastTwo = pr.rank >= 2 && gr.rank >= 2;
+  const notBothThree   = !(pr.rank >= 3 && gr.rank >= 3);
+  return bothAtLeastTwo && notBothThree;
+}

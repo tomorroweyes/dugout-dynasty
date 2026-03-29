@@ -1076,6 +1076,8 @@ describe("strategyBeatsApproach predicate", () => {
 import {
   hasClutchLegendCombo,
   isNearClutchLegend,
+  hasDiamondMindCombo,
+  isNearDiamondMind,
   type MentalSkillSnapshot,
 } from "../narrative/narrativeContext";
 
@@ -1580,6 +1582,523 @@ describe("clutch_legend_hint rule", () => {
         scoreDiff: -1,
         batterMentalSkills: NEAR_COMBO,
         batterName: "Cruz",
+      }),
+      rng
+    );
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("{batter}");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hasDiamondMindCombo predicate
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DM_FULL_COMBO: MentalSkillSnapshot[] = [
+  makeSkill("pitch_recognition", 3),
+  makeSkill("game_reading", 3),
+];
+
+const DM_NEAR_COMBO: MentalSkillSnapshot[] = [
+  makeSkill("pitch_recognition", 2),
+  makeSkill("game_reading", 2),
+];
+
+describe("hasDiamondMindCombo predicate", () => {
+  it("returns true when both skills are rank 3 and active", () => {
+    expect(hasDiamondMindCombo(ctx({ batterMentalSkills: DM_FULL_COMBO }))).toBe(true);
+  });
+
+  it("returns true when both skills are rank 5 (max)", () => {
+    expect(
+      hasDiamondMindCombo(
+        ctx({
+          batterMentalSkills: [makeSkill("pitch_recognition", 5), makeSkill("game_reading", 5)],
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("returns true when pitch_recognition is rank 4, game_reading is rank 3", () => {
+    expect(
+      hasDiamondMindCombo(
+        ctx({
+          batterMentalSkills: [makeSkill("pitch_recognition", 4), makeSkill("game_reading", 3)],
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("returns false when pitch_recognition is rank 2 (below threshold)", () => {
+    expect(
+      hasDiamondMindCombo(
+        ctx({
+          batterMentalSkills: [makeSkill("pitch_recognition", 2), makeSkill("game_reading", 3)],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when game_reading is rank 2 (below threshold)", () => {
+    expect(
+      hasDiamondMindCombo(
+        ctx({
+          batterMentalSkills: [makeSkill("pitch_recognition", 3), makeSkill("game_reading", 2)],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when pitch_recognition is inactive (confidence lost)", () => {
+    expect(
+      hasDiamondMindCombo(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("pitch_recognition", 3, false),
+            makeSkill("game_reading", 3),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when game_reading is inactive", () => {
+    expect(
+      hasDiamondMindCombo(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("pitch_recognition", 3),
+            makeSkill("game_reading", 3, false),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when only pitch_recognition is present", () => {
+    expect(
+      hasDiamondMindCombo(
+        ctx({ batterMentalSkills: [makeSkill("pitch_recognition", 4)] })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when only game_reading is present", () => {
+    expect(
+      hasDiamondMindCombo(
+        ctx({ batterMentalSkills: [makeSkill("game_reading", 4)] })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when batterMentalSkills is empty", () => {
+    expect(hasDiamondMindCombo(ctx({ batterMentalSkills: [] }))).toBe(false);
+  });
+
+  it("returns false when batterMentalSkills is absent", () => {
+    expect(hasDiamondMindCombo(ctx({ batterMentalSkills: undefined }))).toBe(false);
+  });
+
+  it("ignores unrelated skills — returns true when combo is met plus other skills", () => {
+    expect(
+      hasDiamondMindCombo(
+        ctx({
+          batterMentalSkills: [
+            ...DM_FULL_COMBO,
+            makeSkill("ice_veins", 4),
+            makeSkill("veteran_poise", 2),
+          ],
+        })
+      )
+    ).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// isNearDiamondMind predicate
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("isNearDiamondMind predicate", () => {
+  it("returns true when both skills are rank 2 and active", () => {
+    expect(isNearDiamondMind(ctx({ batterMentalSkills: DM_NEAR_COMBO }))).toBe(true);
+  });
+
+  it("returns true when asymmetric near-combo: pitch_recognition rank 2, game_reading rank 3", () => {
+    // rank 2 + rank 3 = near (not both 3+)
+    expect(
+      isNearDiamondMind(
+        ctx({
+          batterMentalSkills: [makeSkill("pitch_recognition", 2), makeSkill("game_reading", 3)],
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("returns false when full combo is active (both rank 3+)", () => {
+    expect(isNearDiamondMind(ctx({ batterMentalSkills: DM_FULL_COMBO }))).toBe(false);
+  });
+
+  it("returns false when only one skill present at rank 2", () => {
+    expect(
+      isNearDiamondMind(
+        ctx({ batterMentalSkills: [makeSkill("pitch_recognition", 2)] })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when one skill is rank 1 (below near threshold)", () => {
+    expect(
+      isNearDiamondMind(
+        ctx({
+          batterMentalSkills: [makeSkill("pitch_recognition", 1), makeSkill("game_reading", 2)],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when pitch_recognition is inactive at rank 2", () => {
+    expect(
+      isNearDiamondMind(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("pitch_recognition", 2, false),
+            makeSkill("game_reading", 2),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when batterMentalSkills is absent", () => {
+    expect(isNearDiamondMind(ctx({ batterMentalSkills: undefined }))).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// diamond_mind_combo rule (priority 52)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("diamond_mind_combo rule", () => {
+  // ── Positive cases ──────────────────────────────────────────────────────
+
+  it("fires for single with full combo (any situation)", () => {
+    const rule = matchingRule(
+      ctx({ result: "single", batterMentalSkills: DM_FULL_COMBO })
+    );
+    expect(rule?.id).toBe("diamond_mind_combo");
+  });
+
+  it("fires for double with full combo", () => {
+    const rule = matchingRule(
+      ctx({ result: "double", batterMentalSkills: DM_FULL_COMBO })
+    );
+    expect(rule?.id).toBe("diamond_mind_combo");
+  });
+
+  it("fires for triple with full combo", () => {
+    const rule = matchingRule(
+      ctx({ result: "triple", batterMentalSkills: DM_FULL_COMBO })
+    );
+    expect(rule?.id).toBe("diamond_mind_combo");
+  });
+
+  it("fires for homerun with full combo (no grand slam / clutch homer context)", () => {
+    const rule = matchingRule(
+      ctx({ result: "homerun", runsScored: 1, inning: 4, scoreDiff: 3, batterMentalSkills: DM_FULL_COMBO })
+    );
+    expect(rule?.id).toBe("diamond_mind_combo");
+  });
+
+  it("fires for walk with full combo — distinct from Clutch Legend which requires a hit", () => {
+    const rule = matchingRule(
+      ctx({ result: "walk", batterMentalSkills: DM_FULL_COMBO })
+    );
+    expect(rule?.id).toBe("diamond_mind_combo");
+  });
+
+  it("fires even outside high-leverage (mid-game, comfortable lead)", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 3,
+        scoreDiff: 5,
+        batterMentalSkills: DM_FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("diamond_mind_combo");
+  });
+
+  it("fires when pitch_recognition is rank 5, game_reading is rank 3", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        batterMentalSkills: [makeSkill("pitch_recognition", 5), makeSkill("game_reading", 3)],
+      })
+    );
+    expect(rule?.id).toBe("diamond_mind_combo");
+  });
+
+  // ── Negative cases — rule must NOT fire ─────────────────────────────────
+
+  it("does NOT fire on strikeout (even with full combo)", () => {
+    const rule = matchingRule(
+      ctx({ result: "strikeout", batterMentalSkills: DM_FULL_COMBO })
+    );
+    expect(rule?.id).not.toBe("diamond_mind_combo");
+  });
+
+  it("does NOT fire on groundout", () => {
+    const rule = matchingRule(
+      ctx({ result: "groundout", batterMentalSkills: DM_FULL_COMBO })
+    );
+    expect(rule?.id).not.toBe("diamond_mind_combo");
+  });
+
+  it("does NOT fire when skills are below rank 3 (near-combo only)", () => {
+    const rule = matchingRule(
+      ctx({ result: "single", batterMentalSkills: DM_NEAR_COMBO })
+    );
+    expect(rule?.id).not.toBe("diamond_mind_combo");
+  });
+
+  it("does NOT fire when only pitch_recognition is present", () => {
+    const rule = matchingRule(
+      ctx({ result: "single", batterMentalSkills: [makeSkill("pitch_recognition", 4)] })
+    );
+    expect(rule?.id).not.toBe("diamond_mind_combo");
+  });
+
+  it("does NOT fire when batterMentalSkills is absent", () => {
+    const rule = matchingRule(
+      ctx({ result: "single", batterMentalSkills: undefined })
+    );
+    expect(rule?.id).not.toBe("diamond_mind_combo");
+  });
+
+  // ── Priority guards ──────────────────────────────────────────────────────
+
+  it("is superseded by walkoff_hit (priority 106) when walk-off conditions met", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: 0,
+        runsScored: 1,
+        bases: [true, false, false],
+        batterMentalSkills: DM_FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("walkoff_hit");
+  });
+
+  it("is superseded by redemption_hit (priority 87) when first hit after 3+ hitless ABs", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        batterHistory: { abs: 3, hits: 0, strikeouts: 2, walks: 0 },
+        batterMentalSkills: DM_FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("redemption_hit");
+  });
+
+  it("is superseded by clutch_hit_risp (priority 70) when RISP + late/close + runs scoring", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 8,
+        scoreDiff: -1,
+        bases: [false, true, false],
+        runsScored: 1,
+        batterMentalSkills: DM_FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("clutch_hit_risp");
+  });
+
+  it("is superseded by clutch_legend_combo (priority 55) when both combos match in high-leverage hit", () => {
+    // Both DM and Clutch Legend combos active, high-leverage hit
+    // clutch_legend_combo (55) > diamond_mind_combo (52)
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1,
+        batterMentalSkills: [
+          ...DM_FULL_COMBO,
+          makeSkill("ice_veins", 3),
+          makeSkill("clutch_composure", 3),
+        ],
+      })
+    );
+    expect(rule?.id).toBe("clutch_legend_combo");
+  });
+
+  it("beats clutch_legend_combo on a walk (Clutch Legend requires a hit)", () => {
+    // Walk: clutch_legend_combo won't fire (requires isHit). diamond_mind_combo fires instead.
+    const rule = matchingRule(
+      ctx({
+        result: "walk",
+        inning: 9,
+        scoreDiff: -1,
+        batterMentalSkills: [
+          ...DM_FULL_COMBO,
+          makeSkill("ice_veins", 3),
+          makeSkill("clutch_composure", 3),
+        ],
+      })
+    );
+    expect(rule?.id).toBe("diamond_mind_combo");
+  });
+
+  it("beats correct_approach_read (priority 45) when both would match", () => {
+    // diamond_mind_combo (52) > correct_approach_read (45)
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        batterApproach: "power",
+        pitchStrategy: "finesse",
+        batterMentalSkills: DM_FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("diamond_mind_combo");
+  });
+
+  // ── Text output ──────────────────────────────────────────────────────────
+
+  it("returns non-empty string with {batter} and {pitcher} tokens filled", () => {
+    const result = evaluateNarrativeRules(
+      ctx({
+        result: "single",
+        batterMentalSkills: DM_FULL_COMBO,
+        batterName: "Yamamoto",
+        pitcherName: "Gibson",
+      }),
+      rng
+    );
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("{batter}");
+    expect(result).not.toContain("{pitcher}");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// diamond_mind_hint rule (priority 12)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("diamond_mind_hint rule", () => {
+  it("fires for a hit when near-combo (both rank 2, any situation)", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        batterMentalSkills: DM_NEAR_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("diamond_mind_hint");
+  });
+
+  it("fires for a walk when near-combo", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "walk",
+        batterMentalSkills: DM_NEAR_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("diamond_mind_hint");
+  });
+
+  it("fires when asymmetric near-combo: pitch_recognition rank 2, game_reading rank 3", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        batterMentalSkills: [makeSkill("pitch_recognition", 2), makeSkill("game_reading", 3)],
+      })
+    );
+    expect(rule?.id).toBe("diamond_mind_hint");
+  });
+
+  it("does NOT fire when full combo is active (diamond_mind_combo takes priority)", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        batterMentalSkills: DM_FULL_COMBO,
+      })
+    );
+    expect(rule?.id).toBe("diamond_mind_combo");
+    expect(rule?.id).not.toBe("diamond_mind_hint");
+  });
+
+  it("does NOT fire on non-hit, non-walk results (strikeout)", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "strikeout",
+        batterMentalSkills: DM_NEAR_COMBO,
+      })
+    );
+    expect(rule?.id).not.toBe("diamond_mind_hint");
+  });
+
+  it("does NOT fire on groundout", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "groundout",
+        batterMentalSkills: DM_NEAR_COMBO,
+      })
+    );
+    expect(rule?.id).not.toBe("diamond_mind_hint");
+  });
+
+  it("does NOT fire when only one skill is present", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        batterMentalSkills: [makeSkill("pitch_recognition", 2)],
+      })
+    );
+    expect(rule?.id).not.toBe("diamond_mind_hint");
+  });
+
+  it("is superseded by higher-priority rules (RISP + late game)", () => {
+    // clutch_hit_risp (70) beats diamond_mind_hint (12)
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1,
+        bases: [false, true, false],
+        runsScored: 1,
+        batterMentalSkills: DM_NEAR_COMBO,
+      })
+    );
+    expect(rule?.id).not.toBe("diamond_mind_hint");
+  });
+
+  it("is superseded by clutch_legend_hint (priority 15) in high-leverage hit with Clutch Legend near-combo", () => {
+    // Both hint conditions met. clutch_legend_hint (15) > diamond_mind_hint (12).
+    // For this to happen: near-Clutch-Legend in high-leverage, near-Diamond-Mind.
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1,
+        batterMentalSkills: [
+          ...DM_NEAR_COMBO,
+          makeSkill("ice_veins", 2),
+          makeSkill("clutch_composure", 2),
+        ],
+      })
+    );
+    // clutch_legend_hint fires first (priority 15 > 12)
+    expect(rule?.id).toBe("clutch_legend_hint");
+    expect(rule?.id).not.toBe("diamond_mind_hint");
+  });
+
+  it("returns non-empty text with {batter} token filled", () => {
+    const result = evaluateNarrativeRules(
+      ctx({
+        result: "single",
+        batterMentalSkills: DM_NEAR_COMBO,
+        batterName: "Fernandez",
       }),
       rng
     );

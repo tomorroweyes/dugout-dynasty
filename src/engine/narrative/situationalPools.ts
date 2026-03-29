@@ -540,3 +540,47 @@ export const CLUTCH_LEGEND_HINT_TEXTS: string[] = [
   "{batter} plays bigger when the game gets bigger. Something's clicking.",
   "There's a calm in {batter} tonight that you can't fake. It's been earned.",
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MENTAL SKILL COMBOS — DIAMOND MIND
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fires when the batter has both pitch_recognition (rank ≥ 3) AND game_reading
+ * (rank ≥ 3), both active. Two cognitive skills at mastery level compound into
+ * near-prescient plate vision — the batter knows the pitch type before it
+ * leaves the hand AND has the pitcher's tendencies mapped cold.
+ *
+ * Fires on any hit or walk (not just high-leverage — the mastery shows up
+ * throughout the game). Tokens: {batter}, {pitcher}
+ */
+export const DIAMOND_MIND_TEXTS: string[] = [
+  "{batter} read it before {pitcher} let go. That's not luck. That's Diamond Mind.",
+  "Two seasons of study. {batter} has the whole pitcher mapped. {pitcher} had nowhere to hide.",
+  "Pitch recognition. Pattern recognition. {batter} is operating on a different level.",
+  "You can't fool someone who's already solved you. {batter} has {pitcher} figured out.",
+  "Every pitch tells a story. {batter} has been reading this one for years.",
+  "{batter} knew the pitch. Knew the location. Knew the count. Diamond Mind doesn't miss.",
+  "The book on {pitcher} is open in {batter}'s head. Every pitch, every tendency — memorized.",
+  "That wasn't a guess. {batter} read the grip, read the windup, read the release. Pure Diamond Mind.",
+  "When you've mastered pitch recognition AND game reading, the whole plate belongs to you. {batter} knows.",
+  "Two minds working as one: the eye that reads the pitch, the brain that's already seen this at-bat before.",
+  "{pitcher} is trying to deceive someone who can't be deceived. {batter} sees the matrix.",
+  "There's reading pitches, and then there's what {batter} does. Every tendency exploited. Diamond Mind.",
+];
+
+/**
+ * Fires when the batter is close to the Diamond Mind combo — both
+ * pitch_recognition AND game_reading are active at rank ≥ 2, but not yet
+ * both at rank 3+.
+ *
+ * Hints at the growing cognitive edge without naming it. Tokens: {batter}
+ */
+export const DIAMOND_MIND_HINT_TEXTS: string[] = [
+  "{batter} is picking up on things at the plate. Reading something — not sure what yet.",
+  "There's a sharpness developing in {batter}'s at-bats. The reads are getting quicker.",
+  "{batter} seems a step ahead. Hard to say why. Something is coming together.",
+  "The studying is showing. {batter} isn't guessing anymore — not exactly.",
+  "{batter} has the look of someone who's starting to figure out the puzzle.",
+  "Something's clicking for {batter} at the plate. The tendencies are becoming patterns.",
+];
