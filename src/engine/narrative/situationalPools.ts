@@ -540,3 +540,45 @@ export const CLUTCH_LEGEND_HINT_TEXTS: string[] = [
   "{batter} plays bigger when the game gets bigger. Something's clicking.",
   "There's a calm in {batter} tonight that you can't fake. It's been earned.",
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MENTAL SKILL COMBOS — VETERAN'S EYE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fires when the batter has both veteran_poise (rank ≥ 3) AND
+ * pitch_recognition (rank ≥ 3), both active. Experience meets elite
+ * pitch-reading — a career's worth of pattern recognition converging.
+ *
+ * Should feel like the game quietly acknowledging mastery.
+ * Tokens: {batter}, {pitcher}
+ */
+export const VETERAN_EYE_TEXTS: string[] = [
+  "{batter} had the pitch read before {pitcher} finished the windup. Twelve years in the league does that.",
+  "The Veterans' Eye — {batter} knows what's coming, and {pitcher} has no answer for it.",
+  "Pure experience fused with pure recognition. {batter} has been studying this for a decade. It shows.",
+  "{pitcher} threw something he thought was clever. {batter} has seen it a thousand times. No fooling him.",
+  "Veteran's instinct plus a perfect eye — {batter} doesn't need to react. He already knew.",
+  "The game slows down for {batter}. Poise earned over years. Reads sharpened by every at-bat before this.",
+  "{batter} carries every pitcher tendency he's ever memorized into the box with him. Today it pays off.",
+  "No hesitation. No guessing. {batter} read the sequence before it unfolded and punished every bit of it.",
+  "Some players see the ball. {batter} sees the pitcher's whole plan. Years of study. One swing.",
+  "The {pitcher} repertoire is an open book to {batter}. He's been reading this chapter for a long time.",
+  "Wily and wise — {batter} combines a veteran's poise with eyes that catch what younger hitters miss.",
+  "{batter} doesn't just read pitches. He reads pitchers. {pitcher} never had a chance.",
+];
+
+/**
+ * Fires when the batter is close to the Veteran's Eye combo — both veteran_poise
+ * AND pitch_recognition are active at rank ≥ 2, but not yet both at rank 3+.
+ *
+ * Quiet hint that something is building. Tokens: {batter}
+ */
+export const VETERAN_EYE_HINT_TEXTS: string[] = [
+  "{batter} is reading the game differently lately. More patient. More precise.",
+  "The experience is starting to sharpen {batter}'s eye. He's seeing things sooner.",
+  "Something's clicking for {batter} at the plate. Like pattern recognition meeting earned calm.",
+  "{batter} looks like he's a step ahead. Not quite there yet — but close.",
+  "More poise. Better reads. {batter} is building toward something you can almost name.",
+  "There's a veteran quality to {batter}'s approach today. The eye is catching up to the experience.",
+];

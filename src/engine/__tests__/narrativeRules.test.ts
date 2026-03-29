@@ -1587,3 +1587,459 @@ describe("clutch_legend_hint rule", () => {
     expect(result).not.toContain("{batter}");
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// hasVeteranEyeCombo / isNearVeteranEye predicates + veteran_eye rules
+// ─────────────────────────────────────────────────────────────────────────────
+
+import {
+  hasVeteranEyeCombo,
+  isNearVeteranEye,
+} from "../narrative/narrativeContext";
+
+// ── Fixtures ─────────────────────────────────────────────────────────────────
+
+const VETERAN_EYE_FULL: MentalSkillSnapshot[] = [
+  makeSkill("veteran_poise", 3),
+  makeSkill("pitch_recognition", 3),
+];
+
+const VETERAN_EYE_NEAR: MentalSkillSnapshot[] = [
+  makeSkill("veteran_poise", 2),
+  makeSkill("pitch_recognition", 2),
+];
+
+// ── hasVeteranEyeCombo predicate ──────────────────────────────────────────────
+
+describe("hasVeteranEyeCombo predicate", () => {
+  it("returns true when both skills are rank 3 and active", () => {
+    expect(hasVeteranEyeCombo(ctx({ batterMentalSkills: VETERAN_EYE_FULL }))).toBe(true);
+  });
+
+  it("returns true when both skills exceed rank 3", () => {
+    expect(
+      hasVeteranEyeCombo(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("veteran_poise", 5),
+            makeSkill("pitch_recognition", 4),
+          ],
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("returns false when veteran_poise is rank 2 (below threshold)", () => {
+    expect(
+      hasVeteranEyeCombo(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("veteran_poise", 2),
+            makeSkill("pitch_recognition", 3),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when pitch_recognition is rank 2 (below threshold)", () => {
+    expect(
+      hasVeteranEyeCombo(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("veteran_poise", 3),
+            makeSkill("pitch_recognition", 2),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when veteran_poise is inactive", () => {
+    expect(
+      hasVeteranEyeCombo(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("veteran_poise", 3, false),
+            makeSkill("pitch_recognition", 3),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when pitch_recognition is inactive", () => {
+    expect(
+      hasVeteranEyeCombo(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("veteran_poise", 3),
+            makeSkill("pitch_recognition", 3, false),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when only veteran_poise is present", () => {
+    expect(
+      hasVeteranEyeCombo(
+        ctx({ batterMentalSkills: [makeSkill("veteran_poise", 4)] })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when only pitch_recognition is present", () => {
+    expect(
+      hasVeteranEyeCombo(
+        ctx({ batterMentalSkills: [makeSkill("pitch_recognition", 4)] })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when batterMentalSkills is empty", () => {
+    expect(hasVeteranEyeCombo(ctx({ batterMentalSkills: [] }))).toBe(false);
+  });
+
+  it("returns false when batterMentalSkills is absent", () => {
+    expect(hasVeteranEyeCombo(ctx({ batterMentalSkills: undefined }))).toBe(false);
+  });
+
+  it("ignores unrelated skills — returns true when combo is met plus extra skills", () => {
+    expect(
+      hasVeteranEyeCombo(
+        ctx({
+          batterMentalSkills: [
+            ...VETERAN_EYE_FULL,
+            makeSkill("ice_veins", 5),
+            makeSkill("clutch_composure", 2),
+          ],
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("does NOT confuse veteran_poise with other skills at rank 3", () => {
+    expect(
+      hasVeteranEyeCombo(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("ice_veins", 3),        // wrong skill
+            makeSkill("pitch_recognition", 3),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+});
+
+// ── isNearVeteranEye predicate ────────────────────────────────────────────────
+
+describe("isNearVeteranEye predicate", () => {
+  it("returns true when both skills are rank 2 and active", () => {
+    expect(isNearVeteranEye(ctx({ batterMentalSkills: VETERAN_EYE_NEAR }))).toBe(true);
+  });
+
+  it("returns true when one is rank 2 and the other is rank 3 — near (not both 3+)", () => {
+    expect(
+      isNearVeteranEye(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("veteran_poise", 2),
+            makeSkill("pitch_recognition", 3),
+          ],
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("returns false when both are rank 3+ (full combo — not 'near')", () => {
+    expect(isNearVeteranEye(ctx({ batterMentalSkills: VETERAN_EYE_FULL }))).toBe(false);
+  });
+
+  it("returns false when veteran_poise is rank 1 (below rank 2)", () => {
+    expect(
+      isNearVeteranEye(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("veteran_poise", 1),
+            makeSkill("pitch_recognition", 2),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when either skill is inactive", () => {
+    expect(
+      isNearVeteranEye(
+        ctx({
+          batterMentalSkills: [
+            makeSkill("veteran_poise", 2, false),
+            makeSkill("pitch_recognition", 2),
+          ],
+        })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when only one skill is present", () => {
+    expect(
+      isNearVeteranEye(
+        ctx({ batterMentalSkills: [makeSkill("veteran_poise", 2)] })
+      )
+    ).toBe(false);
+  });
+
+  it("returns false when batterMentalSkills is absent", () => {
+    expect(isNearVeteranEye(ctx({ batterMentalSkills: undefined }))).toBe(false);
+  });
+});
+
+// ── veteran_eye_combo rule (priority 52) ─────────────────────────────────────
+
+function veteranEyeCtx(
+  overrides: Partial<NarrativeContext> = {}
+): NarrativeContext {
+  return ctx({
+    batterMentalSkills: VETERAN_EYE_FULL,
+    ...overrides,
+  });
+}
+
+describe("veteran_eye_combo rule", () => {
+  // ── Positive cases ──────────────────────────────────────────────────────
+
+  it("fires for single with full combo", () => {
+    const rule = matchingRule(veteranEyeCtx({ result: "single" }));
+    expect(rule?.id).toBe("veteran_eye_combo");
+  });
+
+  it("fires for double with full combo", () => {
+    const rule = matchingRule(veteranEyeCtx({ result: "double" }));
+    expect(rule?.id).toBe("veteran_eye_combo");
+  });
+
+  it("fires for triple with full combo", () => {
+    const rule = matchingRule(veteranEyeCtx({ result: "triple" }));
+    expect(rule?.id).toBe("veteran_eye_combo");
+  });
+
+  it("fires for homerun with full combo (no grand slam or walk-off conditions)", () => {
+    const rule = matchingRule(
+      veteranEyeCtx({ result: "homerun", runsScored: 1, inning: 3, scoreDiff: 2 })
+    );
+    expect(rule?.id).toBe("veteran_eye_combo");
+  });
+
+  it("fires in mid-game with no situational pressure (combo requires no leverage gate)", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 4,
+        scoreDiff: 5, // comfortable lead, low leverage
+        batterMentalSkills: VETERAN_EYE_FULL,
+      })
+    );
+    expect(rule?.id).toBe("veteran_eye_combo");
+  });
+
+  it("fires when skills exceed rank threshold", () => {
+    const rule = matchingRule(
+      veteranEyeCtx({
+        result: "single",
+        batterMentalSkills: [
+          makeSkill("veteran_poise", 5),
+          makeSkill("pitch_recognition", 4),
+        ],
+      })
+    );
+    expect(rule?.id).toBe("veteran_eye_combo");
+  });
+
+  // ── Negative cases ──────────────────────────────────────────────────────
+
+  it("does NOT fire when result is strikeout", () => {
+    const rule = matchingRule(veteranEyeCtx({ result: "strikeout" }));
+    expect(rule?.id).not.toBe("veteran_eye_combo");
+  });
+
+  it("does NOT fire when result is groundout", () => {
+    const rule = matchingRule(veteranEyeCtx({ result: "groundout" }));
+    expect(rule?.id).not.toBe("veteran_eye_combo");
+  });
+
+  it("does NOT fire when result is walk", () => {
+    const rule = matchingRule(veteranEyeCtx({ result: "walk" }));
+    expect(rule?.id).not.toBe("veteran_eye_combo");
+  });
+
+  it("does NOT fire when skills are below rank 3", () => {
+    const rule = matchingRule(
+      veteranEyeCtx({
+        result: "single",
+        batterMentalSkills: VETERAN_EYE_NEAR,
+      })
+    );
+    expect(rule?.id).not.toBe("veteran_eye_combo");
+  });
+
+  it("does NOT fire when only veteran_poise is present", () => {
+    const rule = matchingRule(
+      veteranEyeCtx({
+        result: "single",
+        batterMentalSkills: [makeSkill("veteran_poise", 4)],
+      })
+    );
+    expect(rule?.id).not.toBe("veteran_eye_combo");
+  });
+
+  it("does NOT fire when batterMentalSkills is absent", () => {
+    const rule = matchingRule(
+      veteranEyeCtx({ result: "single", batterMentalSkills: undefined })
+    );
+    expect(rule?.id).not.toBe("veteran_eye_combo");
+  });
+
+  // ── Priority guards ──────────────────────────────────────────────────────
+
+  it("is superseded by walkoff_hit (priority 95) on walk-off conditions", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: 0,
+        runsScored: 1,
+        bases: [true, false, false],
+        batterMentalSkills: VETERAN_EYE_FULL,
+      })
+    );
+    expect(rule?.id).toBe("walkoff_hit");
+  });
+
+  it("is superseded by clutch_legend_combo (priority 55) when both combos apply in high-leverage", () => {
+    // Player has ALL FOUR skills at rank 3+ — both combos active simultaneously.
+    // Clutch Legend (55) > Veteran's Eye (52), so clutch_legend_combo should win.
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1, // high-leverage
+        batterMentalSkills: [
+          makeSkill("ice_veins", 3),
+          makeSkill("clutch_composure", 3),
+          makeSkill("veteran_poise", 3),
+          makeSkill("pitch_recognition", 3),
+        ],
+      })
+    );
+    expect(rule?.id).toBe("clutch_legend_combo");
+  });
+
+  it("wins over clutch_legend_combo when clutch combo is absent but veteran eye applies", () => {
+    // Only veteran eye skills present, high-leverage situation.
+    // clutch_legend_combo can't fire (missing ice_veins/clutch_composure).
+    // veteran_eye_combo (52) should fire.
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        inning: 9,
+        scoreDiff: -1,
+        batterMentalSkills: VETERAN_EYE_FULL,
+      })
+    );
+    expect(rule?.id).toBe("veteran_eye_combo");
+  });
+
+  it("returns text with batter and pitcher tokens filled", () => {
+    const result = evaluateNarrativeRules(
+      ctx({
+        result: "single",
+        inning: 4,
+        scoreDiff: 0,
+        batterName: "Rivera",
+        pitcherName: "Okafor",
+        batterMentalSkills: VETERAN_EYE_FULL,
+      }),
+      rng
+    );
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("{batter}");
+    expect(result).not.toContain("{pitcher}");
+  });
+});
+
+// ── veteran_eye_hint rule (priority 12) ──────────────────────────────────────
+
+describe("veteran_eye_hint rule", () => {
+  it("fires for single with near-combo skills", () => {
+    const rule = matchingRule(
+      ctx({ result: "single", batterMentalSkills: VETERAN_EYE_NEAR })
+    );
+    expect(rule?.id).toBe("veteran_eye_hint");
+  });
+
+  it("fires when one skill is at rank 2, the other at rank 3 (near — not full combo)", () => {
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        batterMentalSkills: [
+          makeSkill("veteran_poise", 3),
+          makeSkill("pitch_recognition", 2),
+        ],
+      })
+    );
+    expect(rule?.id).toBe("veteran_eye_hint");
+  });
+
+  it("does NOT fire when full combo is active (veteran_eye_combo supersedes)", () => {
+    const rule = matchingRule(
+      ctx({ result: "single", batterMentalSkills: VETERAN_EYE_FULL })
+    );
+    expect(rule?.id).not.toBe("veteran_eye_hint");
+    expect(rule?.id).toBe("veteran_eye_combo");
+  });
+
+  it("does NOT fire when result is out", () => {
+    const rule = matchingRule(
+      ctx({ result: "flyout", batterMentalSkills: VETERAN_EYE_NEAR })
+    );
+    expect(rule?.id).not.toBe("veteran_eye_hint");
+  });
+
+  it("does NOT fire when result is walk", () => {
+    const rule = matchingRule(
+      ctx({ result: "walk", batterMentalSkills: VETERAN_EYE_NEAR })
+    );
+    expect(rule?.id).not.toBe("veteran_eye_hint");
+  });
+
+  it("is superseded by approach-counter rules when those apply", () => {
+    // approach_beats_strategy (priority 45) beats veteran_eye_hint (12)
+    const rule = matchingRule(
+      ctx({
+        result: "single",
+        batterApproach: "power",
+        pitchStrategy: "finesse",
+        batterMentalSkills: VETERAN_EYE_NEAR,
+      })
+    );
+    // approach_beats rule should win over veteran_eye_hint
+    expect(rule?.id).not.toBe("veteran_eye_hint");
+  });
+
+  it("returns non-empty text with {batter} token filled", () => {
+    const result = evaluateNarrativeRules(
+      ctx({
+        result: "single",
+        inning: 4,
+        scoreDiff: 0,
+        batterName: "Martinez",
+        batterMentalSkills: VETERAN_EYE_NEAR,
+      }),
+      rng
+    );
+    expect(result).toBeTruthy();
+    expect(result).not.toContain("{batter}");
+  });
+});

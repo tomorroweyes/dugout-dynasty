@@ -27,6 +27,8 @@ import {
   strategyBeatsApproach,
   hasClutchLegendCombo,
   isNearClutchLegend,
+  hasVeteranEyeCombo,
+  isNearVeteranEye,
 } from "./narrativeContext";
 import {
   GRAND_SLAM_TEXTS,
@@ -47,6 +49,8 @@ import {
   APPROACH_MISMATCH_TEXTS,
   CLUTCH_LEGEND_TEXTS,
   CLUTCH_LEGEND_HINT_TEXTS,
+  VETERAN_EYE_TEXTS,
+  VETERAN_EYE_HINT_TEXTS,
 } from "./situationalPools";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -342,6 +346,37 @@ export const NARRATIVE_RULES: NarrativeRule[] = [
       isNearClutchLegend(ctx) &&
       isHighLeverageSituation(ctx),
     pool: CLUTCH_LEGEND_HINT_TEXTS,
+  },
+
+  // ── Priority 52: Mental skill combo — Veteran's Eye ──────────────────────
+  // Fires when batter has mastered BOTH veteran_poise AND pitch_recognition
+  // (rank 3+) and gets a hit. No situational gate — experience + pattern
+  // mastery pays dividends throughout the game, not just in clutch moments.
+  // Slightly lower priority than Clutch Legend (55) so if both apply,
+  // the high-leverage narrative wins.
+
+  {
+    id: "veteran_eye_combo",
+    name: "Veteran's Eye — veteran_poise + pitch_recognition at rank 3+, hit",
+    priority: 52,
+    matches: (ctx) =>
+      isHit(ctx.result) &&
+      hasVeteranEyeCombo(ctx),
+    pool: VETERAN_EYE_TEXTS,
+  },
+
+  // ── Priority 12: Veteran's Eye near-combo hint ───────────────────────────
+  // Subtle "the reads are sharpening" hint before the full combo unlocks.
+  // Very low priority — activates only when no other rule claimed this at-bat.
+
+  {
+    id: "veteran_eye_hint",
+    name: "Veteran's Eye Hint — both skills active at rank 2+ but combo not yet unlocked",
+    priority: 12,
+    matches: (ctx) =>
+      isHit(ctx.result) &&
+      isNearVeteranEye(ctx),
+    pool: VETERAN_EYE_HINT_TEXTS,
   },
 
 ];
