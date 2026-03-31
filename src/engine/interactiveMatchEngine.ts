@@ -584,7 +584,9 @@ export function simulateAtBat_Interactive(
       paintedCorner: isPerfectZone && isTop ? true : undefined,
       // Zone visualization data
       zoneAimed: decision.pitcherAimedZone,
-      zoneLanded: decision.pitcherAimedZone, // For now, aimed zone serves as landing (perfect execution)
+      // Use actual landing zone from zoneResult (may differ from aim for low-control pitchers).
+      // Falls back to aimed zone when zone grid was not used (auto-sim path).
+      zoneLanded: decision.zoneResult?.landingZone ?? decision.pitcherAimedZone,
       zoneBatterAimed: decision.batterAimedZone,
     } as PlayByPlayEvent,
   ];
